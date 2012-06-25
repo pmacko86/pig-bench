@@ -79,7 +79,8 @@ public class BenchmarkMicro extends Benchmark {
 		System.err.println("Usage: runBenchmarkSuite.sh OPTIONS");
 		System.err.println("");
 		System.err.println("General options:");
-		System.err.println("  --database, -D DB       Select/create a database");
+		System.err.println("  --annotation TEXT       Include an arbitrary annotation in the " +
+										"disclosed provenance");
 		System.err.println("  --dir, -d DIR           Set the database and results directory");
 		System.err.println("  --help                  Print this help message");
 		System.err.println("  --no-provenance         Disable provenance collection");
@@ -88,7 +89,6 @@ public class BenchmarkMicro extends Benchmark {
 										"for all threads");
 		System.err.println("  --threads N             Run N copies of the benchmark concurrently");
 		System.err.println("  --tx-buffer N           Set the size of the transaction buffer");
-		System.err.println("  --warmup-sql [ADDR]     Specify the SQL database for warmup");
 		System.err.println("");
 		System.err.println("Options to select a database engine (select one):");
 		System.err.println("  --bdb                   Berkeley DB, using massive indexing");
@@ -100,6 +100,11 @@ public class BenchmarkMicro extends Benchmark {
 		System.err.println("  --neo                   neo4j");
 		System.err.println("  --rdf                   Sesame RDF");
 		System.err.println("  --sql [ADDR]            MySQL");
+		System.err.println("");
+		System.err.println("Database engine options:");
+		System.err.println("  --database, -D NAME     Select a particular graph or an instance of " +
+										"a database");
+		System.err.println("  --warmup-sql [ADDR]     Specify the SQL database for warmup");
 		System.err.println("");
 		System.err.println("Options to select a workload (select multiple):");
 		System.err.println("  --add                   Adding nodes and edges to the database");
@@ -113,20 +118,20 @@ public class BenchmarkMicro extends Benchmark {
 		System.err.println("  --get-k                 \"Get\" k-hops microbenchmarks");
         System.err.println("  --get-property          \"Get\" Object store microbenchmarks");
 		System.err.println("  --ingest [FILE]         Ingest a file to the database "+
-										" (implies --delete-graph)");
+										"(implies --delete-graph)");
 		System.err.println("");
 		System.err.println("Benchmark and workload options:");
 		System.err.println("  --k-hops K              Set the number of k-hops");
 		System.err.println("  --k-hops K1:K2          Set a range of k-hops");
 		System.err.println("  --op-count N            Set the number of operations");
-		System.err.println("  --warmup-ingest FILE    Set a different file for ingest for" +
-										" the warmup database");
+		System.err.println("  --warmup-ingest FILE    Set a different file for ingest for " +
+										"the warmup database");
 		System.err.println("  --warmup-op-count N     Set the number of warmup operations");
 		System.err.println("");
 		System.err.println("Options for model \"Barabasi\":");
 		System.err.println("  --barabasi-n N          The number of vertices");
 		System.err.println("  --barabasi-m M          The number of incoming edges "+
-										" generated for each vertex");
+										"generated for each vertex");
 	}
 	
 	
