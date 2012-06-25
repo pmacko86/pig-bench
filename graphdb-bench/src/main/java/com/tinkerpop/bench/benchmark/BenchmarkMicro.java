@@ -111,9 +111,9 @@ public class BenchmarkMicro extends Benchmark {
 		System.err.println("  --clustering-coeff      Compute the clustering coefficients");
 		System.err.println("  --delete-graph          Delete the entire graph");
 		System.err.println("  --shortest-path         Shortest path algorithm");
-        System.err.println("  --shortest-path-prop    Shortest paths with in-DB marking.");
+        System.err.println("  --shortest-path-prop    Shortest paths with in-DB marking");
 		System.err.println("  --generate MODEL        Generate (or grow) the graph "+
-										" based on the given model");
+										"based on the given model");
 		System.err.println("  --get                   \"Get\" microbenchmarks");
 		System.err.println("  --get-k                 \"Get\" k-hops microbenchmarks");
         System.err.println("  --get-property          \"Get\" Object store microbenchmarks");
