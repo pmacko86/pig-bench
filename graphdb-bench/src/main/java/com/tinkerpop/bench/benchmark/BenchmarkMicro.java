@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import com.tinkerpop.bench.Bench;
 import com.tinkerpop.bench.ConsoleUtils;
@@ -78,6 +79,7 @@ public class BenchmarkMicro extends Benchmark {
 		System.err.println("Usage: runBenchmarkSuite.sh OPTIONS");
 		System.err.println("");
 		System.err.println("General options:");
+		System.err.println("  --database, -D DB       Select/create a database");
 		System.err.println("  --dir, -d DIR           Set the database and results directory");
 		System.err.println("  --help                  Print this help message");
 		System.err.println("  --no-provenance         Disable provenance collection");
@@ -88,7 +90,7 @@ public class BenchmarkMicro extends Benchmark {
 		System.err.println("  --tx-buffer N           Set the size of the transaction buffer");
 		System.err.println("  --warmup-sql [ADDR]     Specify the SQL database for warmup");
 		System.err.println("");
-		System.err.println("Options to select a database (select one):");
+		System.err.println("Options to select a database engine (select one):");
 		System.err.println("  --bdb                   Berkeley DB, using massive indexing");
 		System.err.println("  --dex                   DEX");
 		System.err.println("  --dup                   Berkeley DB, duplicates "+
@@ -200,6 +202,8 @@ public class BenchmarkMicro extends Benchmark {
 		
 		parser.accepts("annotation").withRequiredArg().ofType(String.class);
 		
+		parser.accepts("D").withRequiredArg().ofType(String.class);
+		parser.accepts("database").withRequiredArg().ofType(String.class);
 		parser.accepts("d").withRequiredArg().ofType(String.class);
 		parser.accepts("dir").withRequiredArg().ofType(String.class);
 		parser.accepts("help");
@@ -481,6 +485,20 @@ public class BenchmarkMicro extends Benchmark {
 		
 		
 		/*
+		 * Get the name of the database
+		 */
+		
+		String dbName = null;
+		if (options.has("D") || options.has("database")) {
+			dbName = options.valueOf(options.has("D") ? "D" : "database").toString();
+			if (!Pattern.matches("^[a-z][a-z0-9_]*$", dbName)) {
+	    		throw new RuntimeException("Invalid database name (can contain only lower-case letters, "
+	    				+ "numbers, and _, and has to start with a letter)");
+	    	}
+		}
+		
+		
+		/*
 		 * Get the name of the results directory
 		 */
 		
@@ -586,7 +604,10 @@ public class BenchmarkMicro extends Benchmark {
 		 * Set the file, directory, and database names
 		 */
 		
-		String dbPrefix = dirResults + dbShortName + "/";
+		String dbPrefix = dirResults + dbShortName;
+		if (dbName != null && !dbName.equals("")) dbPrefix += "_" + dbName;
+		dbPrefix += "/";
+		
 		String warmupDbDir = null;
 		String dbDir = null;
 		if (!options.has("sql")) {
@@ -600,6 +621,10 @@ public class BenchmarkMicro extends Benchmark {
 			if (options.has("sql")) {
 				warmupDbPath = sqlDbPathWarmup;
 				dbPath = sqlDbPath;
+				if (dbName != null && !dbName.equals("")) {
+					warmupDbPath += "|" + dbName;
+					dbPath += "|" + dbName;
+				}
 			}
 			else {
 				warmupDbPath = warmupDbDir + (options.has("dex") ? "/graph.dex" : "");
@@ -608,6 +633,7 @@ public class BenchmarkMicro extends Benchmark {
 		}
 		
 		String logPrefix = dbPrefix + dbShortName;
+		if (dbName != null && !dbName.equals("")) logPrefix += "_" + dbName;
 		String warmupLogFile = logPrefix + "-warmup" + argString + ".csv";
 		String logFile = logPrefix + argString + ".csv";
 		String summaryLogFile = logPrefix + "-summary" + argString + ".csv";
