@@ -36,6 +36,9 @@ import edu.harvard.pass.cpl.CPL;
  */
 public class BenchRunner {
 	
+	/// The bench runner identification string
+	public static final String ID_STRING = "BenchRunner";
+	
 	/// Log writer
 	private OperationLogWriter logWriter = null;
 
@@ -284,21 +287,13 @@ public class BenchRunner {
 				// Instantiate operation factories
 				
 				int longestFactoryName = 0;
-				int longestOperationName = 0;
 				@SuppressWarnings("unused") int totalOperations = 0;
-				int maxOperationID = 0;
 				for (OperationFactory operationFactory : operationFactories) {
 					InstantiatedOperationFactory f = new InstantiatedOperationFactory(operationFactory);
 					instantiatedOperationFactories.add(f);
 					longestFactoryName = Math.max(longestFactoryName, f.getFactory().getClass().getSimpleName().length());
-					for (Operation operation : f.getOperations()) {
-						longestOperationName = Math.max(longestOperationName, operation.getName().length());
-						maxOperationID = Math.max(maxOperationID, operation.getId());
-						totalOperations++;
-					}
 				}
 				int longestFactoryStrID = ("" + instantiatedOperationFactories.size()).length();
-				@SuppressWarnings("unused") int longestOperatoinStrID = ("" + maxOperationID).length();
 				
 				
 				// Run
@@ -350,8 +345,13 @@ public class BenchRunner {
 						// Pollute cache
 						
 						if ((main || GlobalConfig.oneDbConnectionPerThread) && polluteCache) {
-							if (main) System.out.print("\rPolluting cache with a sequential scan");
-							if (main) System.out.flush();
+							if (main) {
+								System.out.printf("\r[%-" + longestFactoryName + "s %" + longestFactoryStrID + "s] %s",
+										ID_STRING,
+										"",
+										"Polluting cache with a sequential scan");
+								System.out.flush();
+							}
 							
 							Graph g = graphDescriptor.getGraph();
 							long numVertices = g.countVertices();
@@ -554,18 +554,6 @@ public class BenchRunner {
 			this.update = factory.isUpdate();
 			this.initialized = false;
 			this.operations = new ArrayList<Operation>();
-			
-			
-			// Initialize the operation factory and instantiate the operations
-
-			factory.initialize(graphDescriptor, operationId);
-			for (Operation operation : factory) {
-				operations.add(operation);
-				if (operation.isUpdate() && !update) {
-					throw new IllegalStateException("Found an update operation in a factory " +
-								"that claims that there are no update operations");
-				}
-			}
 		}
 		
 		
@@ -590,9 +578,27 @@ public class BenchRunner {
 		
 		
 		/**
-		 * Initialize all operations
+		 * Initialize the factory and all operations
 		 */
 		public void initialize() {
+			
+			if (initialized) return;
+			
+			
+			// Initialize the operation factory and instantiate the operations
+
+			factory.initialize(graphDescriptor, operationId);
+			for (Operation operation : factory) {
+				operations.add(operation);
+				if (operation.isUpdate() && !update) {
+					throw new IllegalStateException("Found an update operation in a factory " +
+								"that claims that there are no update operations");
+				}
+			}
+			
+			
+			// Initialize all operations
+			
 			for (Operation operation : operations) {
 				operation.setLogWriter(logWriter);
 				operation.initialize(graphDescriptor);
@@ -617,6 +623,7 @@ public class BenchRunner {
 		 * @return a collection of operations
 		 */
 		public List<Operation> getOperations() {
+			if (!initialized) throw new IllegalStateException("Not initialized");
 			return operations;
 		}
 	}

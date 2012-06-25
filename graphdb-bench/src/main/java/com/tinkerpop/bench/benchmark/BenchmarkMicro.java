@@ -35,6 +35,7 @@ import com.tinkerpop.blueprints.pgm.impls.sql.SqlGraph;
 
 import edu.harvard.pass.cpl.CPL;
 import edu.harvard.pass.cpl.CPLException;
+import edu.harvard.pass.cpl.CPLFile;
 //import com.tinkerpop.blueprints.pgm.impls.tg.TinkerGraph;
 
 import joptsimple.OptionParser;
@@ -85,6 +86,7 @@ public class BenchmarkMicro extends Benchmark {
 										"for all threads");
 		System.err.println("  --threads N             Run N copies of the benchmark concurrently");
 		System.err.println("  --tx-buffer N           Set the size of the transaction buffer");
+		System.err.println("  --warmup-sql [ADDR]     Specify the SQL database for warmup");
 		System.err.println("");
 		System.err.println("Options to select a database (select one):");
 		System.err.println("  --bdb                   Berkeley DB, using massive indexing");
@@ -101,8 +103,8 @@ public class BenchmarkMicro extends Benchmark {
 		System.err.println("  --add                   Adding nodes and edges to the database");
 		System.err.println("  --clustering-coeff      Compute the clustering coefficients");
 		System.err.println("  --delete-graph          Delete the entire graph");
-		System.err.println("  --dijkstra              Dijkstra's shortest path algorithm");
-        System.err.println("  --dijkstra-property     Shortest paths with in-DB marking.");
+		System.err.println("  --shortest-path         Shortest path algorithm");
+        System.err.println("  --shortest-path-prop    Shortest paths with in-DB marking.");
 		System.err.println("  --generate MODEL        Generate (or grow) the graph "+
 										" based on the given model");
 		System.err.println("  --get                   \"Get\" microbenchmarks");
@@ -196,7 +198,7 @@ public class BenchmarkMicro extends Benchmark {
 		
 		OptionParser parser = new OptionParser();
 		
-		parser.accepts("annotation").withRequiredArg().ofType(String.class); /* TODO */
+		parser.accepts("annotation").withRequiredArg().ofType(String.class);
 		
 		parser.accepts("d").withRequiredArg().ofType(String.class);
 		parser.accepts("dir").withRequiredArg().ofType(String.class);
@@ -206,6 +208,7 @@ public class BenchmarkMicro extends Benchmark {
 		parser.accepts("single-db-connection");
 		parser.accepts("threads").withRequiredArg().ofType(Integer.class);
 		parser.accepts("tx-buffer").withRequiredArg().ofType(Integer.class);
+		parser.accepts("warmup-sql").withRequiredArg().ofType(String.class);
 		
 		
 		// Databases
@@ -235,8 +238,9 @@ public class BenchmarkMicro extends Benchmark {
 		parser.accepts("clustering-coef");
 		parser.accepts("clustering-coeff");
 		parser.accepts("delete-graph");
-		parser.accepts("dijkstra");
-        parser.accepts("dijkstra-property");
+		parser.accepts("shortest-path");
+        parser.accepts("shortest-path-prop");
+        parser.accepts("shortest-path-property");
 		parser.accepts("generate").withRequiredArg().ofType(String.class);
 		parser.accepts("get");
         parser.accepts("get-property");
@@ -424,6 +428,7 @@ public class BenchmarkMicro extends Benchmark {
 		if (dbClass == HollowGraph.class) withGraphPath = false;
 		
 		String sqlDbPath = null;
+		String sqlDbPathWarmup = null;
 		if (options.has("sql")) {
 			if (options.hasArgument("sql")) {
 				sqlDbPath = options.valueOf("sql").toString();
@@ -435,6 +440,19 @@ public class BenchmarkMicro extends Benchmark {
 				}
 				else {
 					ConsoleUtils.error("The SQL database path is not specified.");
+					return;
+				}
+			}
+			if (options.has("warmup-sql")) {
+				sqlDbPathWarmup = options.valueOf("warmup-sql").toString();
+			}
+			else {
+				String sqlDbPathWarmup_property = getProperty(Bench.DB_SQL_PATH_WARMUP);
+				if (sqlDbPathWarmup_property != null) {
+					sqlDbPathWarmup = sqlDbPathWarmup_property;
+				}
+				else {
+					ConsoleUtils.error("The SQL warmup database path is not specified.");
 					return;
 				}
 			}
@@ -580,7 +598,7 @@ public class BenchmarkMicro extends Benchmark {
 		String dbPath = null;
 		if (withGraphPath) {
 			if (options.has("sql")) {
-				warmupDbPath = sqlDbPath;
+				warmupDbPath = sqlDbPathWarmup;
 				dbPath = sqlDbPath;
 			}
 			else {
@@ -626,6 +644,10 @@ public class BenchmarkMicro extends Benchmark {
 				t.printStackTrace(System.err);
 				System.exit(1);
 			}
+			if (CPL.isAttached() && options.has("annotation")) {
+				CPLFile.lookup(new File(warmupLogFile)).addProperty("ANNOTATION",
+						options.valueOf("annotation").toString());
+			}
 			Cache.dropAll();
 		}
 		
@@ -640,6 +662,10 @@ public class BenchmarkMicro extends Benchmark {
 			System.exit(1);
 		}
 		resultFiles.put(dbShortName, logFile);
+		if (CPL.isAttached() && options.has("annotation")) {
+			CPLFile.lookup(new File(logFile)).addProperty("ANNOTATION",
+					options.valueOf("annotation").toString());
+		}
 		
 		
 		/*
@@ -652,6 +678,12 @@ public class BenchmarkMicro extends Benchmark {
 		summaryLogWriter.writeSummary(summaryLogFile);
 		summaryLogWriter.writeSummaryText(summaryLogFileText);
 		summaryLogWriter.writeSummaryText(null);
+		if (CPL.isAttached() && options.has("annotation")) {
+			CPLFile.lookup(new File(summaryLogFile)).addProperty("ANNOTATION",
+					options.valueOf("annotation").toString());
+			CPLFile.lookup(new File(summaryLogFileText)).addProperty("ANNOTATION",
+					options.valueOf("annotation").toString());
+		}
 	}
 
 	
@@ -764,15 +796,15 @@ public class BenchmarkMicro extends Benchmark {
 				}
 			}
 			
-			// SHORTEST PATH (Dijkstra's algorithm)
-			if (options.has("dijkstra")) {
+			// SHORTEST PATH
+			if (options.has("shortest-path")) {
 				operationFactories.add(new OperationFactoryRandomVertexPair(
 						OperationGetShortestPath.class, opCount / 2));
             }
 
-			if (options.has("dijkstra-property")) {	
+			if (options.has("shortest-path-property") || options.has("shortest-path-prop")) {	
 				if (numThreads != 1) {
-					throw new UnsupportedOperationException("Operation \"dijkstra-property\" "
+					throw new UnsupportedOperationException("Operation \"shortest-path-prop\" "
 							+"is not supported in the multi-threaded mode");
 				}
 				operationFactories.add(new OperationFactoryRandomVertexPair(
