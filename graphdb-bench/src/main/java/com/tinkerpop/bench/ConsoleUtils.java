@@ -7,6 +7,11 @@ package com.tinkerpop.bench;
  */
 public class ConsoleUtils {
 	
+	/**
+	 * Whether to use color output to the console
+	 */
+	public static boolean useColor = true;
+	
 	private static final String SPACES = "                                        ";
 	private static final String BACKSPACES = "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b";
 
@@ -35,7 +40,7 @@ public class ConsoleUtils {
 	 * should not be used
 	 */
 	private static String escapeColor(int color) {
-		if (!useEscapeCharacter) return "";
+		if (!useEscapeCharacter || !useColor) return "";
 		if ((color < 0) || (color >= 16)) return "";
 		
 		return "" + (char)27 + ((color < 8) ? ("[0;3" + color) : ("[1;3" + (color - 8))) + "m";
@@ -46,7 +51,7 @@ public class ConsoleUtils {
 	 * Returns a stdout escape sequence for normal color output
 	 */
 	private static String escapeNormal() {
-		if (!useEscapeCharacter) return "";
+		if (!useEscapeCharacter || !useColor) return "";
 		return "" + (char)27 + "[0;0m";
 	}
 	

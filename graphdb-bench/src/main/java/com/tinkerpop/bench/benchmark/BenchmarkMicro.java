@@ -1,6 +1,8 @@
 package com.tinkerpop.bench.benchmark;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.PrintStream;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -13,6 +15,7 @@ import com.tinkerpop.bench.Bench;
 import com.tinkerpop.bench.ConsoleUtils;
 import com.tinkerpop.bench.GlobalConfig;
 import com.tinkerpop.bench.GraphDescriptor;
+import com.tinkerpop.bench.GraphUtils;
 import com.tinkerpop.bench.LogUtils;
 import com.tinkerpop.bench.cache.Cache;
 import com.tinkerpop.bench.generator.GraphGenerator;
@@ -24,6 +27,7 @@ import com.tinkerpop.bench.operationFactory.OperationFactory;
 import com.tinkerpop.bench.operationFactory.OperationFactoryGeneric;
 import com.tinkerpop.bench.operationFactory.factories.OperationFactoryRandomVertex;
 import com.tinkerpop.bench.operationFactory.factories.OperationFactoryRandomVertexPair;
+import com.tinkerpop.blueprints.pgm.Graph;
 import com.tinkerpop.blueprints.pgm.impls.bdb.BdbGraph;
 import com.tinkerpop.blueprints.pgm.impls.dex.DexGraph;
 import com.tinkerpop.blueprints.pgm.impls.dup.DupGraph;
@@ -83,6 +87,7 @@ public class BenchmarkMicro extends Benchmark {
 										"disclosed provenance");
 		System.err.println("  --dir, -d DIR           Set the database and results directory");
 		System.err.println("  --help                  Print this help message");
+		System.err.println("  --no-color              Disable color output to the terminal");
 		System.err.println("  --no-provenance         Disable provenance collection");
 		System.err.println("  --no-warmup             Disable the initial warmup run");
 		System.err.println("  --single-db-connection  Use a single, shared database connection " +
@@ -112,7 +117,7 @@ public class BenchmarkMicro extends Benchmark {
 		System.err.println("  --delete-graph          Delete the entire graph");
 		System.err.println("  --shortest-path         Shortest path algorithm");
         System.err.println("  --shortest-path-prop    Shortest paths with in-DB marking");
-		System.err.println("  --generate MODEL        Generate (or grow) the graph "+
+		System.err.println("  --generate [MODEL]      Generate (or grow) the graph "+
 										"based on the given model");
 		System.err.println("  --get                   \"Get\" microbenchmarks");
 		System.err.println("  --get-k                 \"Get\" k-hops microbenchmarks");
@@ -132,6 +137,9 @@ public class BenchmarkMicro extends Benchmark {
 		System.err.println("  --barabasi-n N          The number of vertices");
 		System.err.println("  --barabasi-m M          The number of incoming edges "+
 										"generated for each vertex");
+		System.err.println("");
+		System.err.println("Miscellaneous commands:");
+		System.err.println("  --export-graphml FILE   Export the database to a graphml file");
 	}
 	
 	
@@ -182,6 +190,13 @@ public class BenchmarkMicro extends Benchmark {
 		 * Initialize
 		 */
 		
+		// Pre-parse the command-line arguments
+		
+		for (String a : args) {
+			if (a.equals("--no-color")) ConsoleUtils.useColor = false;
+		}
+		
+		
 		// Find the graphdb-bench directory
 		
 		URL source = BenchmarkMicro.class.getProtectionDomain().getCodeSource().getLocation();
@@ -212,6 +227,7 @@ public class BenchmarkMicro extends Benchmark {
 		parser.accepts("d").withRequiredArg().ofType(String.class);
 		parser.accepts("dir").withRequiredArg().ofType(String.class);
 		parser.accepts("help");
+		parser.accepts("no-color");
 		parser.accepts("no-provenance");
 		parser.accepts("no-warmup");
 		parser.accepts("single-db-connection");
@@ -250,7 +266,7 @@ public class BenchmarkMicro extends Benchmark {
 		parser.accepts("shortest-path");
         parser.accepts("shortest-path-prop");
         parser.accepts("shortest-path-property");
-		parser.accepts("generate").withRequiredArg().ofType(String.class);
+		parser.accepts("generate").withOptionalArg().ofType(String.class);
 		parser.accepts("get");
         parser.accepts("get-property");
 		parser.accepts("get-k");
@@ -277,6 +293,11 @@ public class BenchmarkMicro extends Benchmark {
 		parser.accepts("barabasi-m").withRequiredArg().ofType(Integer.class);
 		
 		
+		// Miscellaneous commands
+		
+		parser.accepts("export-graphml").withOptionalArg().ofType(String.class);
+		
+		
 		// Parse the options
 		
 		OptionSet options;
@@ -297,6 +318,10 @@ public class BenchmarkMicro extends Benchmark {
 		
 		
 		// Handle the options
+		
+		if (options.has("no-color")) {
+			ConsoleUtils.useColor = false;
+		}
 		
 		if (options.has("help") || !options.hasOptions()) {
 			help();
@@ -420,12 +445,11 @@ public class BenchmarkMicro extends Benchmark {
 		for (int i = 0; i < DATABASE_SHORT_NAMES.length; i++) {
 			if (options.has(DATABASE_SHORT_NAMES[i])) {
 				if (dbShortName != null) {
-					System.err.println("Error: Multiple databases selected.");
+					ConsoleUtils.error("Multiple databases are selected, but only one is allowed.");
 					return;
 				}
 				dbShortName = DATABASE_SHORT_NAMES[i];
 				dbClass = DATABASE_CLASSES[i];
-				break;
 			}
 		}
 		if (dbShortName == null) {
@@ -474,7 +498,9 @@ public class BenchmarkMicro extends Benchmark {
 		
 		GraphGenerator graphGenerator = null;
 		if (options.has("generate")) {
-			String model = options.valueOf("generate").toString().toLowerCase();
+			String model = options.hasArgument("generate")
+					? options.valueOf("generate").toString().toLowerCase()
+					: "barabasi";
 			
 			if (model.equals("barabasi")) {
 				int n = options.has("barabasi-n") ? (Integer) options.valueOf("barabasi-n") : 1000;
@@ -646,12 +672,48 @@ public class BenchmarkMicro extends Benchmark {
 		
 		
 		/*
-		 * Print info
+		 * Non-benchmark commands
+		 */
+		
+		// TODO Ensure that there is only a single command specified or that there is only benchmark workload specified
+		
+		if (options.has("export-graphml")) {
+			
+			String file = options.hasArgument("export-graphml") ? "" + options.valueOf("export-graphml") : null;
+			PrintStream out = System.out;
+			if (file != null) {
+				try {
+					File f = new File(file);
+					out = new PrintStream(f);
+				}
+				catch (IOException e) {
+					ConsoleUtils.error("Cannot write to the specified file: " + file);
+					return;
+				}
+			}
+			
+			try {
+				graphDescriptor = new GraphDescriptor(dbClass, dbDir, dbPath);
+				Graph g = graphDescriptor.openGraph();
+				GraphUtils.printGraphML(out, g, false);
+				graphDescriptor.shutdownGraph();
+			}
+			finally {
+				if (file != null) out.close();
+			}
+			
+			return;
+		}
+		
+		
+		/*
+		 * Print benchmark info
 		 */
 		
 		ConsoleUtils.sectionHeader("Tinkubator Graph Database Benchmark");
 		
 		System.out.println("Database    : " + dbShortName);
+		System.out.println("Instance    : " + (dbName != null && !dbName.equals("") ? dbName : "<default>"));
 		System.out.println("Directory   : " + dirResults);
 		System.out.println("Log File    : " + logFile);
 		System.out.println("Summary Log : " + summaryLogFile);

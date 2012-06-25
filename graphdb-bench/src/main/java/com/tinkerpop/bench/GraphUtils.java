@@ -3,6 +3,7 @@ package com.tinkerpop.bench;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Set;
 
 import com.tinkerpop.blueprints.pgm.Edge;
 import com.tinkerpop.blueprints.pgm.Graph;
@@ -84,6 +85,69 @@ public class GraphUtils {
 			if (i++ % 20 == 0) out.print("\n");
 		}
 		if ((i-1) % 20 != 0) out.print("\n");
+	}
+	
+	
+	/**
+	 * Export the graph in the GraphML format
+	 * 
+	 * @param out the print stream
+	 * @param graph the graph
+	 * @param sorted whether the node/edge lists should be sorted
+	 */
+	public static void printGraphML(PrintStream out, Graph graph, boolean sorted /*TODO*/) {
+				
+		out.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+		out.println("<graphml xmlns=\"http://graphml.graphdrawing.org/xmlns\"");
+		out.println("         xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"");
+		out.println("         xsi:schemaLocation=\"http://graphml.graphdrawing.org/xmlns");
+		out.println("         http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd\">");
+		out.println("<!-- Exported by graphdb-bench -->");
+		
+		Set<String> nodeKeys = new HashSet<String>();
+		for (Vertex vertex : graph.getVertices()) {
+			nodeKeys.addAll(vertex.getPropertyKeys());
+		}
+		for (String key : nodeKeys) {
+			out.println("  <key id=\"" + key + "\" for=\"node\" attr.name=\"" + key + "\" attr.type=\"string\"/>");
+			if (key.contains("\"")) throw new RuntimeException("The following node key contains \'\"\': " + key);
+		}
+		
+		Set<String> edgeKeys = new HashSet<String>();
+		for (Edge edge : graph.getEdges()) {
+			edgeKeys.addAll(edge.getPropertyKeys());
+		}
+		for (String key : edgeKeys) {
+			if (key.contains("\"")) throw new RuntimeException("The following node key contains \'\"\': " + key);
+			out.println("  <key id=\"" + key + "\" for=\"edge\" attr.name=\"" + key + "\" attr.type=\"string\"/>");
+		}
+		
+		out.println("  <graph id=\"G\" edgedefault=\"directed\">");
+		
+		for (Vertex vertex : graph.getVertices()) {
+			out.println("    <node id=\"" + vertex.getId() + "\">");
+			for (String key : vertex.getPropertyKeys()) {
+				if (key.contains("\"")) throw new RuntimeException("The following node key contains \'\"\': " + key);
+				String value = OutputUtils.encodeXMLString("" + vertex.getProperty(key));
+				out.println("      <data key=\"" + key + "\">" + value + "</data>");
+			}
+			out.println("    </node>");
+		}
+		
+		for (Edge edge : graph.getEdges()) {
+			out.println("    <edge source=\"" + edge.getOutVertex().getId() + "\" "
+					+ "target=\"" + edge.getInVertex ().getId() + "\" "
+					+ "label=\"" + edge.getLabel() + "\">");
+			for (String key : edge.getPropertyKeys()) {
+				if (key.contains("\"")) throw new RuntimeException("The following node key contains \'\"\': " + key);
+				String value = OutputUtils.encodeXMLString("" + edge.getProperty(key));
+				out.println("      <data key=\"" + key + "\">" + value + "</data>");
+			}
+			out.println("    </edge>");
+		}
+		
+		out.println("  </graph>");
+		out.println("</graphml>");
 	}
 	
 	
