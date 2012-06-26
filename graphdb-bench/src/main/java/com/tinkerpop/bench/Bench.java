@@ -3,7 +3,11 @@ package com.tinkerpop.bench;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
+import com.tinkerpop.bench.benchmark.BenchmarkMicro;
+
+import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.Properties;
 
 /**
@@ -13,6 +17,7 @@ public class Bench {
 
 	public static Logger logger = Logger.getLogger(Bench.class);
 	public static Properties benchProperties = new Properties();
+	public static String graphdbBenchDir = null;
 	
 	// CPL - Originator & Types
 	public static final String ORIGINATOR = "com.tinkerpop.bench";
@@ -40,21 +45,79 @@ public class Bench {
 	// GRAPH FILES
 	public static final String GRAPHML_BARABASI = "bench.graph.barabasi.file";
 
+	
 	static {
+		
+		// Load the properties
+		
 		try {
-			benchProperties.load(Bench.class
-					.getResourceAsStream("bench.properties"));
-			//System.out.println(benchProperties);
-		} catch (IOException e) {
-			//e.printStackTrace();
+			benchProperties.load(Bench.class.getResourceAsStream("bench.properties"));
+		}
+		catch (IOException e) {
 			ConsoleUtils.warn("Could not load bench.properties");
 		}
 		try {
-			PropertyConfigurator.configure(Bench.class
-				.getResource("log4j.properties"));
+			PropertyConfigurator.configure(Bench.class.getResource("log4j.properties"));
 		} catch (Exception e) {
-			//e.printStackTrace();
 			ConsoleUtils.warn("Could not load log4j.properties");
 		}
+		
+		
+		// Find the graphdb-bench directory
+		
+		try {
+			URL source = BenchmarkMicro.class.getProtectionDomain().getCodeSource().getLocation();
+			if ("file".equals(source.getProtocol())) {
+				for (File f = new File(source.toURI()); f != null; f = f.getParentFile()) {
+					if (f.getName().equals("graphdb-bench")) {
+						graphdbBenchDir = f.getAbsolutePath();
+						break;
+					}
+				}
+			}
+		} catch (Exception e) {
+			graphdbBenchDir = null;
+		}
+		
+		if (graphdbBenchDir == null) {
+			ConsoleUtils.warn("Could not determine the graphdb-bench directory.");
+			graphdbBenchDir = ".";
+		}
+	}
+	
+	
+	
+	/**
+	 * Get the given property and expand variables
+	 * 
+	 * @param key the property key
+	 * @param defaultValue the default value
+	 * @return the value
+	 */
+	public static String getProperty(String key, String defaultValue) {
+		
+		String v = Bench.benchProperties.getProperty(key);
+		if (v == null) return defaultValue;
+		
+		if (v.indexOf("$GRAPHDB_BENCH") >= 0) {
+			if (Bench.graphdbBenchDir == null) {
+				ConsoleUtils.error("Could not determine the graphdb-bench directory.");
+				throw new RuntimeException("Could not expand the $GRAPHDB_BENCH variable");
+			}
+			v = v.replaceAll("\\$GRAPHDB_BENCH", Bench.graphdbBenchDir);
+		}
+		
+		return v;
+	}
+	
+	
+	/**
+	 * Get the given property and expand variables
+	 * 
+	 * @param key the property key
+	 * @return the value, or null if not found
+	 */
+	public static String getProperty(String key) {
+		return getProperty(key, null);
 	}
 }

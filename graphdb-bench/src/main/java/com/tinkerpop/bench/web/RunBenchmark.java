@@ -11,6 +11,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.tinkerpop.bench.Bench;
+
 
 /**
  * A servlet for running single benchmarks
@@ -81,10 +83,10 @@ public class RunBenchmark extends HttpServlet {
 		String s_warmupOpCount = getStringParameter(request, "warmup_op_count");
 		String[] workloads = getStringParameterValues(request, "workloads");
 		
-		// TODO Validate the input
+		// Note: Remember to validate the input for file names when we add a support for such arguments
 		
 		List<String> arguments = new LinkedList<String>();
-		arguments.add("./runBenchmarkSuite.sh");
+		arguments.add(Bench.graphdbBenchDir + "/runBenchmarkSuite.sh");
 		arguments.add("--dumb-terminal");
 		
 		if (dbName           != null) { arguments.add("--" + dbName); }

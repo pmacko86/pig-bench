@@ -3,7 +3,6 @@ package com.tinkerpop.bench.benchmark;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -53,9 +52,6 @@ public class BenchmarkMicro extends Benchmark {
 	/// The defaults
 	private static final int DEFAULT_OP_COUNT = 1000;
 	private static final int DEFAULT_K_HOPS = 2;
-	
-	/// The graphdb-bench directory
-	private static String graphdbBenchDir = null;
 	
 	/// The number of threads
 	private static int numThreads = 1;
@@ -118,41 +114,6 @@ public class BenchmarkMicro extends Benchmark {
 		System.err.println("Miscellaneous commands:");
 		System.err.println("  --export-graphml FILE   Export the database to a GraphML file");
 	}
-	
-	
-	/**
-	 * Get the given property and expand variables
-	 * 
-	 * @param key the property key
-	 * @param defaultValue the default value
-	 * @return the value
-	 */
-	protected static String getProperty(String key, String defaultValue) {
-		
-		String v = Bench.benchProperties.getProperty(key);
-		if (v == null) return defaultValue;
-		
-		if (v.indexOf("$GRAPHDB_BENCH") >= 0) {
-			if (graphdbBenchDir == null) {
-				ConsoleUtils.error("Could not determine the graphdb-bench directory.");
-				throw new RuntimeException("Could not expand the $GRAPHDB_BENCH variable");
-			}
-			v = v.replaceAll("\\$GRAPHDB_BENCH", graphdbBenchDir);
-		}
-		
-		return v;
-	}
-	
-	
-	/**
-	 * Get the given property and expand variables
-	 * 
-	 * @param key the property key
-	 * @return the value, or null if not found
-	 */
-	protected static String getProperty(String key) {
-		return getProperty(key, null);
-	}
 
 	
 	/**
@@ -176,24 +137,7 @@ public class BenchmarkMicro extends Benchmark {
 				ConsoleUtils.useEscapeSequences = false;
 			}
 		}
-		
-		
-		// Find the graphdb-bench directory
-		
-		URL source = BenchmarkMicro.class.getProtectionDomain().getCodeSource().getLocation();
-		if ("file".equals(source.getProtocol())) {
-			for (File f = new File(source.toURI()); f != null; f = f.getParentFile()) {
-				if (f.getName().equals("graphdb-bench")) {
-					graphdbBenchDir = f.getAbsolutePath();
-					break;
-				}
-			}
-		}
-		
-		if (graphdbBenchDir == null) {
-			ConsoleUtils.warn("Could not determine the graphdb-bench directory.");
-		}
-		
+				
 
 		/*
 		 * Parse the command-line arguments
@@ -401,7 +345,7 @@ public class BenchmarkMicro extends Benchmark {
 			}
 			else {
 				try {
-					CPL.attachODBC(getProperty(Bench.CPL_ODBC_DSN, "DSN=CPL"));
+					CPL.attachODBC(Bench.getProperty(Bench.CPL_ODBC_DSN, "DSN=CPL"));
 				}
 				catch (CPLException e) {
 					ConsoleUtils.error("Could not initialize provenance collection:");
@@ -443,7 +387,7 @@ public class BenchmarkMicro extends Benchmark {
 				sqlDbPath = options.valueOf("sql").toString();
 			}
 			else {
-				String sqlDbPath_property = getProperty(Bench.DB_SQL_PATH);
+				String sqlDbPath_property = Bench.getProperty(Bench.DB_SQL_PATH);
 				if (sqlDbPath_property != null) {
 					sqlDbPath = sqlDbPath_property;
 				}
@@ -456,7 +400,7 @@ public class BenchmarkMicro extends Benchmark {
 				sqlDbPathWarmup = options.valueOf("warmup-sql").toString();
 			}
 			else {
-				String sqlDbPathWarmup_property = getProperty(Bench.DB_SQL_PATH_WARMUP);
+				String sqlDbPathWarmup_property = Bench.getProperty(Bench.DB_SQL_PATH_WARMUP);
 				if (sqlDbPathWarmup_property != null) {
 					sqlDbPathWarmup = sqlDbPathWarmup_property;
 				}
@@ -515,7 +459,7 @@ public class BenchmarkMicro extends Benchmark {
 			if (!dirResults.endsWith("/")) dirResults += "/";
 		}
 		else {
-			String propDirResults = getProperty(Bench.RESULTS_DIRECTORY);
+			String propDirResults = Bench.getProperty(Bench.RESULTS_DIRECTORY);
 			if (propDirResults == null) {
 				ConsoleUtils.error("Property \"" + Bench.RESULTS_DIRECTORY + "\" is not set and --dir is not specified.");
 				return;
@@ -531,7 +475,7 @@ public class BenchmarkMicro extends Benchmark {
 		
 		if (options.has("ingest")) {
 			if (!(new File(ingestFile)).exists()) {
-				String dirGraphML = getProperty(Bench.DATASETS_DIRECTORY);
+				String dirGraphML = Bench.getProperty(Bench.DATASETS_DIRECTORY);
 				if (dirGraphML == null) {
 					ConsoleUtils.warn("Property \"" + Bench.DATASETS_DIRECTORY + "\" is not set.");
 					ConsoleUtils.error("File \"" + ingestFile + "\" does not exist.");
@@ -547,7 +491,7 @@ public class BenchmarkMicro extends Benchmark {
 				}
 			}
 			if (!(new File(warmupIngestFile)).exists()) {
-				String dirGraphML = getProperty(Bench.DATASETS_DIRECTORY);
+				String dirGraphML = Bench.getProperty(Bench.DATASETS_DIRECTORY);
 				if (dirGraphML == null) {
 					ConsoleUtils.warn("Property \"" + Bench.DATASETS_DIRECTORY + "\" is not set.");
 					ConsoleUtils.error("File \"" + warmupIngestFile + "\" does not exist.");
