@@ -318,7 +318,8 @@ public class BenchRunner {
 							Class<?> c = f.getFactory().getClass();
 							String name = c.getSimpleName();
 							if (main) {
-								System.out.printf("\r[%-" + longestFactoryName + "s %"+ longestFactoryStrID + "d]"
+								if (ConsoleUtils.useEscapeSequences) System.out.print("\r");
+								System.out.printf("[%-" + longestFactoryName + "s %"+ longestFactoryStrID + "d]"
 										+ " Initializing", name, i+1);
 								System.out.flush();
 							}
@@ -346,7 +347,8 @@ public class BenchRunner {
 						
 						if ((main || GlobalConfig.oneDbConnectionPerThread) && polluteCache) {
 							if (main) {
-								System.out.printf("\r[%-" + longestFactoryName + "s %" + longestFactoryStrID + "s] %s",
+								if (ConsoleUtils.useEscapeSequences) System.out.print("\r");
+								System.out.printf("[%-" + longestFactoryName + "s %" + longestFactoryStrID + "s] %s",
 										ID_STRING,
 										"",
 										"Polluting cache with a sequential scan");
@@ -398,7 +400,8 @@ public class BenchRunner {
 							if (!operation.getName().equals(lastOperationName)) {
 								lastOperationName = operation.getName();
 								if (operation_i == 0) {
-									System.out.printf("\r[%-" + longestFactoryName + "s %" + longestFactoryStrID + "d] " +
+									if (ConsoleUtils.useEscapeSequences) System.out.print("\r");
+									System.out.printf("[%-" + longestFactoryName + "s %" + longestFactoryStrID + "d] " +
 											"Running %s%s",
 											factoryName,
 											factory_i+1,
@@ -406,7 +409,8 @@ public class BenchRunner {
 											operation.isUpdate() ? " (update)" : "");
 								}
 								else {
-									System.out.printf("\r %-" + longestFactoryName + "s %" + longestFactoryStrID + "s  " +
+									if (ConsoleUtils.useEscapeSequences) System.out.print("\r");
+									System.out.printf(" %-" + longestFactoryName + "s %" + longestFactoryStrID + "s  " +
 											"Running %s%s",
 											" ",
 											" ",

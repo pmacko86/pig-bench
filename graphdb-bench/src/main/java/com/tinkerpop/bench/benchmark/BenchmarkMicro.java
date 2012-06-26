@@ -13,10 +13,12 @@ import java.util.regex.Pattern;
 
 import com.tinkerpop.bench.Bench;
 import com.tinkerpop.bench.ConsoleUtils;
+import com.tinkerpop.bench.DatabaseEngine;
 import com.tinkerpop.bench.GlobalConfig;
 import com.tinkerpop.bench.GraphDescriptor;
 import com.tinkerpop.bench.GraphUtils;
 import com.tinkerpop.bench.LogUtils;
+import com.tinkerpop.bench.Workload;
 import com.tinkerpop.bench.cache.Cache;
 import com.tinkerpop.bench.generator.GraphGenerator;
 import com.tinkerpop.bench.generator.SimpleBarabasiGenerator;
@@ -28,23 +30,15 @@ import com.tinkerpop.bench.operationFactory.OperationFactoryGeneric;
 import com.tinkerpop.bench.operationFactory.factories.OperationFactoryRandomVertex;
 import com.tinkerpop.bench.operationFactory.factories.OperationFactoryRandomVertexPair;
 import com.tinkerpop.blueprints.pgm.Graph;
-import com.tinkerpop.blueprints.pgm.impls.bdb.BdbGraph;
-import com.tinkerpop.blueprints.pgm.impls.dex.DexGraph;
-import com.tinkerpop.blueprints.pgm.impls.dup.DupGraph;
 import com.tinkerpop.blueprints.pgm.impls.hollow.HollowGraph;
-import com.tinkerpop.blueprints.pgm.impls.neo4j.Neo4jGraph;
-//import com.tinkerpop.blueprints.pgm.impls.orientdb.OrientGraph;
-//import com.tinkerpop.blueprints.pgm.impls.rdf.RdfGraph;
-import com.tinkerpop.blueprints.pgm.impls.rdf.impls.NativeStoreRdfGraph;
-import com.tinkerpop.blueprints.pgm.impls.sql.SqlGraph;
 
 import edu.harvard.pass.cpl.CPL;
 import edu.harvard.pass.cpl.CPLException;
 import edu.harvard.pass.cpl.CPLFile;
-//import com.tinkerpop.blueprints.pgm.impls.tg.TinkerGraph;
 
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
+
 
 /**
  * @author Alex Averbuch (alex.averbuch@gmail.com)
@@ -55,14 +49,6 @@ public class BenchmarkMicro extends Benchmark {
 	
 	/// The default file for ingest
 	private static final String DEFAULT_INGEST_FILE = "barabasi_1000_5000.graphml";
-	
-	/// The list of supported databases
-	private static final String[] DATABASE_SHORT_NAMES = { "bdb", "dex", "dup", "hollow", "neo", "rdf", "sql" };
-	private static final String[] DATABASE_WITH_OPTIONAL_ARG = { "sql" };
-	
-	/// The list of supported database classes
-	private static final Class<?>[] DATABASE_CLASSES = { BdbGraph.class, DexGraph.class, DupGraph.class,
-		HollowGraph.class, Neo4jGraph.class, NativeStoreRdfGraph.class, SqlGraph.class };
 	
 	/// The defaults
 	private static final int DEFAULT_OP_COUNT = 1000;
@@ -83,63 +69,54 @@ public class BenchmarkMicro extends Benchmark {
 		System.err.println("Usage: runBenchmarkSuite.sh OPTIONS");
 		System.err.println("");
 		System.err.println("General options:");
-		System.err.println("  --annotation TEXT       Include an arbitrary annotation in the " +
+		System.err.println("  --annotation TEXT       Include an annotation in the " +
 										"disclosed provenance");
 		System.err.println("  --dir, -d DIR           Set the database and results directory");
+		System.err.println("  --dumb-terminal         Use the dumb terminal settings");
 		System.err.println("  --help                  Print this help message");
 		System.err.println("  --no-color              Disable color output to the terminal");
 		System.err.println("  --no-provenance         Disable provenance collection");
 		System.err.println("  --no-warmup             Disable the initial warmup run");
-		System.err.println("  --single-db-connection  Use a single, shared database connection " +
+		System.err.println("  --single-db-connection  Use one shared database connection " +
 										"for all threads");
 		System.err.println("  --threads N             Run N copies of the benchmark concurrently");
 		System.err.println("  --tx-buffer N           Set the size of the transaction buffer");
 		System.err.println("");
 		System.err.println("Options to select a database engine (select one):");
-		System.err.println("  --bdb                   Berkeley DB, using massive indexing");
-		System.err.println("  --dex                   DEX");
-		System.err.println("  --dup                   Berkeley DB, duplicates "+
-										"on edge lookups and properties");
-		System.err.println("  --hollow                The hollow implementation with no "+
-										"backing database");
-		System.err.println("  --neo                   neo4j");
-		System.err.println("  --rdf                   Sesame RDF");
-		System.err.println("  --sql [ADDR]            MySQL");
+		for (String k : DatabaseEngine.ENGINES.keySet()) {
+			DatabaseEngine e = DatabaseEngine.ENGINES.get(k);
+			String l = e.getShortName();
+			if (e.hasOptionalArgument()) l += " [ADDR]";
+			System.err.printf("  --%-20s  %s\n", l, e.getDescription());
+		}
 		System.err.println("");
 		System.err.println("Database engine options:");
-		System.err.println("  --database, -D NAME     Select a particular graph or an instance of " +
-										"a database");
+		System.err.println("  --database, -D NAME     Select a specific graph or a database instance");
 		System.err.println("  --warmup-sql [ADDR]     Specify the SQL database for warmup");
 		System.err.println("");
 		System.err.println("Options to select a workload (select multiple):");
-		System.err.println("  --add                   Adding nodes and edges to the database");
-		System.err.println("  --clustering-coeff      Compute the clustering coefficients");
-		System.err.println("  --delete-graph          Delete the entire graph");
-		System.err.println("  --shortest-path         Shortest path algorithm");
-        System.err.println("  --shortest-path-prop    Shortest paths with in-DB marking");
-		System.err.println("  --generate [MODEL]      Generate (or grow) the graph "+
-										"based on the given model");
-		System.err.println("  --get                   \"Get\" microbenchmarks");
-		System.err.println("  --get-k                 \"Get\" k-hops microbenchmarks");
-        System.err.println("  --get-property          \"Get\" Object store microbenchmarks");
-		System.err.println("  --ingest [FILE]         Ingest a file to the database "+
-										"(implies --delete-graph)");
+		for (String k : Workload.WORKLOADS.keySet()) {
+			Workload w = Workload.WORKLOADS.get(k);
+			String l = w.getShortName();
+			if (w.getOptionalArgument() != null) l += " [" + w.getOptionalArgument() + "]";
+			System.err.printf("  --%-20s  %s\n", l, w.getDescription());
+		}
 		System.err.println("");
 		System.err.println("Benchmark and workload options:");
 		System.err.println("  --k-hops K              Set the number of k-hops");
 		System.err.println("  --k-hops K1:K2          Set a range of k-hops");
 		System.err.println("  --op-count N            Set the number of operations");
-		System.err.println("  --warmup-ingest FILE    Set a different file for ingest for " +
-										"the warmup database");
+		System.err.println("  --warmup-ingest FILE    Set a different file for ingest during " +
+										"the warmup");
 		System.err.println("  --warmup-op-count N     Set the number of warmup operations");
 		System.err.println("");
 		System.err.println("Options for model \"Barabasi\":");
 		System.err.println("  --barabasi-n N          The number of vertices");
 		System.err.println("  --barabasi-m M          The number of incoming edges "+
-										"generated for each vertex");
+										"at each new vertex");
 		System.err.println("");
 		System.err.println("Miscellaneous commands:");
-		System.err.println("  --export-graphml FILE   Export the database to a graphml file");
+		System.err.println("  --export-graphml FILE   Export the database to a GraphML file");
 	}
 	
 	
@@ -194,6 +171,10 @@ public class BenchmarkMicro extends Benchmark {
 		
 		for (String a : args) {
 			if (a.equals("--no-color")) ConsoleUtils.useColor = false;
+			if (a.equals("--dumb-terminal")) {
+				ConsoleUtils.useColor = false;
+				ConsoleUtils.useEscapeSequences = false;
+			}
 		}
 		
 		
@@ -226,6 +207,7 @@ public class BenchmarkMicro extends Benchmark {
 		parser.accepts("database").withRequiredArg().ofType(String.class);
 		parser.accepts("d").withRequiredArg().ofType(String.class);
 		parser.accepts("dir").withRequiredArg().ofType(String.class);
+		parser.accepts("dumb-terminal");
 		parser.accepts("help");
 		parser.accepts("no-color");
 		parser.accepts("no-provenance");
@@ -238,39 +220,26 @@ public class BenchmarkMicro extends Benchmark {
 		
 		// Databases
 		
-		for (int i = 0; i < DATABASE_SHORT_NAMES.length; i++) {
-			
-			boolean withOptArg = false;
-			for (int j = 0; j < DATABASE_WITH_OPTIONAL_ARG.length; j++) {
-				if (DATABASE_SHORT_NAMES[i].equals(DATABASE_WITH_OPTIONAL_ARG[j])) {
-					withOptArg = true;
-					break;
-				}
-			}
-			
-			if (withOptArg) {
-				parser.accepts(DATABASE_SHORT_NAMES[i]).withOptionalArg().ofType(String.class);
+		for (DatabaseEngine e : DatabaseEngine.ENGINES.values()) {
+			if (e.hasOptionalArgument()) {
+				parser.accepts(e.getShortName()).withOptionalArg().ofType(String.class);
 			}
 			else {
-				parser.accepts(DATABASE_SHORT_NAMES[i]);
+				parser.accepts(e.getShortName());
 			}
 		}
 		
 		
 		// Workloads
 		
-		parser.accepts("add");
-		parser.accepts("clustering-coef");
-		parser.accepts("clustering-coeff");
-		parser.accepts("delete-graph");
-		parser.accepts("shortest-path");
-        parser.accepts("shortest-path-prop");
-        parser.accepts("shortest-path-property");
-		parser.accepts("generate").withOptionalArg().ofType(String.class);
-		parser.accepts("get");
-        parser.accepts("get-property");
-		parser.accepts("get-k");
-		parser.accepts("ingest").withOptionalArg().ofType(String.class);
+		for (Workload w : Workload.WORKLOADS.values()) {
+			if (w.getOptionalArgument() != null) {
+				parser.accepts(w.getShortName()).withOptionalArg().ofType(String.class);
+			}
+			else {
+				parser.accepts(w.getShortName());
+			}
+		}
 		
 		
 		// Ingest modifiers
@@ -321,6 +290,11 @@ public class BenchmarkMicro extends Benchmark {
 		
 		if (options.has("no-color")) {
 			ConsoleUtils.useColor = false;
+		}
+		
+		if (options.has("dumb-terminal")) {
+			ConsoleUtils.useColor = false;
+			ConsoleUtils.useEscapeSequences = false;
 		}
 		
 		if (options.has("help") || !options.hasOptions()) {
@@ -442,14 +416,16 @@ public class BenchmarkMicro extends Benchmark {
 		
 		String dbShortName = null;
 		Class<?> dbClass = null;
-		for (int i = 0; i < DATABASE_SHORT_NAMES.length; i++) {
-			if (options.has(DATABASE_SHORT_NAMES[i])) {
-				if (dbShortName != null) {
+		DatabaseEngine dbEngine = null;
+		for (DatabaseEngine e : DatabaseEngine.ENGINES.values()) {
+			if (options.has(e.getShortName())) {
+				if (dbEngine != null) {
 					ConsoleUtils.error("Multiple databases are selected, but only one is allowed.");
 					return;
 				}
-				dbShortName = DATABASE_SHORT_NAMES[i];
-				dbClass = DATABASE_CLASSES[i];
+				dbEngine = e;
+				dbShortName = dbEngine.getShortName();
+				dbClass = dbEngine.getBlueprintsClass();
 			}
 		}
 		if (dbShortName == null) {

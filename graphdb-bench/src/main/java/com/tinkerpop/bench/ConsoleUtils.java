@@ -12,6 +12,11 @@ public class ConsoleUtils {
 	 */
 	public static boolean useColor = true;
 	
+	/**
+	 * Whether to use any escape sequences (including \r, \b)
+	 */
+	public static boolean useEscapeSequences = true;
+	
 	private static final String SPACES = "                                        ";
 	private static final String BACKSPACES = "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b";
 
@@ -23,7 +28,9 @@ public class ConsoleUtils {
 	private static boolean useEscapeCharacter = false;
 	
 	private static long lastProgressDraw = 0;
-	private static int lastProgressExtra = 0;
+	private static long lastProgressValue = -1;
+	private static long lastProgressMax = -1;
+	private static String lastProgressExtra = "";
 
 
 	/**
@@ -40,7 +47,7 @@ public class ConsoleUtils {
 	 * should not be used
 	 */
 	private static String escapeColor(int color) {
-		if (!useEscapeCharacter || !useColor) return "";
+		if (!useEscapeCharacter || !useColor || !useEscapeSequences) return "";
 		if ((color < 0) || (color >= 16)) return "";
 		
 		return "" + (char)27 + ((color < 8) ? ("[0;3" + color) : ("[1;3" + (color - 8))) + "m";
@@ -51,7 +58,7 @@ public class ConsoleUtils {
 	 * Returns a stdout escape sequence for normal color output
 	 */
 	private static String escapeNormal() {
-		if (!useEscapeCharacter || !useColor) return "";
+		if (!useEscapeCharacter || !useColor || !useEscapeSequences) return "";
 		return "" + (char)27 + "[0;0m";
 	}
 	
@@ -98,41 +105,57 @@ public class ConsoleUtils {
 	public static void printProgressIndicator(long value, long max, String extra) {
 		if (value > max) value = max;
 		long t = System.currentTimeMillis();
-		if (t < lastProgressDraw + 100 && value != max) return;
+		if (t < lastProgressDraw + (useEscapeSequences ? 100 : 1000) && value != max) return;
 		lastProgressDraw = t;
 		
-		String before = extra == null ? "" : "[" + extra + "] ";
-		String before_b = "";
-		if (extra != null) {
-			int l = BACKSPACES.length();
-			int n = before.length();
-			while (n >= l) {
-				before_b += BACKSPACES;
-				n -= l;
-			}
-			before_b += BACKSPACES.substring(l - n);
-		}
+		if (useEscapeSequences) {
 			
-		String clear = "";
-		if (lastProgressExtra > 0) {
-			int l = SPACES.length();
-			int n = lastProgressExtra;
-			while (n >= l) {
-				clear += SPACES;
-				n -= l;
+			String before = extra == null ? "" : "[" + extra + "] ";
+			String before_b = "";
+			if (extra != null) {
+				int l = BACKSPACES.length();
+				int n = before.length();
+				while (n >= l) {
+					before_b += BACKSPACES;
+					n -= l;
+				}
+				before_b += BACKSPACES.substring(l - n);
 			}
-			clear += SPACES.substring(l - n);
-			l = BACKSPACES.length();
-			n = lastProgressExtra;
-			while (n >= l) {
-				clear += BACKSPACES;
-				n -= l;
+				
+			String clear = "";
+			if (lastProgressExtra.length() > 0) {
+				int l = SPACES.length();
+				int n = lastProgressExtra.length();
+				while (n >= l) {
+					clear += SPACES;
+					n -= l;
+				}
+				clear += SPACES.substring(l - n);
+				l = BACKSPACES.length();
+				n = lastProgressExtra.length();
+				while (n >= l) {
+					clear += BACKSPACES;
+					n -= l;
+				}
+				clear += BACKSPACES.substring(l - n);
 			}
-			clear += BACKSPACES.substring(l - n);
+			lastProgressExtra = before;
+			
+			System.out.printf(": %s%6.2f%%%s%s\b\b\b\b\b\b\b\b\b", before, 100 * value / (float) max, clear, before_b);
 		}
-		lastProgressExtra = before_b.length();
+		else {
+			
+			if (extra != null) {
+				if (!extra.equals(lastProgressExtra) || lastProgressMax != max || lastProgressValue >= value) {
+					System.out.print(" [" + extra + "]");
+				}
+				lastProgressExtra = extra;
+				System.out.printf("...%.2f%%", 100 * value / (float) max);
+			}
+		}
 		
-		System.out.printf(": %s%6.2f%%%s%s\b\b\b\b\b\b\b\b\b", before, 100 * value / (float) max, clear, before_b);
+		lastProgressValue = value;
+		lastProgressMax = max;
 	}
 	
 	
