@@ -14,10 +14,22 @@ xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns
 		<servlet-class>com.tinkerpop.bench.web.RunBenchmark</servlet-class>
 		<load-on-startup>1</load-on-startup>
 	 </servlet>
+	
+	<servlet>
+		<display-name>AddJob</display-name>
+		<servlet-name>AddJob</servlet-name>
+		<servlet-class>com.tinkerpop.bench.web.AddJob</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	 </servlet>
 
 	<servlet-mapping>
 		<servlet-name>RunBenchmark</servlet-name>
 		<url-pattern>/RunBenchmark</url-pattern>
+	</servlet-mapping>
+
+	<servlet-mapping>
+		<servlet-name>AddJob</servlet-name>
+		<url-pattern>/AddJob</url-pattern>
 	</servlet-mapping>
  
 </web-app>

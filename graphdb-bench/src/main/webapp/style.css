@@ -14,9 +14,20 @@ p, h1, form, button, body, html {
 	padding:0;
 }
 
+.clear {
+	clear:both;
+}
+
 .spacer {
 	clear:both;
 	height:1px;
+}
+
+h1 {
+	font-size:16px;
+	font-weight:bold;
+	margin-top:0px;
+	margin-bottom:8px;
 }
 
 
@@ -27,9 +38,105 @@ p, h1, form, button, body, html {
 #header {
 	width:100%;
 	border-bottom:solid 2px #b7ddf2;
+	background:#b7ddf2;
+	padding:0;
+	color: black;
+}
+
+#header h1 {
+	font-size:18px;
+	padding: 10px;
+	margin: 0;
+}
+
+
+/* -------------------------------------------------------- *
+ *  Menu                                                    *
+ * -------------------------------------------------------- */
+
+#menu {
+	width: 200px;
+	height: 100%;
+	float: left;
+	text-align: left;
+	margin: 0 0 0 0;
+	border-right:solid 2px #b7ddf2;
+	border-bottom:solid 2px #b7ddf2;
 	background:#ebf4fb;
-	padding:10px;
-	margin-bottom:20px;
+}
+
+#menu li a {
+	display:block;
+	font-weight:bold;
+	text-align:right;
+	width:190px;
+	float:left;
+	height: 30px;
+	voice-family: "\"}\""; 
+	voice-family: inherit;
+	text-decoration: none;
+	text-align: left;
+	padding-left:10px;
+	vertical-align: middle;
+}	
+
+#menu li p {
+	display:block;
+	font-weight:bold;
+	text-align:right;
+	width:190px;
+	float:left;
+	height: 30px;
+	voice-family: "\"}\""; 
+	voice-family: inherit;
+	text-decoration: none;
+	text-align: left;
+	padding-left:10px;
+	vertical-align: middle;
+	color: #222222;
+	background:#b7ddf2;
+	padding: 15px 0 0 10px;
+	text-align: left;
+}	
+
+#menu li a:link, #menu li a:visited {
+	color: black;
+	display: block;
+	padding: 15px 0 0 10px;
+	text-align: left;
+}
+	
+#menu li a:hover, #menu li a:active {
+	color: #222222;
+	background:#b7ddf2;
+	padding: 15px 0 0 10px;
+	text-align: left;
+}	
+
+#menu ul {
+	list-style: none;
+	margin: 0;
+	padding: 15px 0 0 0;
+	text-align: left;
+}
+
+
+/* -------------------------------------------------------- *
+ *  Content                                                 *
+ * -------------------------------------------------------- */
+
+#container_outer {
+    width:100%;
+    min-width:1000px;
+}
+
+#content {
+	margin-left: 200px;
+}
+
+#content_inner {
+	padding: 10px;
+	backgroung: gray;
 }
 
 
@@ -41,24 +148,23 @@ p, h1, form, button, body, html {
  
 .stylized_form {
 	margin:0 auto;
-	width:650px;
+	/*width:650px;*/
 	padding:14px;
-	border:solid 2px #b7ddf2;
-	background:#ebf4fb;
-}
-
-.stylized_form h1 {
-	font-size:14px;
-	font-weight:bold;
-	margin-bottom:8px;
+	/*border:solid 2px #b7ddf2;*/
+	/*background:#ebf4fb;*/
+	padding-right:210px;
 }
 
 .stylized_form p.header {
+	float:left;
+	width: 100%;
 	font-size:11px;
+	display:block;
 	color:#666666;
 	margin-bottom:20px;
 	border-bottom:solid 1px #b7ddf2;
 	padding-bottom:10px;
+	padding-right:210px;
 }
 
 .stylized_form p.middle {
@@ -66,11 +172,11 @@ p, h1, form, button, body, html {
 	width: 100%;
 	display:block;
 	font-weight:bold;
-	clear:both;
 	margin-top:20px;
 	border-top:solid 1px #b7ddf2;
 	padding-top:10px;
 	padding-bottom:10px;
+	padding-right:210px;
 }
 
 .stylized_form label {
@@ -79,6 +185,7 @@ p, h1, form, button, body, html {
 	text-align:right;
 	width:190px;
 	float:left;
+	clear:left;	
 }
 
 .stylized_form label.checkbox {
@@ -107,8 +214,8 @@ p, h1, form, button, body, html {
 	font-size:12px;
 	padding:4px 2px;
 	border:solid 1px #aacfe4;
-	width:440px;
-	margin:2px 0 20px 10px;
+	width:100%;
+	margin:2px -500px 20px 10px;
 }
 
 .stylized_form input.checkbox {
@@ -118,13 +225,88 @@ p, h1, form, button, body, html {
 }
 
 .stylized_form button {
-	clear:both;
 	float:left;
 	margin-top:10px;
 	margin-left:0px;
-	width:125px;
+	width:150px;
 	height:31px;
-	background:#666666 url(img/button.png) no-repeat;
+	background:#666666;
+	text-align:center;
+	line-height:31px;
+	color:#FFFFFF;
+	font-size:11px;
+	font-weight:bold;
+}
+
+
+/* -------------------------------------------------------- *
+ *  Job List                                                *
+ * -------------------------------------------------------- */
+
+.job_list_form {
+	margin:0 auto;
+	padding:14px;
+}
+
+.job_list_form div.job_list_div {
+	border-top:solid 1px #aacfe4;
+	border-left:solid 1px #aacfe4;
+	border-right:solid 1px #aacfe4;
+	padding-right:20px;
+}
+
+.job_list_form label.checkbox {
+	display: block;
+	border-bottom:solid 1px #aacfe4;
+	font-weight:normal;
+	text-align:left;
+	width:100%;
+	padding: 10px 10px;
+	font-family: monospace;
+}
+
+.job_list_form p.job_none {
+	display: block;
+	border-bottom:solid 1px #aacfe4;
+	font-weight:normal;
+	text-align:center;
+	width:100%;
+	padding: 10px 10px;
+	font-style: italic;
+}
+
+.job_list_form label.job_neutral {
+	background: #ebf4fb;
+}
+
+.job_list_form label.job_done {
+	background: #EBFBEC;
+}
+
+.job_list_form label.job_failed {
+	background: #FBEBEB;
+}
+
+.job_list_form input.checkbox {
+	float:left;
+	font-size:12px;
+	width:440px;
+	margin:0;
+	padding:0 10px 0 10px;
+}
+
+.job_list_form p.checkbox {
+	padding:3px 0 0 10px;
+	margin-left: 20px;
+}
+
+.job_list_form button {
+	float:left;
+	margin-top:10px;
+	margin-left:0px;
+	width:150px;
+	height:31px;
+	background:#666666;
 	text-align:center;
 	line-height:31px;
 	color:#FFFFFF;
