@@ -238,6 +238,69 @@ h1 {
 	font-weight:bold;
 }
 
+table.db_table, table.db_table td, table.db_table th {
+	border: solid 1px #aacfe4;
+}
+
+table.db_table {
+	border-collapse:collapse;
+	margin: 0 auto;
+}
+
+table.db_table td, table.db_table th {
+	padding: 5px 10px;
+	vertical-align: middle;
+}
+
+table.db_table th {
+	background: #aacfe4;
+}
+
+table.db_table tr {
+	padding: 0;
+	margin: 0;
+	height:30px;
+}
+
+table.db_table input {
+	padding: 0;
+	margin: 0;
+	width: 80px;
+}
+
+table.db_table input.db_table_checkbox {
+	float:none;
+	margin: 5px 0 0 0;
+	padding: 0;
+	width: auto;
+}
+
+table.db_table label {
+	display:inline;
+	width:auto;
+	padding: 2px 5px 0 0;
+	margin: 0;
+}
+
+table.db_table label.db_table_checkbox {
+	display:block;
+	font-weight:normal;
+	width:100%;
+	height:30px;
+	text-align: center;
+	vertical-align: middle;
+	padding: 0;
+}
+
+table.db_table label.db_table_available {
+	background:#ebf4fb;
+}
+
+table.db_table td.db_table_checkbox {
+	padding: 0;
+	margin: 0;
+}
+
 
 /* -------------------------------------------------------- *
  *  Job List                                                *

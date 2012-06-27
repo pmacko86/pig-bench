@@ -28,6 +28,30 @@ public class Job {
 	 * @param request the HTTP request from which to create the job
 	 */
 	public Job(HttpServletRequest request) {
+		loadFromRequest(request, null, null);
+	}
+	
+	
+	/**
+	 * Create an instance of a Job
+	 * 
+	 * @param request the HTTP request from which to create the job
+	 * @param dbName a specific database engine name to use instead of the one from the request
+	 * @param dbInstance a specific database instance to use instead of the one from the request
+	 */
+	public Job(HttpServletRequest request, String dbName, String dbInstance) {
+		loadFromRequest(request, dbName, dbInstance);
+	}
+	
+	
+	/**
+	 * Load from an HTTP request
+	 * 
+	 * @param request the HTTP request from which to create the job
+	 * @param _dbName a specific database engine name to use instead of the one from the request
+	 * @param _dbInstance a specific database instance to use instead of the one from the request
+	 */
+	protected void loadFromRequest(HttpServletRequest request, String _dbName, String _dbInstance) {
 		
 		arguments = new LinkedList<String>();
 		id = -1;
@@ -39,12 +63,25 @@ public class Job {
 		
 		String dbName = WebUtils.getStringParameter(request, "database_name");
 		String dbInstance = WebUtils.getStringParameter(request, "database_instance");
+		if (_dbName != null) {
+			dbName = _dbName;
+			dbInstance = _dbInstance;
+			if (dbInstance != null) {
+				if (dbInstance.equals("<new>")) {
+					dbInstance = WebUtils.getStringParameter(request, "new_database_instance");
+				}
+			}
+		}
+		if (dbInstance.equals("")) dbInstance = null;
+		
 		String s_txBuffer = WebUtils.getStringParameter(request, "tx_buffer");
 		String s_opCount = WebUtils.getStringParameter(request, "op_count");
 		String s_warmupOpCount = WebUtils.getStringParameter(request, "warmup_op_count");
 		String[] workloads = WebUtils.getStringParameterValues(request, "workloads");
 		
+		
 		// Note: Remember to validate the input for file names when we add a support for such arguments
+		
 		
 		arguments.add(Bench.graphdbBenchDir + "/runBenchmarkSuite.sh");
 		arguments.add("--dumb-terminal");
@@ -80,15 +117,21 @@ public class Job {
 	 * @param multiline true to return a multi-line string
 	 * @param lineStart the line start string
 	 * @param lineEnd the line end string
-	 * @param useSimpleProgramName true to use a simple (abbreviated) program name
+	 * @param simple true to use a bit simpler output
 	 * @return the string
 	 */
-	public String toStringExt(boolean multiline, boolean useSimpleProgramName, String lineStart, String lineEnd) {
+	public String toStringExt(boolean multiline, boolean simple, String lineStart, String lineEnd) {
 		
 		boolean first = true;
 		StringBuilder sb = new StringBuilder();
 		
 		for (String s : arguments) {
+			
+			if (simple) {
+				if (s.equals("--dumb-terminal")) continue;
+				if (s.equals("--no-color")) continue;
+			}
+			
 			if (s.startsWith("-") && !first) {
 				if (multiline) {
 					sb.append(lineEnd);
@@ -103,7 +146,7 @@ public class Job {
 				if (first) {
 					first = false;
 					sb.append(lineStart);
-					if (useSimpleProgramName) {
+					if (simple) {
 						sb.append("runBenchmarkSuite.sh");
 						continue;
 					}
@@ -139,10 +182,11 @@ public class Job {
 	/**
 	 * Return the job description as a string
 	 * 
+	 * @param simple true to use a bit simpler output
 	 * @return the string
 	 */
-	public String toString(boolean useSimpleProgramName) {
-		return toStringExt(false, useSimpleProgramName, "", "");
+	public String toString(boolean simple) {
+		return toStringExt(false, simple, "", "");
 	}
 	
 	
@@ -160,11 +204,11 @@ public class Job {
 	/**
 	 * Return the job description as a multi-line string
 	 * 
-	 * @param useSimpleProgramName true to use a simple (abbreviated) program name
+	 * @param simple true to use a bit simpler output
 	 * @return the string
 	 */
-	public String toMultilineString(boolean useSimpleProgramName) {
-		return toStringExt(true, useSimpleProgramName, "", "\n");
+	public String toMultilineString(boolean simple) {
+		return toStringExt(true, simple, "", "\n");
 	}
 	
 	

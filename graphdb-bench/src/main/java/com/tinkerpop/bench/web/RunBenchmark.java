@@ -57,12 +57,20 @@ public class RunBenchmark extends HttpServlet {
 			}
 		}
 		
-		
 		String dbEngine = WebUtils.getStringParameter(request, "database_engine");
 		if (dbEngine != null) {
 			jobs.add(new Job(request));
 		}
 		
+		String[] pairs = WebUtils.getStringParameterValues(request, "database_engine_instance");
+		if (pairs != null) {
+			for (String p : pairs) {
+				int d = p.indexOf('|');
+				Job job = new Job(request, p.substring(0, d), p.substring(d+1));
+				jobs.add(job);
+			}
+		}
+
 		
 		// Start the response
 		

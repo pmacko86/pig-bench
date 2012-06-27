@@ -2,7 +2,9 @@
 <%@ page import="com.tinkerpop.bench.Bench"%>
 <%@ page import="com.tinkerpop.bench.Workload"%>
 <%@ page import="com.tinkerpop.bench.DatabaseEngine"%>
-<%@ page import="java.util.TreeMap"%>
+<%@ page import="com.tinkerpop.bench.util.Pair"%>
+<%@ page import="com.tinkerpop.bench.web.WebUtils"%>
+<%@ page import="java.util.*"%>
 
 <%
 	String jsp_title = "Add Job";
@@ -15,15 +17,18 @@
 			<h1>Add a Job</h1>
 			<p class="header">Please enter the information to specify the benchmark</p>
 			
-			<label>Database Engine
-				<span class="small">DEX, neo4j, etc.</span>
-			</label>
-			<select name="database_name" id="database_name">
 			<%
 				TreeMap<String, DatabaseEngine> engines = new TreeMap<String, DatabaseEngine>();
 				for (DatabaseEngine e : DatabaseEngine.ENGINES.values()) {
 					engines.put(e.getLongName().toLowerCase(), e);
 				}
+			%>
+						
+			<!--<label>Database Engine
+				<span class="small">DEX, neo4j, etc.</span>
+			</label>
+			<select name="database_name" id="database_name">
+			<%
 				for (DatabaseEngine e : engines.values()) {
 					%>
 						<option value="<%= e.getShortName() %>"><%= e.getLongName() %></option>
@@ -36,11 +41,79 @@
 				<span class="small">Name of a graph or an instance</span>
 			</label>
 			<input type="text" name="database_instance" id="database_instance" />
+			-->
+			
+			<table class="db_table">
+				<tr>
+					<th style="min-width: 120px; text-align:left">Instance&nbsp;Name</th>
+					<%
+					for (DatabaseEngine e : engines.values()) {
+						%>
+							<th><%= e.getLongName() %></th>
+						<%
+					}					
+					%>
+				</tr>
+				<%
+					LinkedList<String> instances = new LinkedList<String>(WebUtils.getAllDatabaseInstanceNames());
+					instances.addFirst("");
+					instances.addLast("<new>");
+					
+					Collection<Pair<String, String>> instancePairs = WebUtils.getDatabaseInstancePairs();
+					
+					for (String dbi : instances) {
+						%>
+							<tr>
+								<%
+									if (dbi.equals("<new>")) {
+								%>
+									<th>
+										<label>New:&nbsp;</label>
+										<input type="text" name="new_database_instance" id="new_database_instance" value="" />
+									</th>
+								<%
+									}
+									else if (dbi.equals("")) {
+								%>
+									<th style="text-align:left">&lt;default&gt;</th>
+								<%
+									}
+									else {
+								%>
+									<th style="text-align:left"><%= dbi %></th>
+								<%
+									}
+								%>
+								<%
+								for (DatabaseEngine e : engines.values()) {
+									String extraClass = "";
+									if (instancePairs.contains(new Pair<String, String>(e.getShortName(), dbi))) {
+										extraClass = " db_table_available";
+									}
+									%>
+										<td class="db_table_checkbox">
+											<label class="db_table_checkbox<%= extraClass %>">
+												<input class="db_table_checkbox" type="checkbox" name="database_engine_instance"
+														value="<%= e.getShortName() %>|<%= dbi %>"/>
+											</label>
+										</td>
+									<%
+								}
+								%>
+							</tr>
+						<%
+					}
+				%>
+			</table>
+			
+			
+			<p class="middle">Configure the benchmark:</p>
 			
 			<label>Number of Threads
 				<span class="small">At least 1</span>
 			</label>
 			<input type="text" name="tx_buffer" id="tx_buffer" value="1" />
+			
 			
 			<p class="middle">Workloads (select one or more):</p>
 			<%
@@ -57,6 +130,7 @@
 					<%
 				}
 			%>
+			
 			
 			<p class="middle">Configure the workloads:</p>
 			

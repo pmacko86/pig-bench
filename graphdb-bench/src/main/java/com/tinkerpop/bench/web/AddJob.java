@@ -40,11 +40,25 @@ public class AddJob extends HttpServlet {
 	@Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
+		// The case when a single database engine is specified
 		
-		// Create and add the job
+		String dbEngine = WebUtils.getStringParameter(request, "database_engine");
+		if (dbEngine != null) {
+			Job job = new Job(request);
+			JobList.getInstance().addJob(job);
+		}
+
 		
-		Job job = new Job(request);
-		JobList.getInstance().addJob(job);
+		// The case when multiple database engine/instances are specified
+		
+		String[] pairs = WebUtils.getStringParameterValues(request, "database_engine_instance");
+		if (pairs != null) {
+			for (String p : pairs) {
+				int d = p.indexOf('|');
+				Job job = new Job(request, p.substring(0, d), p.substring(d+1));
+				JobList.getInstance().addJob(job);
+			}
+		}
 		
 		
 		// Redirect
