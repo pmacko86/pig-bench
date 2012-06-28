@@ -3,7 +3,7 @@
 <%@ page import="com.tinkerpop.bench.Workload"%>
 <%@ page import="com.tinkerpop.bench.DatabaseEngine"%>
 <%@ page import="com.tinkerpop.bench.util.Pair"%>
-<%@ page import="com.tinkerpop.bench.web.WebUtils"%>
+<%@ page import="com.tinkerpop.bench.web.*"%>
 <%@ page import="java.util.*"%>
 
 <%
@@ -55,7 +55,11 @@
 					%>
 				</tr>
 				<%
-					LinkedList<String> instances = new LinkedList<String>(WebUtils.getAllDatabaseInstanceNames());
+					TreeSet<String> instanceSet = new TreeSet<String>(WebUtils.getAllDatabaseInstanceNames());
+					for (Job job : JobList.getInstance().getJobs()) {
+						if (job.getDbInstance() != null) instanceSet.add(job.getDbInstance());
+					}
+					LinkedList<String> instances = new LinkedList<String>(instanceSet);
 					instances.addFirst("");
 					instances.addLast("<new>");
 					
@@ -108,6 +112,11 @@
 			
 			
 			<p class="middle">Configure the benchmark:</p>
+			
+			<label>Annotation:
+				<span class="small">A custom provenance annotation</span>
+			</label>
+			<input type="text" name="annotation" id="annotation" value="" />
 			
 			<label>Number of Threads
 				<span class="small">At least 1</span>

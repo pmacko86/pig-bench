@@ -50,11 +50,12 @@ public class BenchmarkMicro extends Benchmark {
 	private static final String DEFAULT_INGEST_FILE = "barabasi_1000_5000.graphml";
 	
 	/// The defaults
-	private static final int DEFAULT_OP_COUNT = 1000;
-	private static final int DEFAULT_K_HOPS = 2;
+	public static final int DEFAULT_OP_COUNT = 1000;
+	public static final int DEFAULT_K_HOPS = 2;
+	public static final int DEFAULT_NUM_THREADS = 1;
 	
 	/// The number of threads
-	private static int numThreads = 1;
+	private static int numThreads = DEFAULT_NUM_THREADS;
 	
 	
 	/**

@@ -1,11 +1,13 @@
 package com.tinkerpop.bench.web;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
 
 import com.tinkerpop.bench.Bench;
+import com.tinkerpop.bench.benchmark.BenchmarkMicro;
 
 
 /**
@@ -17,6 +19,8 @@ public class Job {
 
 	int id;
 	private List<String> arguments;
+	private String dbEngine;
+	private String dbInstance;
 	
 	private int status;
 	private int executionCount;
@@ -36,11 +40,11 @@ public class Job {
 	 * Create an instance of a Job
 	 * 
 	 * @param request the HTTP request from which to create the job
-	 * @param dbName a specific database engine name to use instead of the one from the request
+	 * @param dbEngine a specific database engine name to use instead of the one from the request
 	 * @param dbInstance a specific database instance to use instead of the one from the request
 	 */
-	public Job(HttpServletRequest request, String dbName, String dbInstance) {
-		loadFromRequest(request, dbName, dbInstance);
+	public Job(HttpServletRequest request, String dbEngine, String dbInstance) {
+		loadFromRequest(request, dbEngine, dbInstance);
 	}
 	
 	
@@ -48,23 +52,23 @@ public class Job {
 	 * Load from an HTTP request
 	 * 
 	 * @param request the HTTP request from which to create the job
-	 * @param _dbName a specific database engine name to use instead of the one from the request
+	 * @param _dbEngine a specific database engine name to use instead of the one from the request
 	 * @param _dbInstance a specific database instance to use instead of the one from the request
 	 */
-	protected void loadFromRequest(HttpServletRequest request, String _dbName, String _dbInstance) {
+	protected void loadFromRequest(HttpServletRequest request, String _dbEngine, String _dbInstance) {
 		
-		arguments = new LinkedList<String>();
+		arguments = new ArrayList<String>();
 		id = -1;
 		status = -1;
 		executionCount = 0;
 		
 		
-		// Build the list of command-line arguments
+		// Get the request arguments
 		
-		String dbName = WebUtils.getStringParameter(request, "database_name");
-		String dbInstance = WebUtils.getStringParameter(request, "database_instance");
-		if (_dbName != null) {
-			dbName = _dbName;
+		dbEngine = WebUtils.getStringParameter(request, "database_name");
+		dbInstance = WebUtils.getStringParameter(request, "database_instance");
+		if (_dbEngine != null) {
+			dbEngine = _dbEngine;
 			dbInstance = _dbInstance;
 			if (dbInstance != null) {
 				if (dbInstance.equals("<new>")) {
@@ -74,30 +78,43 @@ public class Job {
 		}
 		if (dbInstance.equals("")) dbInstance = null;
 		
+		String s_annotation = WebUtils.getStringParameter(request, "annotation");
 		String s_txBuffer = WebUtils.getStringParameter(request, "tx_buffer");
 		String s_opCount = WebUtils.getStringParameter(request, "op_count");
 		String s_warmupOpCount = WebUtils.getStringParameter(request, "warmup_op_count");
 		String[] workloads = WebUtils.getStringParameterValues(request, "workloads");
 		
 		
+		// Sanitize the input
+		
 		// Note: Remember to validate the input for file names when we add a support for such arguments
 		
+		if (dbInstance != null) {
+			if (!Pattern.matches("^[a-z][a-z0-9_]*$", dbInstance)) {
+	    		throw new RuntimeException("Invalid database instance name (can contain only lower-case letters, "
+	    				+ "numbers, and _, and has to start with a letter)");
+	    	}
+		}
+
+		
+		// Build the list of command-line arguments
 		
 		arguments.add(Bench.graphdbBenchDir + "/runBenchmarkSuite.sh");
 		arguments.add("--dumb-terminal");
 		
-		if (dbName           != null) { arguments.add("--" + dbName); }
+		if (dbEngine         != null) { arguments.add("--" + dbEngine); }
 		if (dbInstance       != null) { arguments.add("--database"); arguments.add(dbInstance); }
-		if (s_txBuffer       != null) { arguments.add("--tx-buffer"); arguments.add(s_txBuffer); }
-		if (s_opCount        != null) { arguments.add("--op-count"); arguments.add(s_opCount); }
-		if (s_warmupOpCount  != null) { arguments.add("--warmup-op-count"); arguments.add(s_warmupOpCount); }
+		if (s_annotation     != null) { arguments.add("--annotation"); arguments.add(s_annotation); }
 		
 		if (workloads != null) {
 			for (String s : workloads) {
 				arguments.add("--" + s);
 			}
 		}
-
+		
+		if (s_txBuffer       != null) { arguments.add("--tx-buffer"); arguments.add(s_txBuffer); }
+		if (s_opCount        != null) { arguments.add("--op-count"); arguments.add(s_opCount); }
+		if (s_warmupOpCount  != null) { arguments.add("--warmup-op-count"); arguments.add(s_warmupOpCount); }
 	}
 
 
@@ -123,14 +140,53 @@ public class Job {
 	public String toStringExt(boolean multiline, boolean simple, String lineStart, String lineEnd) {
 		
 		boolean first = true;
+		boolean skip = false;
 		StringBuilder sb = new StringBuilder();
+		int next_i = 0;
+		String s_op_count = "";
+		
+		
+		// Process each argument
 		
 		for (String s : arguments) {
+			int i = next_i++;
+			boolean last = next_i == arguments.size();
+			if (skip) {
+				skip = false;
+				continue;
+			}
+			
+			
+			// Simplify the output if we need to
 			
 			if (simple) {
+				
+				// Remove options that affect the output
+				
 				if (s.equals("--dumb-terminal")) continue;
 				if (s.equals("--no-color")) continue;
+				
+				
+				// Remove default options
+				
+				if (s.equals("--k-hops") && !last) {
+					s_op_count = arguments.get(i+1);
+					if (arguments.get(i+1).equals("" + BenchmarkMicro.DEFAULT_K_HOPS)) {skip = true;continue;}
+				}
+				if (s.equals("--op-count") && !last) {
+					s_op_count = arguments.get(i+1);
+					if (arguments.get(i+1).equals("" + BenchmarkMicro.DEFAULT_OP_COUNT)) {skip = true;continue;}
+				}
+				if (s.equals("--warmup-op-count") && !last) {
+					if (arguments.get(i+1).equals(s_op_count)) {skip = true;continue;}
+				}
+				if (s.equals("--tx-buffer") && !last) {
+					if (arguments.get(i+1).equals("" + BenchmarkMicro.DEFAULT_NUM_THREADS)) {skip = true;continue;}
+				}
 			}
+			
+			
+			// Handle the program name, arguments, and arguments of arguments differently
 			
 			if (s.startsWith("-") && !first) {
 				if (multiline) {
@@ -250,5 +306,25 @@ public class Job {
 	public synchronized void jobTerminated(int status) {
 		this.status = status;
 		this.executionCount++;
+	}
+
+
+	/**
+	 * Return the short name of the database engine
+	 * 
+	 * @return the short name of the database engine, or null if not specified
+	 */
+	public String getDbEngine() {
+		return dbEngine;
+	}
+
+
+	/**
+	 * Return the name of the database instance
+	 * 
+	 * @return the name of the database instance, or null if not specified
+	 */
+	public String getDbInstance() {
+		return dbInstance;
 	}
 }
