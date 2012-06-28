@@ -1,8 +1,6 @@
 package com.tinkerpop.bench.web;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.LinkedList;
 
 import javax.servlet.ServletException;
@@ -18,8 +16,6 @@ import javax.servlet.http.HttpServletResponse;
  */
 @SuppressWarnings("serial")
 public class RunBenchmark extends HttpServlet {
-	
-	private boolean buffered = false;
 	
 	
 	/**
@@ -45,6 +41,8 @@ public class RunBenchmark extends HttpServlet {
 	@Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
+		final HttpServletResponse _response = response;
+		
 
 		// Create and/or get the jobs
 		
@@ -100,49 +98,31 @@ public class RunBenchmark extends HttpServlet {
 	        
 			try {
 				
-				ProcessBuilder pb = new ProcessBuilder(job.getArguments());
-				pb.redirectErrorStream(true);
-				Process p = pb.start();
-	
-				if (buffered) {
-					BufferedReader es = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-					
-					while (true) {
-						String l = es.readLine();
-						if (l == null) break;
-						response.getWriter().println(l);
-						response.flushBuffer();
+				job.start();
+				job.addJobOutputListenerToCurrent(new JobOutputListener() {
+					@Override
+					public void jobOutput(String str) {
+						try {
+							_response.getWriter().print(str);
+							_response.getWriter().flush();
+						} catch (IOException e) {
+							// TODO Detach the listener instead
+							throw new RuntimeException(e);
+						}
 					}
-					
-					es.close();
-				}
-				else {
-					InputStreamReader es = new InputStreamReader(p.getInputStream());
-					
-					while (true) {
-						int r = es.read();
-						if (r < 0) break;
-						response.getWriter().print((char) r);
-						response.flushBuffer();
-					}
-		
-					es.close();
-				}
+				});
+				job.join();
 				
-				int r = p.waitFor();
-				
-				if (r == 0) {
+				if (job.getLastStatus() == 0) {
 					response.getWriter().println("\nDone.");
 				}
 				else {
-					response.getWriter().println("\nFailed -- terminated with exit code " + r);
+					response.getWriter().println("\nFailed -- terminated with exit code " + job.getLastStatus());
 				}
-				job.jobTerminated(r);
 			}
 			catch (Exception e) {
 				response.getWriter().println("\nFailed:");
 				e.printStackTrace(response.getWriter());
-				job.jobTerminated(Integer.MIN_VALUE);
 			}
 		}
 		

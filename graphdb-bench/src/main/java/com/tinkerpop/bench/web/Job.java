@@ -1,6 +1,9 @@
 package com.tinkerpop.bench.web;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -25,6 +28,9 @@ public class Job {
 	private int status;
 	private int executionCount;
 	
+	private ExecutionThread current = null;
+	private boolean bufferedThreadOutput = false;
+	
 	
 	/**
 	 * Create an instance of a Job
@@ -32,7 +38,7 @@ public class Job {
 	 * @param request the HTTP request from which to create the job
 	 */
 	public Job(HttpServletRequest request) {
-		loadFromRequest(request, null, null);
+		this(request, null, null);
 	}
 	
 	
@@ -299,17 +305,6 @@ public class Job {
 
 
 	/**
-	 * Set the status of the last job execution
-	 * 
-	 * @param status the status code
-	 */
-	public synchronized void jobTerminated(int status) {
-		this.status = status;
-		this.executionCount++;
-	}
-
-
-	/**
 	 * Return the short name of the database engine
 	 * 
 	 * @return the short name of the database engine, or null if not specified
@@ -326,5 +321,170 @@ public class Job {
 	 */
 	public String getDbInstance() {
 		return dbInstance;
+	}
+	
+	
+	/**
+	 * Start the job and return immediately
+	 */
+	public synchronized void start() {
+		
+		if (current != null) {
+			throw new IllegalStateException("The job is already running");
+		}
+		
+		current = new ExecutionThread();
+		current.start();
+	}
+	
+	
+	/**
+	 * Determine if the job is currently running
+	 * 
+	 * @return if the job is currently running
+	 */
+	public boolean isRunning() {
+		return current != null;
+	}
+	
+	
+	/**
+	 * Join the execution of the thread
+	 * 
+	 * @throws InterruptedException if interrupted
+	 */
+	public void join() throws InterruptedException {
+		ExecutionThread t = current;
+		if (t == null) return;
+		t.join();
+	}
+	
+	
+	/**
+	 * Add a job output listener for the current instance of the job
+	 * 
+	 * @param listener the listener
+	 */
+	public synchronized void addJobOutputListenerToCurrent(JobOutputListener listener) {
+		
+		// TODO Allow detach, such as by changing the callback method to return boolean -- false to detach, true to stay
+		
+		// TODO This method has several possible race conditions, but they are all quite rare
+		
+		ExecutionThread t = current;
+		if (t == null) {
+			// TODO Return the entire output of the last execution
+			return;
+		}
+
+		while (t.newOutputListener != null) {
+			Thread.yield();
+			if (t != current) {
+				// TODO Return the entire output of the last execution
+				return;
+			}
+		}
+		
+		t.newOutputListener = listener;
+	}
+	
+	
+	/**
+	 * The process execution thread
+	 */
+	private class ExecutionThread extends Thread {
+		
+		public StringBuilder output;
+		public List<JobOutputListener> outputListeners;
+		public JobOutputListener newOutputListener;
+		
+		
+		/**
+		 * Create an instance of ExecutionThread
+		 */
+		public ExecutionThread() {
+			output = new StringBuilder();
+			outputListeners = new LinkedList<JobOutputListener>();
+			newOutputListener = null;
+		}
+		
+		
+		/**
+		 * Run the job
+		 */
+		@Override
+		public void run() {
+			
+			int status = Integer.MIN_VALUE;
+			
+			try {
+		        
+		        // Execute the program and capture the output
+		        
+				try {
+					
+					ProcessBuilder pb = new ProcessBuilder(getArguments());
+					pb.redirectErrorStream(true);
+					Process p = pb.start();
+		
+					if (bufferedThreadOutput) {
+						BufferedReader es = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+						
+						while (true) {
+							String l = es.readLine();
+							if (l == null) break;
+							l += "\n";
+							output.append(l);
+							for (JobOutputListener x : outputListeners) x.jobOutput(l);
+							if (newOutputListener != null) {
+								newOutputListener.jobOutput(output.toString());
+								outputListeners.add(newOutputListener);
+								newOutputListener = null;
+							}
+						}
+						
+						es.close();
+					}
+					else {
+						InputStreamReader es = new InputStreamReader(p.getInputStream());
+						
+						while (true) {
+							int r = es.read();
+							if (r < 0) break;
+							output.append((char) r);
+							for (JobOutputListener x : outputListeners) x.jobOutput("" + (char) r);
+							if (newOutputListener != null) {
+								newOutputListener.jobOutput(output.toString());
+								outputListeners.add(newOutputListener);
+								newOutputListener = null;
+							}
+						}
+			
+						es.close();
+					}
+					
+					if (newOutputListener != null) {
+						newOutputListener.jobOutput(output.toString());
+						outputListeners.add(newOutputListener);
+						newOutputListener = null;
+					}
+	
+					status = p.waitFor();
+				}
+				catch (RuntimeException e) {
+					throw e;
+				}
+				catch (Exception e) {
+					throw new RuntimeException(e);
+				}
+			}
+			finally {
+				
+				Job.this.status = status;
+				Job.this.executionCount++;
+				
+				current = null;		// This must be the very last statement
+			}
+		}
 	}
 }
