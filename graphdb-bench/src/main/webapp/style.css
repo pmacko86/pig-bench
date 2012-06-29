@@ -222,6 +222,7 @@ h1 {
 	float:none;
 	margin:0;
 	padding:0 0 0 10px;
+	width:auto;
 }
 
 .stylized_form button {
@@ -339,6 +340,10 @@ table.db_table td.db_table_checkbox {
 }
 
 .job_list_form label.job_neutral {
+	background: #FBFBFB;
+}
+
+.job_list_form label.job_running {
 	background: #ebf4fb;
 }
 
@@ -353,14 +358,33 @@ table.db_table td.db_table_checkbox {
 .job_list_form input.checkbox {
 	float:left;
 	font-size:12px;
-	width:440px;
+	width:auto;
 	margin:0;
 	padding:0 10px 0 10px;
 }
 
 .job_list_form p.checkbox {
-	padding:3px 0 0 10px;
-	margin-left: 20px;
+	padding:0px 0 0 20px;
+	margin-left: 30px;
+	margin-top: 2px;
+}
+
+.job_list_form p.job_running {
+	/* Icon: http://www.frumster.com/images/loading-animated-spokes.gif */
+	background: url(icons/loading_32.gif) no-repeat left top;
+	background-size:16px 16px;
+}
+
+.job_list_form p.job_done {
+	/* Icon - free for commercial use: http://iconlet.com/info/82999_checkmark_32_32x32 */
+	background: url(icons/checkmark_32.png) no-repeat left top;
+	background-size:16px 16px;
+}
+
+.job_list_form p.job_failed {
+	/* Icon - free for commercial use: http://iconlet.com/info/82992_error_32_32x32 */
+	background: url(icons/error_32.png) no-repeat left top;
+	background-size:16px 16px;
 }
 
 .job_list_form button {

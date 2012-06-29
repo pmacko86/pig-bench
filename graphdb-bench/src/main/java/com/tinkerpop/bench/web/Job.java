@@ -3,6 +3,7 @@ package com.tinkerpop.bench.web;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -435,7 +436,13 @@ public class Job {
 							if (l == null) break;
 							l += "\n";
 							output.append(l);
-							for (JobOutputListener x : outputListeners) x.jobOutput(l);
+							
+							Iterator<JobOutputListener> I = outputListeners.iterator();
+							while (I.hasNext()) {
+								JobOutputListener x = I.next();
+								if (!x.jobOutput(l)) I.remove();
+							}
+							
 							if (newOutputListener != null) {
 								newOutputListener.jobOutput(output.toString());
 								outputListeners.add(newOutputListener);
@@ -452,7 +459,13 @@ public class Job {
 							int r = es.read();
 							if (r < 0) break;
 							output.append((char) r);
-							for (JobOutputListener x : outputListeners) x.jobOutput("" + (char) r);
+							
+							Iterator<JobOutputListener> I = outputListeners.iterator();
+							while (I.hasNext()) {
+								JobOutputListener x = I.next();
+								if (!x.jobOutput("" + (char) r)) I.remove();
+							}
+							
 							if (newOutputListener != null) {
 								newOutputListener.jobOutput(output.toString());
 								outputListeners.add(newOutputListener);

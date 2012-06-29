@@ -8,7 +8,7 @@
 	String jsp_page = "index";
 %>
 <%@ include file="header.jsp" %>
-	
+
 	<div class="job_list_form">
 		<form id="form" name="form" method="post" action="/RunBenchmark">
 			<h1>List of Jobs</h1>
@@ -22,24 +22,22 @@
 				}
 				else {
 					for (Job job : JobList.getInstance().getJobs()) {
-						if (job.getExecutionCount() == 0) {
-							%>
-								<label class="checkbox job_neutral">
-							<%
+						String c = "neutral";
+						if (job.isRunning()) {
+							c = "running";
 						}
-						else if (job.getLastStatus() == 0) {
-							%>
-								<label class="checkbox job_done">
-							<%
-						}
-						else {
-							%>
-								<label class="checkbox job_failed">
-							<%
+						else if (job.getExecutionCount() > 0) {
+							if (job.getLastStatus() == 0) {
+								c = "done";
+							}
+							else {
+								c = "failed";
+							}
 						}
 						%>
+							<label class="checkbox job_<%= c %>">
 								<input class="checkbox" type="checkbox" name="jobs" value="<%= job.getId() %>"/>
-								<p class="checkbox"><%= job.toString() %></p>
+								<p class="checkbox job_<%= c %>"><%= job.toString() %></p>
 							</label>
 						<%
 					}

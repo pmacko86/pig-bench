@@ -41,9 +41,7 @@ public class RunBenchmark extends HttpServlet {
 	@Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
-		final HttpServletResponse _response = response;
 		
-
 		// Create and/or get the jobs
 		
 		String[] jobIds = WebUtils.getStringParameterValues(request, "jobs");
@@ -97,20 +95,10 @@ public class RunBenchmark extends HttpServlet {
 	        // Execute the program and capture the output
 	        
 			try {
+				Listener l = new Listener(response);
 				
 				job.start();
-				job.addJobOutputListenerToCurrent(new JobOutputListener() {
-					@Override
-					public void jobOutput(String str) {
-						try {
-							_response.getWriter().print(str);
-							_response.getWriter().flush();
-						} catch (IOException e) {
-							// TODO Detach the listener instead
-							throw new RuntimeException(e);
-						}
-					}
-				});
+				job.addJobOutputListenerToCurrent(l);
 				job.join();
 				
 				if (job.getLastStatus() == 0) {
@@ -127,5 +115,50 @@ public class RunBenchmark extends HttpServlet {
 		}
 		
 		response.getWriter().println("\nAll jobs finished.");
-   }
+	}
+	
+	
+	/**
+	 * The listener class
+	 */
+	private class Listener implements JobOutputListener {
+		
+		private HttpServletResponse response;
+		
+		
+		/**
+		 * Create an instance of class Listener
+		 * 
+		 * @param response the HTTP response
+		 * @throws IOException 
+		 */
+		public Listener(HttpServletResponse response) {
+			this.response = response;
+		}
+		
+
+		/**
+		 * Callback for receiving what the job printed to its output
+		 * 
+		 * @param str the string printed to the output since the last time the method was called
+		 * @return true to continue receiving future output or false to detach
+		 */
+		@Override
+		public boolean jobOutput(String str) {
+			try {
+				response.getWriter().print(str);
+				response.getWriter().flush();
+				return true;
+			}
+			catch (IOException e) {
+				try {
+					response.getWriter().println("\nFailed:");
+					e.printStackTrace(response.getWriter());
+				}
+				catch (IOException _e) {
+				}							
+				return false;	// Detach
+			}
+		}
+	}
 }
