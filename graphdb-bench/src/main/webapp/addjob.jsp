@@ -9,6 +9,8 @@
 <%
 	String jsp_title = "Add Job";
 	String jsp_page = "addjob";
+	String jsp_body = null;
+	boolean jsp_allow_cache = true;
 %>
 <%@ include file="header.jsp" %>
 	

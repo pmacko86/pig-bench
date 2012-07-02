@@ -9,6 +9,13 @@ xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns
 	</context-param>
 	
 	<servlet>
+		<display-name>AddJob</display-name>
+		<servlet-name>AddJob</servlet-name>
+		<servlet-class>com.tinkerpop.bench.web.AddJob</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	 </servlet>
+	
+	<servlet>
 		<display-name>RunBenchmark</display-name>
 		<servlet-name>RunBenchmark</servlet-name>
 		<servlet-class>com.tinkerpop.bench.web.RunBenchmark</servlet-class>
@@ -16,20 +23,25 @@ xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns
 	 </servlet>
 	
 	<servlet>
-		<display-name>AddJob</display-name>
-		<servlet-name>AddJob</servlet-name>
-		<servlet-class>com.tinkerpop.bench.web.AddJob</servlet-class>
+		<display-name>ShowOutput</display-name>
+		<servlet-name>ShowOutput</servlet-name>
+		<servlet-class>com.tinkerpop.bench.web.ShowOutput</servlet-class>
 		<load-on-startup>1</load-on-startup>
 	 </servlet>
 
 	<servlet-mapping>
+		<servlet-name>AddJob</servlet-name>
+		<url-pattern>/AddJob</url-pattern>
+	</servlet-mapping>
+ 
+	<servlet-mapping>
 		<servlet-name>RunBenchmark</servlet-name>
 		<url-pattern>/RunBenchmark</url-pattern>
 	</servlet-mapping>
-
+ 
 	<servlet-mapping>
-		<servlet-name>AddJob</servlet-name>
-		<url-pattern>/AddJob</url-pattern>
+		<servlet-name>ShowOutput</servlet-name>
+		<url-pattern>/ShowOutput</url-pattern>
 	</servlet-mapping>
  
 </web-app>

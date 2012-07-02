@@ -30,6 +30,7 @@ public class Job {
 	private int executionCount;
 	
 	private ExecutionThread current = null;
+	private ExecutionThread last = null;
 	private boolean bufferedThreadOutput = false;
 	
 	
@@ -352,12 +353,14 @@ public class Job {
 	/**
 	 * Join the execution of the thread
 	 * 
+	 * @return true if the job was joined, false otherwise
 	 * @throws InterruptedException if interrupted
 	 */
-	public void join() throws InterruptedException {
+	public boolean join() throws InterruptedException {
 		ExecutionThread t = current;
-		if (t == null) return;
+		if (t == null) return false;
 		t.join();
+		return true;
 	}
 	
 	
@@ -368,20 +371,22 @@ public class Job {
 	 */
 	public synchronized void addJobOutputListenerToCurrent(JobOutputListener listener) {
 		
-		// TODO Allow detach, such as by changing the callback method to return boolean -- false to detach, true to stay
-		
 		// TODO This method has several possible race conditions, but they are all quite rare
 		
 		ExecutionThread t = current;
 		if (t == null) {
-			// TODO Return the entire output of the last execution
+			if (last != null) {
+				listener.jobOutput(last.output.toString());
+			}
 			return;
 		}
 
 		while (t.newOutputListener != null) {
 			Thread.yield();
 			if (t != current) {
-				// TODO Return the entire output of the last execution
+				if (last != null) {
+					listener.jobOutput(last.output.toString());
+				}
 				return;
 			}
 		}
@@ -391,11 +396,26 @@ public class Job {
 	
 	
 	/**
+	 * Get the output of the current/last instance of the job
+	 * 
+	 * @return the output or null if no instance has been run
+	 */
+	public String getOutput() {
+		
+		ExecutionThread t = current;
+		if (t == null) t = last;
+		if (t == null) return null;
+		
+		return t.output.toString();
+	}
+	
+	
+	/**
 	 * The process execution thread
 	 */
 	private class ExecutionThread extends Thread {
 		
-		public StringBuilder output;
+		public Appendable output;
 		public List<JobOutputListener> outputListeners;
 		public JobOutputListener newOutputListener;
 		
@@ -404,7 +424,7 @@ public class Job {
 		 * Create an instance of ExecutionThread
 		 */
 		public ExecutionThread() {
-			output = new StringBuilder();
+			output = new StringBuffer();
 			outputListeners = new LinkedList<JobOutputListener>();
 			newOutputListener = null;
 		}
@@ -496,6 +516,7 @@ public class Job {
 				Job.this.status = status;
 				Job.this.executionCount++;
 				
+				last = this;
 				current = null;		// This must be the very last statement
 			}
 		}

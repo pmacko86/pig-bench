@@ -3,9 +3,16 @@
 	<title><%= (jsp_title == null ? "" : jsp_title + " - ") %>GraphDB Benchmark Web Interface</title>
 	<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
 	<meta name="description" content="GraphDB Benchmark Web Interface" />
+<%
+	if (!jsp_allow_cache) {
+		%>	<meta http-equiv="cache-control" content="no-store" /><%;
+		%>	<meta http-equiv="pragma" content="no-cache" /><%;
+		%>	<meta http-equiv="expires" content="-1" /><%;
+	}
+%>
 	<link rel="stylesheet" type="text/css" href="/style.css" media="screen" />
 </head>
-<body>
+<body<%= jsp_body == null ? "" : " " + jsp_body %>>
 	<div id="header">
 		<h1>GraphDB Benchmark Web Interface</h1>
 	</div>
