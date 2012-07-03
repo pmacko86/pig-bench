@@ -93,11 +93,20 @@
 
 
 	<div class="job_list_form">
-		<form id="form" name="form" method="post" action="/RunBenchmark">
+		<form id="form" name="form" method="post" action="/JobListControl">
 			<h1>List of Jobs</h1>
+			<p class="header">Completed, Running, and Scheduled Jobs</p>
 			
 			<div class="job_list_div">
+				<div class="header">
+					<div class="header_inner">
+						Jobs
+					</div>
+				</div>
 			<%
+				boolean running = false;
+				int numJobs = 0;
+				int numRunnableJobs = 0;
 				if (JobList.getInstance().getJobs().isEmpty()) {
 					%>
 						<p class="job_none">There are no completed or scheduled jobs.</p>
@@ -106,8 +115,10 @@
 				else {
 					for (Job job : JobList.getInstance().getJobs()) {
 						String c = "job_neutral";
+						numJobs++;
 						if (job.isRunning()) {
 							c = "job_running";
+							running = true;
 						}
 						else if (job.getExecutionCount() > 0) {
 							if (job.getLastStatus() == 0) {
@@ -116,6 +127,9 @@
 							else {
 								c = "job_failed";
 							}
+						}
+						else {
+							numRunnableJobs++;
 						}
 						%>
 							<div class="checkbox_outer">
@@ -148,12 +162,63 @@
 					}
 				}
 			%>
+				<!-- <div class="footer">
+					<div class="footer_inner">
+						<div class="clear"></div>
+					</div>
+				</div> -->
 			</div>
 			
-			<input type="hidden" id="refreshed" value="no" />
-			
-			<button type="submit">Run</button>
+			<div class="footer_detached">
+				<div class="footer_inner_detached">
+					<button type="submit" class="footer" name="action" value="remove">Remove Selected</button>		
+					<button type="submit" class="footer" name="action" value="remove_all">Remove All</button>
+					<button type="submit" class="footer" name="action" value="remove_finished">Remove Completed</button>
+					<button type="submit" class="footer" name="action" value="move_to_bottom">Move to the Bottom</button>
+					<div class="clear"></div>
+				</div>
+			</div> 
 		</form>
+		
+		
+		<div id="job_control">
+			<p class="middle_header">Job Execution Control</p>
+			
+			<form method="post" action="/JobExecutionControl">
+				<input type="hidden" name="action" value="start" />
+				<button type="submit"<%= running || numRunnableJobs == 0 ? " disabled=\"disabled\"" : "" %>>Start</button>
+			</form>
+			
+			<form method="post" action="/JobExecutionControl">
+				<input type="hidden" name="action" value="pause" />
+				<button type="submit"<%= !running || JobList.getInstance().isPaused() ? " disabled=\"disabled\"" : "" %>>Pause</button>
+			</form>
+			
+			<%
+				if (!running && numRunnableJobs == 0) {
+			%>
+					<p class="status">There are no scheduled jobs.</p>
+			<%
+				}
+				else if (!running) {
+			%>
+					<p class="status">The job execution is currently paused.</p>
+			<%
+				}
+				else if (JobList.getInstance().isPaused()) {
+			%>
+					<p class="status status_running">Waiting for the current job to finish...</p>
+			<%
+				}
+				else {
+			%>
+					<p class="status status_running">Running...</p>
+			<%
+				}
+			%>
+			
+			<div class="clear"></div>
+		</div>
 	</div>
 
 <%@ include file="footer.jsp" %>

@@ -16,6 +16,20 @@ xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns
 	 </servlet>
 	
 	<servlet>
+		<display-name>JobExecutionControl</display-name>
+		<servlet-name>JobExecutionControl</servlet-name>
+		<servlet-class>com.tinkerpop.bench.web.JobExecutionControl</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	 </servlet>
+	
+	<servlet>
+		<display-name>JobListControl</display-name>
+		<servlet-name>JobListControl</servlet-name>
+		<servlet-class>com.tinkerpop.bench.web.JobListControl</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	 </servlet>
+	
+	<servlet>
 		<display-name>RunBenchmark</display-name>
 		<servlet-name>RunBenchmark</servlet-name>
 		<servlet-class>com.tinkerpop.bench.web.RunBenchmark</servlet-class>
@@ -32,6 +46,16 @@ xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns
 	<servlet-mapping>
 		<servlet-name>AddJob</servlet-name>
 		<url-pattern>/AddJob</url-pattern>
+	</servlet-mapping>
+
+	<servlet-mapping>
+		<servlet-name>JobExecutionControl</servlet-name>
+		<url-pattern>/JobExecutionControl</url-pattern>
+	</servlet-mapping>
+
+	<servlet-mapping>
+		<servlet-name>JobListControl</servlet-name>
+		<url-pattern>/JobListControl</url-pattern>
 	</servlet-mapping>
  
 	<servlet-mapping>

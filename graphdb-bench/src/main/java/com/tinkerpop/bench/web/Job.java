@@ -403,6 +403,10 @@ public class Job {
 			}
 		}
 		
+		String output = t.output.toString();
+		listener.jobOutput(output);
+		t.newOutputCharsSent = output.length();
+		
 		t.newOutputListener = listener;
 	}
 	
@@ -430,6 +434,7 @@ public class Job {
 		public Appendable output;
 		public List<JobOutputListener> outputListeners;
 		public JobOutputListener newOutputListener;
+		public int newOutputCharsSent;
 		
 		
 		/**
@@ -439,6 +444,7 @@ public class Job {
 			output = new StringBuffer();
 			outputListeners = new LinkedList<JobOutputListener>();
 			newOutputListener = null;
+			newOutputCharsSent = 0;
 		}
 		
 		
@@ -476,7 +482,10 @@ public class Job {
 							}
 							
 							if (newOutputListener != null) {
-								newOutputListener.jobOutput(output.toString());
+								String s = output.toString();
+								if (s.length() > newOutputCharsSent) {
+									newOutputListener.jobOutput(s.substring(newOutputCharsSent));
+								}
 								outputListeners.add(newOutputListener);
 								newOutputListener = null;
 							}
@@ -499,7 +508,10 @@ public class Job {
 							}
 							
 							if (newOutputListener != null) {
-								newOutputListener.jobOutput(output.toString());
+								String s = output.toString();
+								if (s.length() > newOutputCharsSent) {
+									newOutputListener.jobOutput(s.substring(newOutputCharsSent));
+								}
 								outputListeners.add(newOutputListener);
 								newOutputListener = null;
 							}

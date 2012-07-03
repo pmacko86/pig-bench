@@ -27,7 +27,7 @@ h1 {
 	font-size:16px;
 	font-weight:bold;
 	margin-top:0px;
-	margin-bottom:8px;
+	margin-bottom:24px;
 }
 
 
@@ -148,6 +148,10 @@ h1 {
 	/*border:solid 2px #b7ddf2;*/
 	/*background:#ebf4fb;*/
 	padding-right:210px;
+}
+
+.stylized_form h1 {
+	margin-bottom: 8px;
 }
 
 .stylized_form div {
@@ -313,16 +317,65 @@ table.db_table td.db_table_checkbox {
 	padding:14px;
 }
 
+.job_list_form h1 {
+	margin-bottom: 8px;
+}
+
+.job_list_form p.header {
+	width: 100%;
+	font-size:11px;
+	display:block;
+	color:#666666;
+	margin-bottom:20px;
+	border-bottom:solid 1px #b7ddf2;
+	padding-bottom:10px;
+}
+
 .job_list_form div.job_list_div {
-	border-top:solid 1px #888888;
-	border-left:solid 1px #888888;
-	border-right:solid 1px #888888;
+	border-top:solid 1px #aacfe4;
+	border-left:solid 1px #aacfe4;
+	border-right:solid 1px #aacfe4;
 	padding-right:2px;
+}
+
+.job_list_form div.header {
+	background-color: #aacfe4;
+	border-bottom:solid 1px #aacfe4;
+	padding-right: 2px;
+	width:100%;
+	color: #000000;
+	font-weight: bold;
+}
+
+.job_list_form div.footer {
+	background-color: #DDDDDD;
+	border-bottom:solid 1px #aacfe4;
+	padding-right: 2px;
+	width:100%;
+}
+
+.job_list_form div.footer_detached {
+	background-color: #FBFBFB;
+	margin-top: 10px;
+	width:100%;
+}
+
+.job_list_form div.header_inner {
+	padding: 5px;
+}
+
+.job_list_form div.footer_inner {
+	padding: 5px;
+}
+
+.job_list_form div.footer_inner_detached {
+	border: solid 1px #aacfe4;
+	padding: 5px;
 }
 
 .job_list_form div.checkbox_outer {
 	display: block;
-	border-bottom:solid 1px #888888;
+	border-bottom:solid 1px #aacfe4;
 	font-weight:normal;
 	text-align:left;
 	width:100%;
@@ -346,7 +399,7 @@ table.db_table td.db_table_checkbox {
 
 .job_list_form p.job_none {
 	display: block;
-	border-bottom:solid 1px #888888;
+	border-bottom:solid 1px #aacfe4;
 	font-weight:normal;
 	text-align:center;
 	width:100%;
@@ -430,23 +483,81 @@ table.db_table td.db_table_checkbox {
 	padding: 8px 8px 8px 0;
 }
 
-.job_list_form button {
+.job_list_form button.footer {
 	float:left;
-	margin-top:10px;
+	margin-top:0px;
 	margin-left:0px;
-	width:150px;
-	height:31px;
-	background:#666666;
+	margin-right:5px;
+	width:140px;
+	height:25px;
+	background:#aacfe4;
 	text-align:center;
-	line-height:31px;
-	color:#FFFFFF;
+	line-height:25px;
+	color:#000000;
 	font-size:11px;
 	font-weight:bold;
-	border: solid 1px #666666;
+	border: solid 1px #aacfe4;
 }
 
 .job_list_form button[disabled="disabled"] {
 	background:#DDDDDD;
 	color:#666666;
 	border: solid 1px #666666;
+}
+
+#job_control {
+	clear: both;
+}
+
+#job_control p.middle_header {
+	font-size: 14px;
+	float:left;
+	width: 100%;
+	display:block;
+	font-weight:bold;
+	margin-top:40px;
+	border-top:solid 1px #b7ddf2;
+	padding-top:10px;
+	padding-bottom: 10px;
+	margin-bottom: 10px;
+}
+
+#job_control button {
+	float:left;
+	margin-top:0px;
+	margin-left:0px;
+	margin-right:10px;
+	width:150px;
+	height:31px;
+	background:#aacfe4;
+	text-align:center;
+	line-height:31px;
+	color:#black;
+	font-size:11px;
+	font-weight:bold;
+	border: solid 1px #aacfe4;
+}
+
+#job_control button[disabled="disabled"] {
+	background:#ebf4fb;
+	color:#aacfe4;
+	border: solid 1px #aacfe4;
+}
+
+#job_control p.status {
+	margin-left:10px;
+	height:31px;
+	width:auto;
+	line-height:31px;
+	font-size:11px;
+	vertical-align: middle;
+	display: block;
+	float: left;
+}
+
+#job_control p.status_running {
+	padding-left: 32px;
+	/* Icon: http://www.frumster.com/images/loading-animated-spokes.gif */
+	background: url(icons/loading_32.gif) no-repeat left center;
+	background-size:24px 24px;
 }
