@@ -17,8 +17,10 @@
 		/*
 		 * Toggle/check a checkbox and unselect all others in the group
 		 */
-		function toggle_one_unselect_others(field, value)
+		function toggle_one_unselect_others(value)
 		{
+			field = document.getElementsByName('jobs');
+
 			toggle = true;
 			for (i = 0; i < field.length; i++) {
 				if (field[i].value != value) {
@@ -69,7 +71,7 @@
 		 */
 		function body_on_load()
 		{
-			field = document.form.jobs;
+			field = document.getElementsByName('jobs');
 			for (i = 0; i < field.length; i++) {
 				if (field[i].checked) {
 					job_checkbox_on_change(field[i]);
@@ -123,9 +125,20 @@
 										       value="<%= job.getId() %>"
 										       onchange="job_checkbox_on_change(this)"/>
 									</div>
+									<%
+										if (job.isRunning() || job.getExecutionCount() > 0) {
+											%>
+												<a href="/ShowOutput?job=<%= job.getId() %>&join=t"
+												   class="per_row_link">
+													<img src="icons/information_32.png"
+														 width="20px" height="20px" />
+												</a>
+											<%
+										}
+									%>
 									<label class="checkbox <%= c %>">
 										<p class="checkbox <%= c %>"
-										   onclick="toggle_one_unselect_others(document.form.jobs, '<%= job.getId() %>')">
+										   onclick="toggle_one_unselect_others('<%= job.getId() %>')">
 											<%= job.toString() %>
 										</p>
 									</label>

@@ -150,6 +150,12 @@ h1 {
 	padding-right:210px;
 }
 
+.stylized_form div {
+	padding: 0;
+	margin: 0;
+	clear: both;
+}
+
 .stylized_form p.header {
 	float:left;
 	width: 100%;
@@ -178,7 +184,7 @@ h1 {
 	display:block;
 	font-weight:bold;
 	text-align:right;
-	width:190px;
+	width:195px;
 	float:left;
 	clear:left;	
 }
@@ -200,7 +206,7 @@ h1 {
 	font-size:11px;
 	font-weight:normal;
 	text-align:right;
-	width:190px;
+	width:195px;
 }
 
 .stylized_form input, .stylized_form select {
@@ -222,7 +228,7 @@ h1 {
 
 .stylized_form button {
 	float:left;
-	margin-top:10px;
+	margin-top:30px;
 	margin-left:0px;
 	width:150px;
 	height:31px;
@@ -344,7 +350,7 @@ table.db_table td.db_table_checkbox {
 	font-weight:normal;
 	text-align:center;
 	width:100%;
-	padding: 10px 10px;
+	padding: 10px 1px;
 	font-style: italic;
 }
 
@@ -396,6 +402,7 @@ table.db_table td.db_table_checkbox {
 	padding:12px 10px 10px 20px;
 	margin-left: 40px;
 	margin-top: 0px;
+	margin-right: 48px;
 }
 
 .job_list_form p.job_running {
@@ -414,6 +421,13 @@ table.db_table td.db_table_checkbox {
 	/* Icon - free for commercial use: http://iconlet.com/info/82992_error_32_32x32 */
 	background: url(icons/error_32.png) no-repeat left 10px;
 	background-size:16px 16px;
+}
+
+.job_list_form a.per_row_link {
+	float: right;
+	border: none;
+	margin-left: 8px;
+	padding: 8px 8px 8px 0;
 }
 
 .job_list_form button {

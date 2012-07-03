@@ -90,6 +90,10 @@ public class Job {
 		String s_txBuffer = WebUtils.getStringParameter(request, "tx_buffer");
 		String s_opCount = WebUtils.getStringParameter(request, "op_count");
 		String s_warmupOpCount = WebUtils.getStringParameter(request, "warmup_op_count");
+		String s_kHops = WebUtils.getStringParameter(request, "k_hops");
+		String s_ingestFile = WebUtils.getStringParameter(request, "ingest_file");
+		String s_ingestWarmupFile = WebUtils.getStringParameter(request, "ingest_warmup_file");
+
 		String[] workloads = WebUtils.getStringParameterValues(request, "workloads");
 		
 		
@@ -117,12 +121,17 @@ public class Job {
 		if (workloads != null) {
 			for (String s : workloads) {
 				arguments.add("--" + s);
+				if ("ingest".equals(s) && s_ingestFile != null) {
+					arguments.add(s_ingestFile);
+				}
 			}
 		}
 		
-		if (s_txBuffer       != null) { arguments.add("--tx-buffer"); arguments.add(s_txBuffer); }
-		if (s_opCount        != null) { arguments.add("--op-count"); arguments.add(s_opCount); }
-		if (s_warmupOpCount  != null) { arguments.add("--warmup-op-count"); arguments.add(s_warmupOpCount); }
+		if (s_txBuffer         != null) { arguments.add("--tx-buffer"); arguments.add(s_txBuffer); }
+		if (s_opCount          != null) { arguments.add("--op-count"); arguments.add(s_opCount); }
+		if (s_warmupOpCount    != null) { arguments.add("--warmup-op-count"); arguments.add(s_warmupOpCount); }
+		if (s_kHops            != null) { arguments.add("--k-hops"); arguments.add(s_kHops); }
+		if (s_ingestWarmupFile != null) { arguments.add("--warmup-ingest"); arguments.add(s_ingestWarmupFile); }
 	}
 
 
@@ -190,6 +199,9 @@ public class Job {
 				}
 				if (s.equals("--tx-buffer") && !last) {
 					if (arguments.get(i+1).equals("" + BenchmarkMicro.DEFAULT_NUM_THREADS)) {skip = true;continue;}
+				}
+				if (s.equals("--k-hops") && !last) {
+					if (arguments.get(i+1).equals("" + BenchmarkMicro.DEFAULT_K_HOPS)) {skip = true;continue;}
 				}
 			}
 			
