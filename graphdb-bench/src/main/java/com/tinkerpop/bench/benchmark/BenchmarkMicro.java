@@ -221,12 +221,14 @@ public class BenchmarkMicro extends Benchmark {
 		}
 		catch (Exception e) {
 			ConsoleUtils.error("Invalid options (please use --help for a list): " + e.getMessage());
+			System.exit(1);
 			return;
 		}
 		
 		List<String> nonOptionArguments = options.nonOptionArguments();
 		if (!nonOptionArguments.isEmpty()) {
 			ConsoleUtils.error("Invalid options (please use --help for a list): " + nonOptionArguments);
+			System.exit(1);
 			return;
 		}
 		
@@ -280,6 +282,7 @@ public class BenchmarkMicro extends Benchmark {
 			numThreads = (Integer) options.valueOf("threads");
 			if (numThreads < 1) {
 				ConsoleUtils.error("Invalid number of threads -- must be at least 1");
+				System.exit(1);
 				return;
 			}
 		}
@@ -288,6 +291,7 @@ public class BenchmarkMicro extends Benchmark {
 			GlobalConfig.transactionBufferSize = (Integer) options.valueOf("tx-buffer");
 			if (GlobalConfig.transactionBufferSize < 1) {
 				ConsoleUtils.error("Invalid size of the transaction buffer -- must be at least 1");
+				System.exit(1);
 				return;
 			}
 		}
@@ -310,10 +314,12 @@ public class BenchmarkMicro extends Benchmark {
 				}
 				catch (NumberFormatException e) {
 					ConsoleUtils.error("Invalid range of k hops (not a number).");
+					System.exit(1);
 					return;
 				}
 				if (k1 <= 0 || k1 > k2) {
 					ConsoleUtils.error("Invalid range of k hops.");
+					System.exit(1);
 					return;
 				}
 				kHops = new int[k2-k1+1];
@@ -326,10 +332,12 @@ public class BenchmarkMicro extends Benchmark {
 				}
 				catch (NumberFormatException e) {
 					ConsoleUtils.error("Invalid number of k hops (not a number).");
+					System.exit(1);
 					return;
 				}
 				if (kHops[0] <= 0) {
 					ConsoleUtils.error("Invalid number of k hops (must be positive).");
+					System.exit(1);
 					return;
 				}
 			}
@@ -342,6 +350,7 @@ public class BenchmarkMicro extends Benchmark {
 		if (provenance) {
 			if (!CPL.isInstalled()) {
 				ConsoleUtils.error("CPL is not installed. Use --no-provenance to disable provenance collection.");
+				System.exit(1);
 				return;
 			}
 			else {
@@ -351,6 +360,7 @@ public class BenchmarkMicro extends Benchmark {
 				catch (CPLException e) {
 					ConsoleUtils.error("Could not initialize provenance collection:");
 					ConsoleUtils.error("  " + e.getMessage());
+					System.exit(1);
 					return;
 				}
 			}
@@ -366,6 +376,7 @@ public class BenchmarkMicro extends Benchmark {
 			if (options.has(e.getShortName())) {
 				if (dbEngine != null) {
 					ConsoleUtils.error("Multiple databases are selected, but only one is allowed.");
+					System.exit(1);
 					return;
 				}
 				dbEngine = e;
@@ -375,6 +386,7 @@ public class BenchmarkMicro extends Benchmark {
 		}
 		if (dbShortName == null) {
 			ConsoleUtils.error("No database is selected (please use --help for a list of options).");
+			System.exit(1);
 			return;
 		}
 		
@@ -394,6 +406,7 @@ public class BenchmarkMicro extends Benchmark {
 				}
 				else {
 					ConsoleUtils.error("The SQL database path is not specified.");
+					System.exit(1);
 					return;
 				}
 			}
@@ -407,6 +420,7 @@ public class BenchmarkMicro extends Benchmark {
 				}
 				else {
 					ConsoleUtils.error("The SQL warmup database path is not specified.");
+					System.exit(1);
 					return;
 				}
 			}
@@ -431,6 +445,7 @@ public class BenchmarkMicro extends Benchmark {
 			
 			if (graphGenerator == null) {
 				ConsoleUtils.error("Unrecognized graph generation model");
+				System.exit(1);
 				return;
 			}
 		}
@@ -463,6 +478,7 @@ public class BenchmarkMicro extends Benchmark {
 			String propDirResults = Bench.getProperty(Bench.RESULTS_DIRECTORY);
 			if (propDirResults == null) {
 				ConsoleUtils.error("Property \"" + Bench.RESULTS_DIRECTORY + "\" is not set and --dir is not specified.");
+				System.exit(1);
 				return;
 			}
 			if (!propDirResults.endsWith("/")) propDirResults += "/";
@@ -480,11 +496,13 @@ public class BenchmarkMicro extends Benchmark {
 				if (dirGraphML == null) {
 					ConsoleUtils.warn("Property \"" + Bench.DATASETS_DIRECTORY + "\" is not set.");
 					ConsoleUtils.error("File \"" + ingestFile + "\" does not exist.");
+					System.exit(1);
 					return;
 				}
 				if (!dirGraphML.endsWith("/")) dirGraphML += "/";
 				if (!(new File(dirGraphML + ingestFile)).exists()) {
 					ConsoleUtils.error("File \"" + ingestFile + "\" does not exist.");
+					System.exit(1);
 					return;
 				}
 				else {
@@ -496,11 +514,13 @@ public class BenchmarkMicro extends Benchmark {
 				if (dirGraphML == null) {
 					ConsoleUtils.warn("Property \"" + Bench.DATASETS_DIRECTORY + "\" is not set.");
 					ConsoleUtils.error("File \"" + warmupIngestFile + "\" does not exist.");
+					System.exit(1);
 					return;
 				}
 				if (!dirGraphML.endsWith("/")) dirGraphML += "/";
 				if (!(new File(dirGraphML + warmupIngestFile)).exists()) {
 					ConsoleUtils.error("File \"" + warmupIngestFile + "\" does not exist.");
+					System.exit(1);
 					return;
 				}
 				else {
@@ -609,6 +629,7 @@ public class BenchmarkMicro extends Benchmark {
 				}
 				catch (IOException e) {
 					ConsoleUtils.error("Cannot write to the specified file: " + file);
+					System.exit(1);
 					return;
 				}
 			}

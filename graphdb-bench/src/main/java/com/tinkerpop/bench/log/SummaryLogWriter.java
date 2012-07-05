@@ -51,7 +51,7 @@ public class SummaryLogWriter {
 			CPLFile summaryFileObject = CPLFile.create(new File(summaryFilePath));
 			for (Entry<String, String> fileEntry : resultFilePaths.entrySet()) {
 				String path = fileEntry.getValue();
-				summaryFileObject.dataFlowFrom(CPLFile.lookup(new File(path)));
+				summaryFileObject.dataFlowFrom(CPLFile.lookupOrCreate(new File(path)));
 			}
 		}
 	}
@@ -162,7 +162,7 @@ public class SummaryLogWriter {
 			CPLFile summaryFileObject = CPLFile.create(new File(summaryFilePath));
 			for (Entry<String, String> fileEntry : resultFilePaths.entrySet()) {
 				String path = fileEntry.getValue();
-				summaryFileObject.dataFlowFrom(CPLFile.lookup(new File(path)));
+				summaryFileObject.dataFlowFrom(CPLFile.lookupOrCreate(new File(path)));
 			}
 		}
 	}

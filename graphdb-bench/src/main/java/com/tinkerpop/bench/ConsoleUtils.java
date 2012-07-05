@@ -96,6 +96,44 @@ public class ConsoleUtils {
 	
 	
 	/**
+	 * Get a string of backspaces of the given length
+	 * 
+	 * @param length the number of backspaces
+	 * @return the string of backspaces
+	 */
+	public static String getBackspaces(int length) {
+		int l = BACKSPACES.length();
+		int n = length;
+		String s = "";
+		while (n >= l) {
+			s += BACKSPACES;
+			n -= l;
+		}
+		s += BACKSPACES.substring(l - n);
+		return s;
+	}
+	
+	
+	/**
+	 * Get a string of spaces of the given length
+	 * 
+	 * @param length the number of spaces
+	 * @return the string of spaces
+	 */
+	public static String getSpaces(int length) {
+		int l = SPACES.length();
+		int n = length;
+		String s = "";
+		while (n >= l) {
+			s += SPACES;
+			n -= l;
+		}
+		s += SPACES.substring(l - n);
+		return s;
+	}
+	
+	
+	/**
 	 * Print a progress indicator
 	 * 
 	 * @param value the position
@@ -113,31 +151,13 @@ public class ConsoleUtils {
 			String before = extra == null ? "" : "[" + extra + "] ";
 			String before_b = "";
 			if (extra != null) {
-				int l = BACKSPACES.length();
-				int n = before.length();
-				while (n >= l) {
-					before_b += BACKSPACES;
-					n -= l;
-				}
-				before_b += BACKSPACES.substring(l - n);
+				before_b += getBackspaces(before.length());
 			}
 				
 			String clear = "";
 			if (lastProgressExtra.length() > 0) {
-				int l = SPACES.length();
-				int n = lastProgressExtra.length();
-				while (n >= l) {
-					clear += SPACES;
-					n -= l;
-				}
-				clear += SPACES.substring(l - n);
-				l = BACKSPACES.length();
-				n = lastProgressExtra.length();
-				while (n >= l) {
-					clear += BACKSPACES;
-					n -= l;
-				}
-				clear += BACKSPACES.substring(l - n);
+				clear += getSpaces(lastProgressExtra.length());
+				clear += getBackspaces(lastProgressExtra.length());
 			}
 			lastProgressExtra = before;
 			
