@@ -7,6 +7,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -114,6 +115,7 @@ public class BenchmarkMicro extends Benchmark {
 		System.err.println("");
 		System.err.println("Miscellaneous commands:");
 		System.err.println("  --export-graphml FILE   Export the database to a GraphML file");
+		System.err.println("  --export-n-graphml FILE Export the database to a normalized GraphML file");
 	}
 
 	
@@ -210,6 +212,7 @@ public class BenchmarkMicro extends Benchmark {
 		// Miscellaneous commands
 		
 		parser.accepts("export-graphml").withOptionalArg().ofType(String.class);
+		parser.accepts("export-n-graphml").withOptionalArg().ofType(String.class);
 		
 		
 		// Parse the options
@@ -367,7 +370,9 @@ public class BenchmarkMicro extends Benchmark {
 		}
 		
 		
-		// Database-specific arguments
+		/*
+		 * Database-specific arguments
+		 */
 		
 		String dbShortName = null;
 		Class<?> dbClass = null;
@@ -423,6 +428,18 @@ public class BenchmarkMicro extends Benchmark {
 					System.exit(1);
 					return;
 				}
+			}
+		}
+		
+		
+		/*
+		 * Get the list of workloads
+		 */
+		
+		LinkedList<Workload> workloads = new LinkedList<Workload>(); 
+		for (Workload w : Workload.WORKLOADS.values()) {
+			if (options.has(w.getShortName())) {
+				workloads.add(w);
 			}
 		}
 
@@ -618,9 +635,12 @@ public class BenchmarkMicro extends Benchmark {
 		
 		// TODO Ensure that there is only a single command specified or that there is only benchmark workload specified
 		
-		if (options.has("export-graphml")) {
+		if (options.has("export-graphml") || options.has("export-n-graphml")) {
 			
-			String file = options.hasArgument("export-graphml") ? "" + options.valueOf("export-graphml") : null;
+			boolean normalize = options.has("export-n-graphml");
+			String arg = normalize ? "export-n-graphml" : "export-graphml";
+			String file = options.hasArgument(arg) ? "" + options.valueOf(arg) : null;
+			
 			PrintStream out = System.out;
 			if (file != null) {
 				try {
@@ -647,6 +667,17 @@ public class BenchmarkMicro extends Benchmark {
 			return;
 		}
 		
+		
+		/*
+		 * Check to make sure that we have specified workloads to run
+		 */
+		
+		if (workloads.isEmpty()) {
+			ConsoleUtils.error("There are no workloads specified (please use --help for a list)");
+			System.exit(1);
+			return;
+		}
+
 		
 		/*
 		 * Print benchmark info

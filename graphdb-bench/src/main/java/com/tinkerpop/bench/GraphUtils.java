@@ -1,13 +1,14 @@
 package com.tinkerpop.bench;
 
+import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Set;
 
 import com.tinkerpop.blueprints.pgm.Edge;
 import com.tinkerpop.blueprints.pgm.Graph;
 import com.tinkerpop.blueprints.pgm.Vertex;
+import com.tinkerpop.blueprints.pgm.util.graphml.GraphMLWriter;
 
 public class GraphUtils {
 	
@@ -94,17 +95,22 @@ public class GraphUtils {
 	 * @param out the print stream
 	 * @param graph the graph
 	 * @param sorted whether the node/edge lists should be sorted
+	 * @throws IOException on error
 	 */
-	public static void printGraphML(PrintStream out, Graph graph, boolean sorted /*TODO*/) {
+	public static void printGraphML(PrintStream out, Graph graph, boolean sorted) throws IOException {
+		
+		GraphMLWriter writer = new GraphMLWriter(graph);
+		writer.setNormalize(sorted);
+		writer.outputGraph(out);
 				
-		out.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+		/*out.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
 		out.println("<graphml xmlns=\"http://graphml.graphdrawing.org/xmlns\"");
 		out.println("         xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"");
 		out.println("         xsi:schemaLocation=\"http://graphml.graphdrawing.org/xmlns");
 		out.println("         http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd\">");
 		out.println("<!-- Exported by graphdb-bench -->");
 		
-		Set<String> nodeKeys = new HashSet<String>();
+		HashSet<String> nodeKeys = new HashSet<String>();
 		for (Vertex vertex : graph.getVertices()) {
 			nodeKeys.addAll(vertex.getPropertyKeys());
 		}
@@ -113,7 +119,7 @@ public class GraphUtils {
 			if (key.contains("\"")) throw new RuntimeException("The following node key contains \'\"\': " + key);
 		}
 		
-		Set<String> edgeKeys = new HashSet<String>();
+		HashSet<String> edgeKeys = new HashSet<String>();
 		for (Edge edge : graph.getEdges()) {
 			edgeKeys.addAll(edge.getPropertyKeys());
 		}
@@ -123,6 +129,8 @@ public class GraphUtils {
 		}
 		
 		out.println("  <graph id=\"G\" edgedefault=\"directed\">");
+		
+		// TODO: Sort
 		
 		for (Vertex vertex : graph.getVertices()) {
 			out.println("    <node id=\"" + vertex.getId() + "\">");
@@ -147,7 +155,7 @@ public class GraphUtils {
 		}
 		
 		out.println("  </graph>");
-		out.println("</graphml>");
+		out.println("</graphml>");*/
 	}
 	
 	
