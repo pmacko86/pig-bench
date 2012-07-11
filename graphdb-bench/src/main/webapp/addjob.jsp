@@ -13,7 +13,7 @@
 	String jsp_body = "onload=\"set_div_visibility()\" onunload=\"\"";
 	boolean jsp_allow_cache = true;
 %>
-<%@ include file="header.jsp" %>
+<%@ include file="include/header.jsp" %>
 	
 	<script language="JavaScript">
 		<!-- Begin
@@ -39,8 +39,18 @@
 			
 			b_op_count = false;
 			for (i = 0; i < checked.length; i++) {
-				if (["add", "get", "get-k", "get-property", "shortest-path",
-						"shortest-path-prop"].indexOf(checked[i]) >= 0) b_op_count = true;
+				<%
+					String workloadsUsingOpCount = "";
+					for (Workload w : Workload.WORKLOADS.values()) {
+						if (w.isUsingOpCount()) {
+							if (!"".equals(workloadsUsingOpCount)) {
+								workloadsUsingOpCount += ", ";
+							}
+							workloadsUsingOpCount += "\"" + w.getShortName() + "\"";
+						}
+					}
+				%>
+				if ([<%= workloadsUsingOpCount %>].indexOf(checked[i]) >= 0) b_op_count = true;
 			}
 
 			if (b_op_count) {
@@ -103,98 +113,12 @@
 			<p class="header">Please enter the information to specify the benchmark</p>
 			
 			<%
-				TreeMap<String, DatabaseEngine> engines = new TreeMap<String, DatabaseEngine>();
-				for (DatabaseEngine e : DatabaseEngine.ENGINES.values()) {
-					engines.put(e.getLongName().toLowerCase(), e);
-				}
-			%>
-						
-			<!--<label>Database Engine
-				<span class="small">DEX, neo4j, etc.</span>
-			</label>
-			<select name="database_name" id="database_name">
-			<%
-				for (DatabaseEngine e : engines.values()) {
-					%>
-						<option value="<%= e.getShortName() %>"><%= e.getLongName() %></option>
-					<%
-				}
-			%>
-			</select>
-			
-			<label>Database Instance
-				<span class="small">Name of a graph or an instance</span>
-			</label>
-			<input type="text" name="database_instance" id="database_instance" />
-			-->
-			
-			<table class="db_table">
-				<tr>
-					<th style="min-width: 120px; text-align:left">Instance&nbsp;Name</th>
-					<%
-					for (DatabaseEngine e : engines.values()) {
-						%>
-							<th><%= e.getLongName() %></th>
-						<%
-					}					
-					%>
-				</tr>
-				<%
-					TreeSet<String> instanceSet = new TreeSet<String>(WebUtils.getAllDatabaseInstanceNames());
-					for (Job job : JobList.getInstance().getJobs()) {
-						if (job.getDbInstance() != null) instanceSet.add(job.getDbInstance());
-					}
-					LinkedList<String> instances = new LinkedList<String>(instanceSet);
-					instances.addFirst("");
-					instances.addLast("<new>");
-					
-					Collection<Pair<String, String>> instancePairs = WebUtils.getDatabaseInstancePairs();
-					
-					for (String dbi : instances) {
-						%>
-							<tr>
-								<%
-									if (dbi.equals("<new>")) {
-								%>
-									<th>
-										<label>New:&nbsp;</label>
-										<input type="text" name="new_database_instance" id="new_database_instance" value="" />
-									</th>
-								<%
-									}
-									else if (dbi.equals("")) {
-								%>
-									<th style="text-align:left">&lt;default&gt;</th>
-								<%
-									}
-									else {
-								%>
-									<th style="text-align:left"><%= dbi %></th>
-								<%
-									}
-								%>
-								<%
-								for (DatabaseEngine e : engines.values()) {
-									String extraClass = "";
-									if (instancePairs.contains(new Pair<String, String>(e.getShortName(), dbi))) {
-										extraClass = " db_table_available";
-									}
-									%>
-										<td class="db_table_checkbox">
-											<label class="db_table_checkbox<%= extraClass %>">
-												<input class="db_table_checkbox" type="checkbox" name="database_engine_instance"
-														value="<%= e.getShortName() %>|<%= dbi %>"/>
-											</label>
-										</td>
-									<%
-								}
-								%>
-							</tr>
-						<%
-					}
-				%>
-			</table>
-			
+				boolean dbinst_simple = false;
+				boolean dbinst_choose_many = true;
+				boolean dbinst_choose_nonexistent = true;
+				String dbinst_onchange = null;
+			%>	
+			<%@ include file="include/dbinsttable.jsp" %>			
 			
 			<p class="middle">Configure the benchmark:</p>
 			
@@ -229,7 +153,7 @@
 			
 			
 			<div id="conf_ingest">
-				<p class="middle" id="conf_ingest">Configure the database ingest:</p>
+				<p class="middle">Configure the database ingest:</p>
 
 				<label>Input file
 					<span class="small">For the regular database</span>
@@ -262,6 +186,12 @@
 					}
 				%>
 				</select>
+		
+				<label class="checkbox">
+					<input class="checkbox" type="checkbox" name="ingest_as_undirected"
+							value="true"/>
+					Ingest a directed graph as undirected by doubling-up the edges
+				</label>
 
 				<div class="clear"></div>
 			</div>
@@ -299,4 +229,4 @@
 		</form>
 	</div>
 
-<%@ include file="footer.jsp" %>
+<%@ include file="include/footer.jsp" %>

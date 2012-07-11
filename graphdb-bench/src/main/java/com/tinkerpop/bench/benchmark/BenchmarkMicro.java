@@ -101,6 +101,8 @@ public class BenchmarkMicro extends Benchmark {
 		}
 		System.err.println("");
 		System.err.println("Benchmark and workload options:");
+		System.err.println("  --ingest-as-undirected  Ingest a graph as undirected by " +
+										"doubling-up the edges");
 		System.err.println("  --k-hops K              Set the number of k-hops");
 		System.err.println("  --k-hops K1:K2          Set a range of k-hops");
 		System.err.println("  --op-count N            Set the number of operations");
@@ -197,6 +199,7 @@ public class BenchmarkMicro extends Benchmark {
 		
 		// Benchmark and workload modifiers
 		
+		parser.accepts("ingest-as-undirected");
 		parser.accepts("k-hops").withRequiredArg().ofType(String.class);
 		parser.accepts("op-count").withRequiredArg().ofType(Integer.class);
 		parser.accepts("warmup-op-count").withRequiredArg().ofType(Integer.class);
@@ -265,6 +268,11 @@ public class BenchmarkMicro extends Benchmark {
 		String warmupIngestFile = ingestFile;
 		if (options.has("warmup-ingest")) {
 			warmupIngestFile = options.valueOf("warmup-ingest").toString();
+		}
+		
+		boolean ingestAsUndirected = false;
+		if (options.has("ingest-as-undirected")) {
+			ingestAsUndirected = true;
 		}
 		
 		boolean warmup = true;
@@ -560,10 +568,12 @@ public class BenchmarkMicro extends Benchmark {
 		GraphGenerator[] graphGenerators = new GraphGenerator[] { graphGenerator };
 		
 		Benchmark warmupBenchmark = new BenchmarkMicro(
-				warmupGraphmlFiles, graphGenerators, options, warmupOpCount, kHops);
+				warmupGraphmlFiles, graphGenerators, options, warmupOpCount, kHops,
+				ingestAsUndirected);
 		
 		Benchmark benchmark = new BenchmarkMicro(
-				graphmlFiles, graphGenerators, options, opCount, kHops);
+				graphmlFiles, graphGenerators, options, opCount, kHops,
+				ingestAsUndirected);
 		
 		
 		/*
@@ -575,15 +585,15 @@ public class BenchmarkMicro extends Benchmark {
 		StringBuilder sb = new StringBuilder();
 		for (String s : args) {
 			String argName = s.charAt(0) == '-' ? s.substring(s.charAt(1) == '-' ? 2 : 1) : s;
-			if (s.charAt(0) == '-') sb.append('_');
+			if (s.charAt(0) == '-') sb.append("__"); else sb.append("_");
 			sb.append(argName);
 		}
 		
-		sb.append("_mem");
+		sb.append("__mem_");
 		sb.append(Math.round(Runtime.getRuntime().maxMemory() / 1024768.0f));
 		sb.append("m");	
 		
-		sb.append("_");
+		sb.append("__date_");
 		sb.append((new SimpleDateFormat("yyyyMMdd-HHmmss")).format(new Date()));
 		
 		String argString = sb.toString().replaceAll("\\s+", "");
@@ -760,6 +770,7 @@ public class BenchmarkMicro extends Benchmark {
 	private int opCount = DEFAULT_OP_COUNT;
 	private String PROPERTY_KEY = "_id";
 	private int[] kHops;
+	private boolean ingestAsUndirected;
 
 	private String[] graphmlFilenames = null;
 	private GraphGenerator[] graphGenerators = null;
@@ -767,12 +778,13 @@ public class BenchmarkMicro extends Benchmark {
 
 	public BenchmarkMicro(String[] graphmlFilenames,
 			GraphGenerator[] graphGenerators, OptionSet options,
-			int opCount, int[] kHops) {
+			int opCount, int[] kHops, boolean ingestAsUndirected) {
 		this.graphmlFilenames = graphmlFilenames;
 		this.graphGenerators = graphGenerators;
 		this.options = options;
 		this.opCount = opCount;
 		this.kHops = kHops;
+		this.ingestAsUndirected = ingestAsUndirected;
 	}
 
 	@Override
@@ -796,7 +808,8 @@ public class BenchmarkMicro extends Benchmark {
 			if (options.has("ingest")) {
 				operationFactories.add(new OperationFactoryGeneric(
 						OperationLoadGraphML.class, 1,
-						new String[] { graphmlFilename }, LogUtils.pathToName(graphmlFilename)));
+						new Object[] { graphmlFilename, ingestAsUndirected },
+						LogUtils.pathToName(graphmlFilename)));
 			}
 			
 			// GENERATE benchmarks

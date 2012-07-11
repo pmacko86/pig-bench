@@ -3,6 +3,7 @@ package com.tinkerpop.bench.web;
 import java.io.File;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 
@@ -22,6 +23,9 @@ public class WebUtils {
 
 	private static Pattern fileNamePattern
 		= Pattern.compile("[_a-zA-Z0-9\\-][_a-zA-Z0-9\\-\\.]*");
+
+	private static Pattern dbInstancePattern
+		= Pattern.compile("^[a-z][a-z0-9_]*$");
 	
 	
 	/**
@@ -62,6 +66,44 @@ public class WebUtils {
 			throw new RuntimeException("Invalid file name");
 		}
 		return s;
+	}
+	
+	
+	/**
+	 * Get a value from the parameter list
+	 */
+	public static String[] getFileNameParameterValues(HttpServletRequest request, String name) {
+		String[] a = request.getParameterValues(name);
+		if (a == null) return null;
+		for (String s : a) {
+			if (s.contains("'")) throw new RuntimeException("Invalid file name");
+			if (!fileNamePattern.matcher(s).matches()) {
+				throw new RuntimeException("Invalid file name");
+			}
+		}
+		return a;
+	}
+	
+	
+	/**
+	 * Get a value from the parameter list
+	 */
+	public static boolean getBooleanParameter(HttpServletRequest request, String name, boolean defaultValue) {
+		String s = request.getParameter(name);
+		if (s == null) return defaultValue;
+		if (s.equals("")) return defaultValue;
+		return s.equalsIgnoreCase("true") || s.equalsIgnoreCase("t");
+	}
+	
+	
+	/**
+	 * Assert that the database instance name is valid
+	 */
+	public static void asssertDatabaseInstanceNameValidity(String dbInstance) {
+		if (!dbInstancePattern.matcher(dbInstance).matches()) {
+			throw new RuntimeException("Invalid database instance name (can contain only lower-case letters, "
+					+ "numbers, and _, and has to start with a letter)");
+		}
 	}
 
 
@@ -180,6 +222,44 @@ public class WebUtils {
 				if (DatabaseEngine.ENGINES.containsKey(name)) {
 					r.add(new Pair<String, String>(name, ""));
 				}
+			}
+		}
+		
+		return r;
+	}
+	
+	
+	/**
+	 * Get a collection of previously executed jobs
+	 * 
+	 * @param dbEngine the database engine name
+	 * @param dbInstance the database instance name
+	 * @return the collection of previously executed jobs
+	 */
+	public static Collection<Job> getFinishedJobs(String dbEngine, String dbInstance) {
+		
+		LinkedList<Job> r = new LinkedList<Job>();
+		File resultsDir = getResultsDirectory();
+		
+		String subdir = dbEngine;
+		if (dbInstance != null && !"".equals(dbInstance)) {
+			asssertDatabaseInstanceNameValidity(dbInstance);
+			subdir += "_" + dbInstance;
+		}
+		String logFilePrefix = subdir + "_";
+		
+		File dir = new File(resultsDir, subdir);
+		if (!dir.exists())
+			throw new RuntimeException("The specific results directory does not exist");
+		if (!dir.isDirectory())
+			throw new RuntimeException("The specific results directory is not really a directory");
+		
+		for (File f : dir.listFiles()) {
+			if (f.isDirectory()) continue;
+			String name = f.getName();
+			
+			if (name.startsWith(logFilePrefix) && name.endsWith(".csv")) {
+				r.add(new Job(f, dbEngine, dbInstance));
 			}
 		}
 		

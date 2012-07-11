@@ -20,25 +20,25 @@ public class Workload {
 	static {
 		Map<String, Workload> m = new TreeMap<String, Workload>();
 		m.put("add", new Workload("add", "Add nodes and edges",
-				"Adding nodes and edges to the database", null));
+				"Adding nodes and edges to the database", null, true));
 		m.put("clustering-coeff", new Workload("clustering-coeff", "Clustering coefficients",
-				"Compute the clustering coefficients", null));
+				"Compute the clustering coefficients", null, false));
 		m.put("delete-graph", new Workload("delete-graph", "Delete graph",
-				"Delete the entire graph", null));
+				"Delete the entire graph", null, false));
 		m.put("shortest-path", new Workload("shortest-path", "Shortest path",
-				"Shortest path algorithm", null));
+				"Shortest path algorithm", null, true));
 		m.put("shortest-path-prop", new Workload("shortest-path-prop", "Shortest path with properties",
-				"Shortest paths with in-DB marking", null));
+				"Shortest paths with in-DB marking", null, true));
 		m.put("generate", new Workload("generate", "Generate",
-				"Generate (or grow) the graph based on the given model", "MODEL"));
+				"Generate (or grow) the graph based on the given model", "MODEL", false));
 		m.put("get", new Workload("get", "Get",
-				"\"Get\" microbenchmarks", null));
+				"\"Get\" microbenchmarks", null, true));
 		m.put("get-k", new Workload("get-k", "Get k-hop",
-				"\"Get\" k-hops microbenchmarks", null));
+				"\"Get\" k-hops microbenchmarks", null, true));
 		m.put("get-property", new Workload("get-property", "Get properties",
-				"\"Get\" Object store microbenchmarks", null));
+				"\"Get\" Object store microbenchmarks", null, true));
 		m.put("ingest", new Workload("ingest", "Ingest",
-				"Ingest a file to the database (also delete the graph)", "FILE"));
+				"Ingest a file to the database (also delete the graph)", "FILE", false));
 		WORKLOADS = Collections.unmodifiableMap(m);
 	}
 	
@@ -47,6 +47,7 @@ public class Workload {
 	private String longName;
 	private String description;
 	private String optionalArgument;
+	private boolean usesOpCount;
 
 	
 	/**
@@ -56,12 +57,14 @@ public class Workload {
 	 * @param longName the long name
 	 * @param description the description
 	 * @param optionalArgument the name of the optional argument; null otherwise
+	 * @param usesOpCount true if the workload uses the --op-count parameter
 	 */
-	public Workload(String shortName, String longName, String description, String optionalArgument) {
+	public Workload(String shortName, String longName, String description, String optionalArgument, boolean usesOpCount) {
 		this.shortName = shortName;
 		this.longName = longName;
 		this.description = description;
 		this.optionalArgument = optionalArgument;
+		this.usesOpCount = usesOpCount;
 	}
 
 
@@ -102,6 +105,16 @@ public class Workload {
 	 */
 	public String getOptionalArgument() {
 		return optionalArgument;
+	}
+
+
+	/**
+	 * Determine whether the workload uses the --op-count parameter
+	 * 
+	 * @return true if the workload uses the --op-count parameter
+	 */
+	public boolean isUsingOpCount() {
+		return usesOpCount;
 	}
 	
 	

@@ -9,7 +9,7 @@
 	String jsp_body = "onload=\"body_on_load()\" onunload=\"\"";
 	boolean jsp_allow_cache = false;
 %>
-<%@ include file="header.jsp" %>
+<%@ include file="include/header.jsp" %>
 	
 	<script language="JavaScript">
 		<!-- Begin
@@ -169,6 +169,8 @@
 				</div> -->
 			</div>
 			
+			<input type="hidden" name="refreshed" id="refreshed" value="no" />
+			
 			<div class="footer_detached">
 				<div class="footer_inner_detached">
 					<button type="submit" class="footer" name="action" value="remove">Remove Selected</button>		
@@ -221,4 +223,4 @@
 		</div>
 	</div>
 
-<%@ include file="footer.jsp" %>
+<%@ include file="include/footer.jsp" %>

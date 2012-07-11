@@ -69,12 +69,22 @@ public class JobList {
 	
 	
 	/**
+	 * Allocate a new job ID
+	 * 
+	 * @return the new ID
+	 */
+	synchronized int allocateJobId() {
+		return ++lastId;
+	}
+	
+	
+	/**
 	 * Add a job to the list
 	 * 
 	 * @param job the job to add
 	 */
 	public synchronized void addJob(Job job) {
-		job.id = ++lastId;
+		job.id = allocateJobId();
 		jobs.add(job);
 		jobMap.put(job.getId(), job);
 	}

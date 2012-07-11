@@ -68,6 +68,9 @@ public class BenchRunner {
 	/// The barrier for synchronizing tasks
 	private CyclicBarrier barrier = null;
 	
+	/// The exception that terminated the last run (null = okay)
+	private Exception lastException = null;
+	
 	
 	/**
 	 * Create an instance of BenchRunner
@@ -145,6 +148,7 @@ public class BenchRunner {
 		}
 		
 		operationId = new AtomicInteger(-1);
+		lastException = null;
 		
 		try {
 			
@@ -203,6 +207,8 @@ public class BenchRunner {
 		finally {
 			benchmarkSemaphore.release();
 		}
+		
+		if (lastException != null) throw lastException;
 	}
 
 	
@@ -458,10 +464,13 @@ public class BenchRunner {
 				if (GlobalConfig.oneDbConnectionPerThread) closeGraph();
 			}
 			catch (RuntimeException e) {
+				lastException = e;
 				throw e;
 			}
 			catch (Exception e) {
-				throw new RuntimeException("Worker " + id + " failed", e);
+				RuntimeException r = new RuntimeException("Worker " + id + " failed", e);
+				lastException = r;
+				throw r;
 			}
 		}
 	}

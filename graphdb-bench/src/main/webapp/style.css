@@ -30,6 +30,20 @@ h1 {
 	margin-bottom:24px;
 }
 
+h2 {
+	font-size:16px;
+	font-weight:bold;
+	margin-top:20px;
+	margin-bottom:16px;
+}
+
+h3 {
+	font-size:14px;
+	font-weight:bold;
+	margin-top:30px;
+	margin-bottom:16px;
+}
+
 
 /* -------------------------------------------------------- *
  *  Header                                                  *
@@ -140,7 +154,7 @@ h1 {
  * -------------------------------------------------------- */
 
 /* Adapted from: http://woork.blogspot.com/2008/06/clean-and-pure-css-form-design.html */
- 
+
 .stylized_form {
 	margin:0 auto;
 	/*width:650px;*/
@@ -168,6 +182,15 @@ h1 {
 	color:#666666;
 	margin-bottom:20px;
 	border-bottom:solid 1px #b7ddf2;
+	padding-bottom:10px;
+	padding-right:210px;
+}
+
+.stylized_form p.header2 {
+	float:left;
+	width: 100%;
+	display:block;
+	font-weight:bold;
 	padding-bottom:10px;
 	padding-right:210px;
 }
@@ -251,6 +274,7 @@ table.db_table, table.db_table td, table.db_table th {
 table.db_table {
 	border-collapse:collapse;
 	margin: 0 auto;
+	width: 100%;
 }
 
 table.db_table td, table.db_table th {
@@ -307,6 +331,58 @@ table.db_table td.db_table_checkbox {
 	margin: 0;
 }
 
+.basic_form {
+	margin:0 auto;
+	padding:14px;
+}
+
+.basic_form h1 {
+	margin-bottom: 8px;
+}
+
+.basic_form div {
+	padding: 0;
+	margin: 0;
+	clear: both;
+}
+
+.basic_form p.header {
+	float:left;
+	width: 100%;
+	font-size:11px;
+	display:block;
+	color:#666666;
+	margin-bottom:20px;
+	border-bottom:solid 1px #b7ddf2;
+	padding-bottom:10px;
+}
+
+.basic_form p.header2 {
+	float:left;
+	width: 100%;
+	display:block;
+	font-weight:bold;
+	padding-bottom:10px;
+}
+
+.basic_form p.middle {
+	float:left;
+	width: 100%;
+	display:block;
+	font-weight:bold;
+	margin-top:20px;
+	border-top:solid 1px #b7ddf2;
+	padding-top:10px;
+	padding-bottom:10px;
+}
+
+.basic_form div.db_table_div {
+	padding-right: 210px;
+	clear: none;
+	float:left;
+}
+
+
 
 /* -------------------------------------------------------- *
  *  Job List                                                *
@@ -331,14 +407,14 @@ table.db_table td.db_table_checkbox {
 	padding-bottom:10px;
 }
 
-.job_list_form div.job_list_div {
+div.job_list_div {
 	border-top:solid 1px #aacfe4;
 	border-left:solid 1px #aacfe4;
 	border-right:solid 1px #aacfe4;
 	padding-right:2px;
 }
 
-.job_list_form div.header {
+.job_list_div div.header {
 	background-color: #aacfe4;
 	border-bottom:solid 1px #aacfe4;
 	padding-right: 2px;
@@ -347,7 +423,7 @@ table.db_table td.db_table_checkbox {
 	font-weight: bold;
 }
 
-.job_list_form div.footer {
+.job_list_div div.footer {
 	background-color: #DDDDDD;
 	border-bottom:solid 1px #aacfe4;
 	padding-right: 2px;
@@ -360,11 +436,11 @@ table.db_table td.db_table_checkbox {
 	width:100%;
 }
 
-.job_list_form div.header_inner {
+.job_list_div div.header_inner {
 	padding: 5px;
 }
 
-.job_list_form div.footer_inner {
+.job_list_div div.footer_inner {
 	padding: 5px;
 }
 
@@ -373,7 +449,7 @@ table.db_table td.db_table_checkbox {
 	padding: 5px;
 }
 
-.job_list_form div.checkbox_outer {
+.job_list_div div.checkbox_outer {
 	display: block;
 	border-bottom:solid 1px #aacfe4;
 	font-weight:normal;
@@ -383,7 +459,7 @@ table.db_table td.db_table_checkbox {
 	padding-right: 2px;
 }
 
-.job_list_form div.checkbox {
+.job_list_div div.checkbox {
 	display: block;
 	border: solid 1px transparent;
 	font-weight:normal;
@@ -392,12 +468,12 @@ table.db_table td.db_table_checkbox {
 	font-family: monospace;
 }
 
-.job_list_form div.checkbox_inner {
+.job_list_div div.checkbox_inner {
 	padding: 10px 0 0 10px;
 	float:left;
 }
 
-.job_list_form p.job_none {
+.job_list_div p.job_none {
 	display: block;
 	border-bottom:solid 1px #aacfe4;
 	font-weight:normal;
@@ -407,43 +483,43 @@ table.db_table td.db_table_checkbox {
 	font-style: italic;
 }
 
-.job_list_form div.job_neutral {
+.job_list_div div.job_neutral {
 	background: #FBFBFB;
 }
 
-.job_list_form div.job_running {
+.job_list_div div.job_running {
 	background: #ebf4fb;
 }
 
-.job_list_form div.job_done {
+.job_list_div div.job_done {
 	background: #EBFBEC;
 }
 
-.job_list_form div.job_failed {
+.job_list_div div.job_failed {
 	background: #FBEBEB;
 }
 
-.job_list_form div.checked_job_neutral {
+.job_list_div div.checked_job_neutral {
 	border: solid 1px #888888;
 	background: #E0E0E0;
 }
 
-.job_list_form div.checked_job_running {
+.job_list_div div.checked_job_running {
 	border: solid 1px #5299CC;
 	background: #BBE0FA;
 }
 
-.job_list_form div.checked_job_done {
+.job_list_div div.checked_job_done {
 	border: solid 1px #51CC59;
 	background: #BCFBC1;
 }
 
-.job_list_form div.checked_job_failed {
+.job_list_div div.checked_job_failed {
 	border: solid 1px #CC5151;
 	background: #FBBCBC;
 }
 
-.job_list_form input.checkbox {
+.job_list_div input.checkbox {
 	float:left;
 	font-size:12px;
 	width:auto;
@@ -451,32 +527,32 @@ table.db_table td.db_table_checkbox {
 	padding:0 10px 0 10px;
 }
 
-.job_list_form p.checkbox {
+.job_list_div p.checkbox {
 	padding:12px 10px 10px 20px;
 	margin-left: 40px;
 	margin-top: 0px;
 	margin-right: 48px;
 }
 
-.job_list_form p.job_running {
+.job_list_div p.job_running {
 	/* Icon: http://www.frumster.com/images/loading-animated-spokes.gif */
 	background: url(icons/loading_32.gif) no-repeat left 10px;
 	background-size:16px 16px;
 }
 
-.job_list_form p.job_done {
+.job_list_div p.job_done {
 	/* Icon - free for commercial use: http://iconlet.com/info/82999_checkmark_32_32x32 */
 	background: url(icons/checkmark_32.png) no-repeat left 10px;
 	background-size:16px 16px;
 }
 
-.job_list_form p.job_failed {
+.job_list_div p.job_failed {
 	/* Icon - free for commercial use: http://iconlet.com/info/82992_error_32_32x32 */
 	background: url(icons/error_32.png) no-repeat left 10px;
 	background-size:16px 16px;
 }
 
-.job_list_form a.per_row_link {
+.job_list_div a.per_row_link {
 	float: right;
 	border: none;
 	margin-left: 8px;
@@ -532,7 +608,7 @@ table.db_table td.db_table_checkbox {
 	background:#aacfe4;
 	text-align:center;
 	line-height:31px;
-	color:#black;
+	color:black;
 	font-size:11px;
 	font-weight:bold;
 	border: solid 1px #aacfe4;
@@ -560,4 +636,40 @@ table.db_table td.db_table_checkbox {
 	/* Icon: http://www.frumster.com/images/loading-animated-spokes.gif */
 	background: url(icons/loading_32.gif) no-repeat left center;
 	background-size:24px 24px;
+}
+
+
+
+/* -------------------------------------------------------- *
+ *  Basic Table                                             *
+ * -------------------------------------------------------- */
+
+table.basic_table, table.basic_table td, table.basic_table th {
+	border: solid 1px #aacfe4;
+}
+
+table.basic_table {
+	border-collapse:collapse;
+	margin: 0 auto;
+	width: 100%;
+}
+
+table.basic_table td, table.basic_table th {
+	padding: 5px 10px;
+	vertical-align: middle;
+}
+
+table.basic_table th {
+	background: #aacfe4;
+	text-align: left;
+}
+
+table.basic_table tr {
+	padding: 0;
+	margin: 0;
+	height:30px;
+}
+
+table.basic_table th.numeric, table.basic_table td.numeric {
+	text-align: right;
 }

@@ -1,16 +1,18 @@
 package com.tinkerpop.bench.web;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
 
 import com.tinkerpop.bench.Bench;
+import com.tinkerpop.bench.Workload;
 import com.tinkerpop.bench.benchmark.BenchmarkMicro;
 
 
@@ -26,8 +28,10 @@ public class Job {
 	private String dbEngine;
 	private String dbInstance;
 	
-	private int status;
-	private int executionCount;
+	protected File logFile;
+	protected int status;
+	protected int executionCount;
+	private String displayPrefix;
 	
 	private ExecutionThread current = null;
 	private ExecutionThread last = null;
@@ -57,6 +61,18 @@ public class Job {
 	
 	
 	/**
+	 * Create an instance of a finished Job from a log file
+	 * 
+	 * @param file the log file
+	 * @param dbEngine a specific database engine name
+	 * @param dbInstance a specific database instance name
+	 */
+	public Job(File file, String dbEngine, String dbInstance) {
+		loadFromLogFile(file, dbEngine, dbInstance);
+	}
+	
+	
+	/**
 	 * Load from an HTTP request
 	 * 
 	 * @param request the HTTP request from which to create the job
@@ -69,6 +85,8 @@ public class Job {
 		id = -1;
 		status = -1;
 		executionCount = 0;
+		displayPrefix = null;
+		logFile = null;
 		
 		
 		// Get the request arguments
@@ -84,28 +102,41 @@ public class Job {
 				}
 			}
 		}
-		if (dbInstance.equals("")) dbInstance = null;
+		if (dbInstance != null) {
+			if (dbInstance.equals("")) dbInstance = null;
+		}
 		
 		String s_annotation = WebUtils.getStringParameter(request, "annotation");
 		String s_txBuffer = WebUtils.getStringParameter(request, "tx_buffer");
 		String s_opCount = WebUtils.getStringParameter(request, "op_count");
 		String s_warmupOpCount = WebUtils.getStringParameter(request, "warmup_op_count");
 		String s_kHops = WebUtils.getStringParameter(request, "k_hops");
+		
+		boolean ingestAsUndirected = WebUtils.getBooleanParameter(request, "ingest_as_undirected", false);
 		String s_ingestFile = WebUtils.getStringParameter(request, "ingest_file");
 		String s_ingestWarmupFile = WebUtils.getStringParameter(request, "ingest_warmup_file");
 
-		String[] workloads = WebUtils.getStringParameterValues(request, "workloads");
+		
+		// Get the workloads
+		
+		String[] a_workloads = WebUtils.getStringParameterValues(request, "workloads");
+		
+		boolean usesOpCount = false;
+		HashMap<String, Workload> workloads = new HashMap<String, Workload>();
+		if (a_workloads != null) {
+			for (String w : a_workloads) {
+				Workload workload = Workload.WORKLOADS.get(w);
+				if (workload == null) throw new IllegalArgumentException("Unknown workload: " + w);
+				workloads.put(w, workload);
+				if (workload.isUsingOpCount()) usesOpCount = true;
+			}
+		}
 		
 		
 		// Sanitize the input
 		
-		// Note: Remember to validate the input for file names when we add a support for such arguments
-		
 		if (dbInstance != null) {
-			if (!Pattern.matches("^[a-z][a-z0-9_]*$", dbInstance)) {
-	    		throw new RuntimeException("Invalid database instance name (can contain only lower-case letters, "
-	    				+ "numbers, and _, and has to start with a letter)");
-	    	}
+			WebUtils.asssertDatabaseInstanceNameValidity(dbInstance);
 		}
 
 		
@@ -118,8 +149,8 @@ public class Job {
 		if (dbInstance       != null) { arguments.add("--database"); arguments.add(dbInstance); }
 		if (s_annotation     != null) { arguments.add("--annotation"); arguments.add(s_annotation); }
 		
-		if (workloads != null) {
-			for (String s : workloads) {
+		if (a_workloads != null) {
+			for (String s : a_workloads) {
 				arguments.add("--" + s);
 				if ("ingest".equals(s) && s_ingestFile != null) {
 					arguments.add(s_ingestFile);
@@ -127,11 +158,129 @@ public class Job {
 			}
 		}
 		
-		if (s_txBuffer         != null) { arguments.add("--tx-buffer"); arguments.add(s_txBuffer); }
-		if (s_opCount          != null) { arguments.add("--op-count"); arguments.add(s_opCount); }
-		if (s_warmupOpCount    != null) { arguments.add("--warmup-op-count"); arguments.add(s_warmupOpCount); }
-		if (s_kHops            != null) { arguments.add("--k-hops"); arguments.add(s_kHops); }
-		if (s_ingestWarmupFile != null) { arguments.add("--warmup-ingest"); arguments.add(s_ingestWarmupFile); }
+		if (s_txBuffer != null) {
+			if (!s_txBuffer.equals("" + BenchmarkMicro.DEFAULT_NUM_THREADS)) {
+				arguments.add("--tx-buffer"); arguments.add(s_txBuffer);
+			}
+		}
+		
+		if (usesOpCount) {
+			if (s_opCount != null) {
+				if (!s_opCount.equals("" + BenchmarkMicro.DEFAULT_OP_COUNT)) {
+					arguments.add("--op-count"); arguments.add(s_opCount);
+				}
+			}
+			if (s_warmupOpCount != null) {
+				if (!s_warmupOpCount.equals(s_opCount)) {
+					arguments.add("--warmup-op-count"); arguments.add(s_warmupOpCount);
+				}
+			}
+		}
+		
+		if (workloads.containsKey("get-k")) {
+			if (s_kHops != null) {
+				if (!s_kHops.equals("" + BenchmarkMicro.DEFAULT_K_HOPS)) {
+					arguments.add("--k-hops"); arguments.add(s_kHops);
+				}
+			}
+		}
+		
+		if (workloads.containsKey("ingest")) {
+			if (ingestAsUndirected) {
+				arguments.add("--ingest-as-undirected");
+			}
+			if (s_ingestWarmupFile != null) {
+				if (!s_ingestWarmupFile.equals(s_ingestFile)) {
+					arguments.add("--warmup-ingest"); arguments.add(s_ingestWarmupFile);
+				}
+			}
+		}
+	}
+	
+	
+	/**
+	 * Load a finished job from a log file
+	 * 
+	 * @param file the log file
+	 * @param dbEngine a specific database engine name
+	 * @param dbInstance a specific database instance name
+	 */
+	protected void loadFromLogFile(File file, String dbEngine, String dbInstance) {
+		
+		if (dbInstance != null) {
+			if (dbInstance.equals("")) dbInstance = null;
+		}
+		
+		arguments = new ArrayList<String>();
+		id = JobList.getInstance().allocateJobId();
+		status = -1;	// Still unknown at this point
+		executionCount = 1;
+		logFile = file;
+
+		this.dbEngine = dbEngine;
+		this.dbInstance = dbInstance;
+		
+		
+		// Reconstruct the command-line arguments from the file name
+		
+		arguments.add(Bench.graphdbBenchDir + "/runBenchmarkSuite.sh");
+	
+		String[] tokens = file.getName().split("__[_]*");
+		boolean first = true;
+		
+		String date = null;
+		@SuppressWarnings("unused")
+		String mem = null;
+		
+		for (String t : tokens) {
+			if (first) {
+				first = false;
+			}
+			else if (t.length() == 1) {
+				arguments.add("-" + t);
+			}
+			else if (t.length() >= 2) {
+				if (t.charAt(1) == '_') {
+					arguments.add("-" + t.charAt(1));
+					arguments.add(t.substring(2));
+				}
+				else {
+					int p = t.indexOf('_');
+					if (p >= 0) {
+						String n = t.substring(0, p);
+						String a = t.substring(p + 1);
+						if (n.equals("date")) {
+							if (a.endsWith(".csv")) {
+								a = a.substring(0, a.length() - 4);
+							}
+							date = a;
+						}
+						else if (n.equals("mem")) {
+							if (a.endsWith(".csv")) {
+								a = a.substring(0, a.length() - 4);
+							}
+							mem = a;
+						}
+						else {
+							arguments.add("--" + n);
+							arguments.add(a);
+						}
+					}
+					else {
+						arguments.add("--" + t);						
+					}
+				}
+			}
+		}
+		
+		if (date != null) {
+			String d = date;
+			if (date.length() == 8 + 1 + 6 && date.charAt(8) == '-') {
+				d = date.substring(0, 4) + "/" + date.substring(4, 6) + "/" + date.substring(6, 8)
+						+ " " + date.substring(9, 11) + ":" + date.substring(11, 13) + ":" + date.substring(13);
+			}
+			displayPrefix = "[" + d + "] ";
+		}
 	}
 
 
@@ -157,21 +306,14 @@ public class Job {
 	public String toStringExt(boolean multiline, boolean simple, String lineStart, String lineEnd) {
 		
 		boolean first = true;
-		boolean skip = false;
 		StringBuilder sb = new StringBuilder();
-		int next_i = 0;
-		String s_op_count = "";
+		
+		if (displayPrefix != null) sb.append(displayPrefix);
 		
 		
 		// Process each argument
 		
 		for (String s : arguments) {
-			int i = next_i++;
-			boolean last = next_i == arguments.size();
-			if (skip) {
-				skip = false;
-				continue;
-			}
 			
 			
 			// Simplify the output if we need to
@@ -182,27 +324,6 @@ public class Job {
 				
 				if (s.equals("--dumb-terminal")) continue;
 				if (s.equals("--no-color")) continue;
-				
-				
-				// Remove default options
-				
-				if (s.equals("--k-hops") && !last) {
-					s_op_count = arguments.get(i+1);
-					if (arguments.get(i+1).equals("" + BenchmarkMicro.DEFAULT_K_HOPS)) {skip = true;continue;}
-				}
-				if (s.equals("--op-count") && !last) {
-					s_op_count = arguments.get(i+1);
-					if (arguments.get(i+1).equals("" + BenchmarkMicro.DEFAULT_OP_COUNT)) {skip = true;continue;}
-				}
-				if (s.equals("--warmup-op-count") && !last) {
-					if (arguments.get(i+1).equals(s_op_count)) {skip = true;continue;}
-				}
-				if (s.equals("--tx-buffer") && !last) {
-					if (arguments.get(i+1).equals("" + BenchmarkMicro.DEFAULT_NUM_THREADS)) {skip = true;continue;}
-				}
-				if (s.equals("--k-hops") && !last) {
-					if (arguments.get(i+1).equals("" + BenchmarkMicro.DEFAULT_K_HOPS)) {skip = true;continue;}
-				}
 			}
 			
 			
@@ -335,6 +456,44 @@ public class Job {
 	 */
 	public String getDbInstance() {
 		return dbInstance;
+	}
+	
+	
+	/**
+	 * Return the log file (usually known only for already-finished jobs)
+	 * 
+	 * @return the log file, or null if not known
+	 */
+	public File getLogFile() {
+		return logFile;
+	}
+	
+	
+	/**
+	 * Return the summary file (usually known only for already-finished jobs)
+	 * 
+	 * @return the summary file, or null if not known
+	 */
+	public File getSummaryFile() {
+		if (logFile == null) return null;
+		
+		String logFilePrefix = dbEngine;
+		if (dbInstance != null) {
+			logFilePrefix += "_" + dbInstance;
+		}
+		String logFilePrefixExt = logFilePrefix + "_";
+
+		String name = logFile.getName();
+		if (!name.startsWith(logFilePrefixExt)) {
+			throw new IllegalStateException("The log file must be prefixed by the database engine and the instance name");
+		}
+		name = name.substring(0, logFilePrefix.length()) + "-summary" + name.substring(logFilePrefix.length());
+		
+		File f = new File(logFile.getParentFile(), name);
+		if (!f.exists()) f = null;
+		if (f != null && !f.isFile()) f = null;
+		
+		return f;
 	}
 	
 	

@@ -23,6 +23,7 @@ public class OperationLoadGraphML extends Operation implements GraphMLReaderProg
 	private String graphmlPath = null;
 	private String lastProgressString = "";
 	private long lastProgressTime = 0;
+	private boolean ingestAsUndirected;
 	
 
 	// args
@@ -30,6 +31,7 @@ public class OperationLoadGraphML extends Operation implements GraphMLReaderProg
 	@Override
 	protected void onInitialize(Object[] args) {
 		this.graphmlPath = (String) args[0];
+		this.ingestAsUndirected = ((Boolean) args[1]).booleanValue();
 	}
 
 	@Override
@@ -38,7 +40,8 @@ public class OperationLoadGraphML extends Operation implements GraphMLReaderProg
 		try {
 			System.out.print(": ");
 			GraphMLReader.inputGraph(graph, new FileInputStream(
-					graphmlPath), GlobalConfig.transactionBufferSize, null, null, null, this);
+					graphmlPath), GlobalConfig.transactionBufferSize,
+					null, null, null, this, ingestAsUndirected);
 			Cache.getInstance(getGraph()).invalidate();
 			setResult("DONE");
 		} catch (Exception e) {
