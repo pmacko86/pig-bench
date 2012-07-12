@@ -45,6 +45,19 @@ public class Job {
 	
 	/**
 	 * Create an instance of a Job
+	 */
+	protected Job() {
+		arguments = null;
+		id = -1;
+		status = -1;
+		executionCount = 0;
+		displayPrefix = null;
+		logFile = null;
+	}
+	
+	
+	/**
+	 * Create an instance of a Job
 	 * 
 	 * @param request the HTTP request from which to create the job
 	 */
@@ -220,7 +233,7 @@ public class Job {
 		this.dbInstance = dbInstance;
 		
 		arguments = new ArrayList<String>();
-		id = JobList.getInstance().allocateJobId();
+		id = -1;
 		status = getSummaryFile() == null ? -1 : 0;
 		executionCount = 1;
 		
@@ -285,6 +298,25 @@ public class Job {
 			}
 			displayPrefix = "[" + d + "] ";
 		}
+	}
+	
+	
+	/**
+	 * Create a new, runnable duplicate of the job
+	 * 
+	 * @return the new job
+	 */
+	public Job duplicate() {
+		
+		Job j = new Job();
+		
+		j.arguments = new ArrayList<String>(arguments);
+		j.dbEngine = dbEngine;
+		j.dbInstance = dbInstance;
+		j.displayPrefix = displayPrefix;
+		j.logFile = logFile;
+		
+		return j;
 	}
 
 

@@ -177,6 +177,7 @@
 					<button type="submit" class="footer" name="action" value="remove_all">Remove All</button>
 					<button type="submit" class="footer" name="action" value="remove_finished">Remove Completed</button>
 					<button type="submit" class="footer" name="action" value="move_to_bottom">Move to the Bottom</button>
+					<button type="submit" class="footer" name="action" value="duplicate">Duplicate</button>
 					<div class="clear"></div>
 				</div>
 			</div> 

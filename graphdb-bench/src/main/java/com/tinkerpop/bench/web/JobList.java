@@ -73,7 +73,7 @@ public class JobList {
 	 * 
 	 * @return the new ID
 	 */
-	synchronized int allocateJobId() {
+	protected synchronized int allocateJobId() {
 		return ++lastId;
 	}
 	

@@ -98,6 +98,15 @@ public class JobListControl extends HttpServlet {
 		}
 		
 		
+		// Action: Duplicate
+		
+		if ("duplicate".equals(action)) {
+			for (Job j : jobs) {
+				jobList.addJob(j.duplicate());
+			}
+		}
+		
+		
 		// Finish
 		
 		response.sendRedirect("/index.jsp");
