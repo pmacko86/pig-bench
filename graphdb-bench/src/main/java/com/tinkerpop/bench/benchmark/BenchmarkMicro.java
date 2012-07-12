@@ -31,6 +31,7 @@ import com.tinkerpop.bench.operationFactory.factories.OperationFactoryRandomVert
 import com.tinkerpop.bench.operationFactory.factories.OperationFactoryRandomVertexPair;
 import com.tinkerpop.blueprints.pgm.Graph;
 import com.tinkerpop.blueprints.pgm.impls.hollow.HollowGraph;
+import com.tinkerpop.blueprints.pgm.impls.sql.SqlGraph;
 
 import edu.harvard.pass.cpl.CPL;
 import edu.harvard.pass.cpl.CPLException;
@@ -84,13 +85,14 @@ public class BenchmarkMicro extends Benchmark {
 		for (String k : DatabaseEngine.ENGINES.keySet()) {
 			DatabaseEngine e = DatabaseEngine.ENGINES.get(k);
 			String l = e.getShortName();
-			if (e.hasOptionalArgument()) l += " [ADDR]";
+			if (e.hasOptionalArgument()) l += " [DB_NAME]";
 			System.err.printf("  --%-20s  %s\n", l, e.getDescription());
 		}
 		System.err.println("");
 		System.err.println("Database engine options:");
 		System.err.println("  --database, -D NAME     Select a specific graph or a database instance");
-		System.err.println("  --warmup-sql [ADDR]     Specify the SQL database for warmup");
+		System.err.println("  --sql-addr [ADDR]       Specify the SQL connection string (w/o DB name)");
+		System.err.println("  --warmup-sql [DB_NAME]  Specify the SQL database name for warmup");
 		System.err.println("");
 		System.err.println("Options to select a workload (select multiple):");
 		for (String k : Workload.WORKLOADS.keySet()) {
@@ -162,6 +164,7 @@ public class BenchmarkMicro extends Benchmark {
 		parser.accepts("no-provenance");
 		parser.accepts("no-warmup");
 		parser.accepts("single-db-connection");
+		parser.accepts("sql-addr").withRequiredArg().ofType(Integer.class);
 		parser.accepts("threads").withRequiredArg().ofType(Integer.class);
 		parser.accepts("tx-buffer").withRequiredArg().ofType(Integer.class);
 		parser.accepts("warmup-sql").withRequiredArg().ofType(String.class);
@@ -239,7 +242,9 @@ public class BenchmarkMicro extends Benchmark {
 		}
 		
 		
-		// Handle the options
+		/*
+		 * Handle generic options
+		 */
 		
 		if (options.has("no-color")) {
 			ConsoleUtils.useColor = false;
@@ -379,7 +384,21 @@ public class BenchmarkMicro extends Benchmark {
 		
 		
 		/*
-		 * Database-specific arguments
+		 * Get the name of the database instance
+		 */
+		
+		String dbInstanceName = null;
+		if (options.has("D") || options.has("database")) {
+			dbInstanceName = options.valueOf(options.has("D") ? "D" : "database").toString();
+			if (!Pattern.matches("^[a-z][a-z0-9_]*$", dbInstanceName)) {
+	    		throw new RuntimeException("Invalid database name (can contain only lower-case letters, "
+	    				+ "numbers, and _, and has to start with a letter)");
+	    	}
+		}
+		
+		
+		/*
+		 * Arguments specific to the various database engines
 		 */
 		
 		String dbShortName = null;
@@ -406,37 +425,83 @@ public class BenchmarkMicro extends Benchmark {
 		boolean withGraphPath = true;
 		if (dbClass == HollowGraph.class) withGraphPath = false;
 		
-		String sqlDbPath = null;
-		String sqlDbPathWarmup = null;
+		
+		// SQL
+		
+		String sqlDbAddr = null;
+		String sqlDbNamePrefix = null;
+		String sqlDbNamePrefixWarmup = null;
+		String sqlDbName = null;
+		String sqlDbNameWarmup = null;
+		
 		if (options.has("sql")) {
+			
+			// Get the connection address
+			
+			if (options.has("sql-addr")) {
+				sqlDbAddr = options.valueOf("sql-addr").toString();
+			}
+			else {
+				String sqlDbAddr_property = Bench.getProperty(Bench.DB_SQL_ADDR);
+				if (sqlDbAddr_property != null) {
+					sqlDbAddr = sqlDbAddr_property;
+				}
+				if (sqlDbAddr == null) {
+					ConsoleUtils.error("The SQL database address is not specified.");
+					System.exit(1);
+					return;
+				}
+			}
+					
+			
+			// Get the table name prefixes
+			
 			if (options.hasArgument("sql")) {
-				sqlDbPath = options.valueOf("sql").toString();
+				sqlDbNamePrefix = options.valueOf("sql").toString();
 			}
 			else {
-				String sqlDbPath_property = Bench.getProperty(Bench.DB_SQL_PATH);
-				if (sqlDbPath_property != null) {
-					sqlDbPath = sqlDbPath_property;
+				String sqlDbNamePrefix_property = Bench.getProperty(Bench.DB_SQL_DB_NAME_PREFIX);
+				if (sqlDbNamePrefix_property != null) {
+					sqlDbNamePrefix = sqlDbNamePrefix_property;
 				}
 				else {
-					ConsoleUtils.error("The SQL database path is not specified.");
+					ConsoleUtils.error("The SQL database name is not specified.");
 					System.exit(1);
 					return;
 				}
 			}
+			
 			if (options.has("warmup-sql")) {
-				sqlDbPathWarmup = options.valueOf("warmup-sql").toString();
+				sqlDbNamePrefixWarmup = options.valueOf("warmup-sql").toString();
 			}
 			else {
-				String sqlDbPathWarmup_property = Bench.getProperty(Bench.DB_SQL_PATH_WARMUP);
-				if (sqlDbPathWarmup_property != null) {
-					sqlDbPathWarmup = sqlDbPathWarmup_property;
+				String sqlDbNamePrefixWarmup_property = Bench.getProperty(Bench.DB_SQL_DB_NAME_PREFIX_WARMUP);
+				if (sqlDbNamePrefixWarmup_property != null) {
+					sqlDbNamePrefixWarmup = sqlDbNamePrefixWarmup_property;
 				}
 				else {
-					ConsoleUtils.error("The SQL warmup database path is not specified.");
+					ConsoleUtils.error("The SQL warmup database name is not specified.");
 					System.exit(1);
 					return;
 				}
 			}
+			
+			
+			// Compose the database names
+			
+			sqlDbName = sqlDbNamePrefix;
+			sqlDbNameWarmup = sqlDbNamePrefixWarmup;
+			
+			if (dbInstanceName != null) {
+				sqlDbName += "__" + dbInstanceName;
+				sqlDbNameWarmup += "__" + dbInstanceName;
+			}
+			
+			
+			// Create the databases if they don't already exist
+			
+			SqlGraph.createDatabase(sqlDbAddr, sqlDbName);
+			if (warmup) SqlGraph.createDatabase(sqlDbAddr, sqlDbNameWarmup);
 		}
 		
 		
@@ -473,20 +538,6 @@ public class BenchmarkMicro extends Benchmark {
 				System.exit(1);
 				return;
 			}
-		}
-		
-		
-		/*
-		 * Get the name of the database
-		 */
-		
-		String dbName = null;
-		if (options.has("D") || options.has("database")) {
-			dbName = options.valueOf(options.has("D") ? "D" : "database").toString();
-			if (!Pattern.matches("^[a-z][a-z0-9_]*$", dbName)) {
-	    		throw new RuntimeException("Invalid database name (can contain only lower-case letters, "
-	    				+ "numbers, and _, and has to start with a letter)");
-	    	}
 		}
 		
 		
@@ -604,7 +655,7 @@ public class BenchmarkMicro extends Benchmark {
 		 */
 		
 		String dbPrefix = dirResults + dbShortName;
-		if (dbName != null && !dbName.equals("")) dbPrefix += "_" + dbName;
+		if (dbInstanceName != null && !dbInstanceName.equals("")) dbPrefix += "_" + dbInstanceName;
 		dbPrefix += "/";
 		
 		String warmupDbDir = null;
@@ -618,12 +669,8 @@ public class BenchmarkMicro extends Benchmark {
 		String dbPath = null;
 		if (withGraphPath) {
 			if (options.has("sql")) {
-				warmupDbPath = sqlDbPathWarmup;
-				dbPath = sqlDbPath;
-				if (dbName != null && !dbName.equals("")) {
-					warmupDbPath += "|" + dbName;
-					dbPath += "|" + dbName;
-				}
+				warmupDbPath = sqlDbAddr + "|" + sqlDbNameWarmup;
+				dbPath = sqlDbAddr + "|" + sqlDbName;
 			}
 			else {
 				warmupDbPath = warmupDbDir + (options.has("dex") ? "/graph.dex" : "");
@@ -632,7 +679,7 @@ public class BenchmarkMicro extends Benchmark {
 		}
 		
 		String logPrefix = dbPrefix + dbShortName;
-		if (dbName != null && !dbName.equals("")) logPrefix += "_" + dbName;
+		if (dbInstanceName != null && !dbInstanceName.equals("")) logPrefix += "_" + dbInstanceName;
 		String warmupLogFile = logPrefix + "-warmup" + argString + ".csv";
 		String logFile = logPrefix + argString + ".csv";
 		String summaryLogFile = logPrefix + "-summary" + argString + ".csv";
@@ -696,7 +743,7 @@ public class BenchmarkMicro extends Benchmark {
 		ConsoleUtils.sectionHeader("Tinkubator Graph Database Benchmark");
 		
 		System.out.println("Database    : " + dbShortName);
-		System.out.println("Instance    : " + (dbName != null && !dbName.equals("") ? dbName : "<default>"));
+		System.out.println("Instance    : " + (dbInstanceName != null && !dbInstanceName.equals("") ? dbInstanceName : "<default>"));
 		System.out.println("Directory   : " + dirResults);
 		System.out.println("Log File    : " + logFile);
 		System.out.println("Summary Log : " + summaryLogFile);
