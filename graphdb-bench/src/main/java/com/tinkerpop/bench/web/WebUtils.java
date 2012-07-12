@@ -143,6 +143,90 @@ public class WebUtils {
 
 		return dir;
 	}
+
+
+	/**
+	 * Get the results directory for a specific database name and an instance name
+	 *
+	 * @param dbEngine the database engine name
+	 * @param dbInstance the database instance name
+	 * @return the directory
+	 */
+	public static File getResultsDirectory(String dbEngine, String dbInstance) {
+
+		File resultsDir = getResultsDirectory();
+		
+		String subdir = dbEngine;
+		if (dbInstance != null && !"".equals(dbInstance)) {
+			asssertDatabaseInstanceNameValidity(dbInstance);
+			subdir += "_" + dbInstance;
+		}
+		
+		File dir = new File(resultsDir, subdir);
+		if (!dir.exists())
+			throw new RuntimeException("The specific results directory does not exist");
+		if (!dir.isDirectory())
+			throw new RuntimeException("The specific results directory is not really a directory");
+
+		return dir;
+	}
+
+	
+	/**
+	 * Get the file name prefix for log files
+	 *
+	 * @param dbEngine the database engine name
+	 * @param dbInstance the database instance name
+	 * @return the directory
+	 */
+	public static String getLogFilePrefix(String dbEngine, String dbInstance) {
+
+		String subdir = dbEngine;
+		if (dbInstance != null && !"".equals(dbInstance)) {
+			asssertDatabaseInstanceNameValidity(dbInstance);
+			subdir += "_" + dbInstance;
+		}
+
+		return subdir + "_";
+	}
+
+	
+	/**
+	 * Get the file name prefix for log files
+	 *
+	 * @param dbEngine the database engine name
+	 * @param dbInstance the database instance name
+	 * @return the directory
+	 */
+	public static String getWarmupLogFilePrefix(String dbEngine, String dbInstance) {
+
+		String subdir = dbEngine;
+		if (dbInstance != null && !"".equals(dbInstance)) {
+			asssertDatabaseInstanceNameValidity(dbInstance);
+			subdir += "_" + dbInstance;
+		}
+
+		return subdir + "-warmup_";
+	}
+
+	
+	/**
+	 * Get the file name prefix for log files
+	 *
+	 * @param dbEngine the database engine name
+	 * @param dbInstance the database instance name
+	 * @return the directory
+	 */
+	public static String getSummaryFilePrefix(String dbEngine, String dbInstance) {
+
+		String subdir = dbEngine;
+		if (dbInstance != null && !"".equals(dbInstance)) {
+			asssertDatabaseInstanceNameValidity(dbInstance);
+			subdir += "_" + dbInstance;
+		}
+
+		return subdir + "-summary_";
+	}
 	
 	
 	/**
@@ -239,27 +323,23 @@ public class WebUtils {
 	public static Collection<Job> getFinishedJobs(String dbEngine, String dbInstance) {
 		
 		LinkedList<Job> r = new LinkedList<Job>();
-		File resultsDir = getResultsDirectory();
-		
-		String subdir = dbEngine;
-		if (dbInstance != null && !"".equals(dbInstance)) {
-			asssertDatabaseInstanceNameValidity(dbInstance);
-			subdir += "_" + dbInstance;
-		}
-		String logFilePrefix = subdir + "_";
-		
-		File dir = new File(resultsDir, subdir);
-		if (!dir.exists())
-			throw new RuntimeException("The specific results directory does not exist");
-		if (!dir.isDirectory())
-			throw new RuntimeException("The specific results directory is not really a directory");
-		
+		File dir = getResultsDirectory(dbEngine, dbInstance);
+		String logFilePrefix = getLogFilePrefix(dbEngine, dbInstance);
+		String logFilePrefixWarmup = getWarmupLogFilePrefix(dbEngine, dbInstance);
+				
 		for (File f : dir.listFiles()) {
 			if (f.isDirectory()) continue;
 			String name = f.getName();
 			
-			if (name.startsWith(logFilePrefix) && name.endsWith(".csv")) {
-				r.add(new Job(f, dbEngine, dbInstance));
+			if (name.endsWith(".csv")) {
+				if (name.startsWith(logFilePrefix)) {
+					r.add(new Job(f, dbEngine, dbInstance));
+				}
+				if (name.startsWith(logFilePrefixWarmup)) {
+					File log = new File(dir, name.substring(0, logFilePrefix.length() - 1)
+							+ "_" + name.substring(logFilePrefixWarmup.length()));
+					if (!log.exists()) r.add(new Job(log, dbEngine, dbInstance));
+				}
 			}
 		}
 		

@@ -44,6 +44,66 @@ h3 {
 	margin-bottom:16px;
 }
 
+.simple_status_warning {
+	font-style: italic;
+}
+
+.basic_status_running {
+	margin-left:10px;
+	height:31px;
+	width:auto;
+	line-height:31px;
+	font-size:11px;
+	vertical-align: middle;
+	display: block;
+	padding-left: 32px;
+	/* Icon: http://www.frumster.com/images/loading-animated-spokes.gif */
+	background: url(icons/loading_32.gif) no-repeat left center;
+	background-size:24px 24px;
+}
+
+.basic_status_error {
+	margin-left:10px;
+	height:31px;
+	width:auto;
+	line-height:31px;
+	font-size:11px;
+	vertical-align: middle;
+	display: block;
+	padding-left: 32px;
+	background: url(icons/error_32.png) no-repeat left center;
+	background-size:24px 24px;
+}
+
+button.gray_button {
+	margin-top:0px;
+	margin-left:0px;
+	width:150px;
+	height:31px;
+	text-align:center;
+	line-height:31px;
+	background:#666666;
+	text-align:center;
+	line-height:31px;
+	color:#FFFFFF;
+	font-size:11px;
+	font-weight:bold;
+}
+
+button {
+	margin-top:0px;
+	margin-left:0px;
+	width:150px;
+	height:31px;
+	text-align:center;
+	line-height:31px;
+	color:black;
+	font-size:11px;
+	font-weight:bold;
+	background:#aacfe4;
+	border: solid 1px #aacfe4;
+}
+
 
 /* -------------------------------------------------------- *
  *  Header                                                  *

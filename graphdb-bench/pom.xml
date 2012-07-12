@@ -37,6 +37,11 @@
 			<artifactId>cpl</artifactId>
 			<version>1.0</version>
 		</dependency>
+		<dependency>
+		   <groupId>commons-lang</groupId>
+		   <artifactId>commons-lang</artifactId>
+		   <version>2.4</version>
+		</dependency>
 		<!-- TINKERPOP GENERAL -->
 		<dependency>
 			<groupId>com.tinkerpop.blueprints</groupId>

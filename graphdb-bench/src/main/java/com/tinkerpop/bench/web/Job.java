@@ -12,6 +12,7 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 
 import com.tinkerpop.bench.Bench;
+import com.tinkerpop.bench.DatabaseEngine;
 import com.tinkerpop.bench.Workload;
 import com.tinkerpop.bench.benchmark.BenchmarkMicro;
 
@@ -105,6 +106,12 @@ public class Job {
 		if (dbInstance != null) {
 			if (dbInstance.equals("")) dbInstance = null;
 		}
+		if (DatabaseEngine.ENGINES.containsKey(dbEngine)) {
+			throw new IllegalArgumentException("Unknown database engine: " + dbEngine);
+		}
+		if (dbInstance != null) {
+			WebUtils.asssertDatabaseInstanceNameValidity(dbInstance);
+		}
 		
 		String s_annotation = WebUtils.getStringParameter(request, "annotation");
 		String s_txBuffer = WebUtils.getStringParameter(request, "tx_buffer");
@@ -134,10 +141,6 @@ public class Job {
 		
 		
 		// Sanitize the input
-		
-		if (dbInstance != null) {
-			WebUtils.asssertDatabaseInstanceNameValidity(dbInstance);
-		}
 
 		
 		// Build the list of command-line arguments
@@ -211,14 +214,14 @@ public class Job {
 			if (dbInstance.equals("")) dbInstance = null;
 		}
 		
-		arguments = new ArrayList<String>();
-		id = JobList.getInstance().allocateJobId();
-		status = -1;	// Still unknown at this point
-		executionCount = 1;
-		logFile = file;
-
+		this.logFile = file;
 		this.dbEngine = dbEngine;
 		this.dbInstance = dbInstance;
+		
+		arguments = new ArrayList<String>();
+		id = JobList.getInstance().allocateJobId();
+		status = getSummaryFile() == null ? -1 : 0;
+		executionCount = 1;
 		
 		
 		// Reconstruct the command-line arguments from the file name
@@ -462,9 +465,22 @@ public class Job {
 	/**
 	 * Return the log file (usually known only for already-finished jobs)
 	 * 
-	 * @return the log file, or null if not known
+	 * @return the log file, or null if not known or if it does not exist
 	 */
 	public File getLogFile() {
+		if (!logFile.exists()) return null;
+		return logFile;
+	}
+	
+	
+	/**
+	 * Return the log file object, optionally even if the file does not exist (usually known only for already-finished jobs)
+	 * 
+	 * @param checkExistence true to check the existence of the file, false to return the file even if it does not exist
+	 * @return the log file, or null if not known
+	 */
+	public File getLogFile(boolean checkExistence) {
+		if (checkExistence && !logFile.exists()) return null;
 		return logFile;
 	}
 	
@@ -472,7 +488,7 @@ public class Job {
 	/**
 	 * Return the summary file (usually known only for already-finished jobs)
 	 * 
-	 * @return the summary file, or null if not known
+	 * @return the summary file, or null if not known or if it does not exist
 	 */
 	public File getSummaryFile() {
 		if (logFile == null) return null;
@@ -488,6 +504,34 @@ public class Job {
 			throw new IllegalStateException("The log file must be prefixed by the database engine and the instance name");
 		}
 		name = name.substring(0, logFilePrefix.length()) + "-summary" + name.substring(logFilePrefix.length());
+		
+		File f = new File(logFile.getParentFile(), name);
+		if (!f.exists()) f = null;
+		if (f != null && !f.isFile()) f = null;
+		
+		return f;
+	}
+	
+	
+	/**
+	 * Return the warmup log file (usually known only for already-finished jobs)
+	 * 
+	 * @return the warmup log file, or null if not known or if it does not exist
+	 */
+	public File getWarmupLogFile() {
+		if (logFile == null) return null;
+		
+		String logFilePrefix = dbEngine;
+		if (dbInstance != null) {
+			logFilePrefix += "_" + dbInstance;
+		}
+		String logFilePrefixExt = logFilePrefix + "_";
+
+		String name = logFile.getName();
+		if (!name.startsWith(logFilePrefixExt)) {
+			throw new IllegalStateException("The log file must be prefixed by the database engine and the instance name");
+		}
+		name = name.substring(0, logFilePrefix.length()) + "-warmup" + name.substring(logFilePrefix.length());
 		
 		File f = new File(logFile.getParentFile(), name);
 		if (!f.exists()) f = null;

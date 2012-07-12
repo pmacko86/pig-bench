@@ -9,6 +9,7 @@
 <%@ page import="com.tinkerpop.bench.web.*"%>
 <%@ page import="java.io.*"%>
 <%@ page import="java.util.*"%>
+<%@ page import="org.apache.commons.lang.StringEscapeUtils"%>
 
 <%
 	String jsp_title = "View Results";
@@ -61,6 +62,30 @@
 		{			
 			job_radio_set_class_for_all();
 			document.getElementById('form').submit();
+		}
+		
+		/*
+		 * Replace the parent of the given element by the contents of the log file
+		 */
+		function replace_by_log_file(element, db_name, db_instance, log_file)
+		{
+			var node = element.parentNode;
+			var http_request = new XMLHttpRequest();
+			http_request.open("GET", "/ShowLogFile?database_name=" + db_name
+				+ "&database_instance=" + db_instance + "&log_file=" + escape(log_file)
+				+ "&format=html", true);
+			http_request.onreadystatechange = function () {
+				if (http_request.readyState == 1) {
+					node.innerHTML = '<p class="basic_status_running">Waiting...</p>';
+				}
+				if (http_request.readyState == 4 && http_request.status == 200) {
+					node.innerHTML = http_request.responseText;
+				}
+				if (http_request.readyState == 4 && http_request.status != 200) {
+					node.innerHTML = '<p class="basic_status_error">Error</p>';
+				}
+			};
+			http_request.send(null);
 		}
 		
 		/*
@@ -145,14 +170,9 @@
 						<%
 							for (String jobString : jobMap.keySet()) {
 								Job job = jobMap.get(jobString);
-								String fileName = job.getLogFile().getName();
+								String fileName = job.getLogFile(false).getName();
 								String extraTags = "";
-								
-								// A quick sanity check
-								if (fileName.indexOf("\"") >= 0) {
-									%> <!-- Oops. --> <%
-									continue;
-								}
+								String escapedFileName = StringEscapeUtils.escapeJavaScript(fileName);
 								
 								if (selectedJobLogFiles.contains(fileName)) {
 									selectedJobs.put(fileName, job);
@@ -160,8 +180,8 @@
 								}
 								
 								String c = "job_neutral";
-								/*if (job.isRunning()) {
-									c = "job_running";
+								if (job.isRunning()) {
+									//TODO c = "job_running";
 								}
 								else if (job.getExecutionCount() > 0) {
 									if (job.getLastStatus() == 0) {
@@ -170,18 +190,18 @@
 									else {
 										c = "job_failed";
 									}
-								}*/
+								}
 								%>
 									<div class="checkbox_outer">
 										<div class="checkbox <%= c %>">
 											<div class="checkbox_inner">
 												<input class="checkbox" type="radio" name="job_file"
-												       value="<%= fileName %>" <%= extraTags %>
+												       value="<%= escapedFileName %>" <%= extraTags %>
 												       onchange="job_radio_on_change(this)"/>
 											</div>
 											<label class="checkbox <%= c %>">
 												<p class="checkbox <%= c %>"
-												   onclick="check_radio('<%= fileName %>')">
+												   onclick="check_radio('<%= escapedFileName %>')">
 													<%= jobString %>
 												</p>
 											</label>
@@ -220,7 +240,9 @@
 				<%
 					File f = job.getSummaryFile();
 					if (f == null) {
-						// TODO
+						%>
+							<p class="simple_status_warning">Not found.</p>
+						<%
 					}
 					else {
 						%>
@@ -280,43 +302,46 @@
 				<%
 					f = job.getLogFile();
 					if (f == null) {
-						// TODO
+						%>
+							<p class="simple_status_warning">Not found.</p>
+						<%
 					}
 					else {
+						String efn = StringEscapeUtils.escapeJavaScript(f.getName());
+						String dbe = job.getDbEngine();
+						String dbi = job.getDbInstance();
+						if (dbi == null) dbi = "";
 						%>
-							<table class="basic_table">
-								<tr>
-									<th>ID</th>
-									<th>Name</th>
-									<th>Arguments</th>
-									<th>Result</th>
-									<th class="numeric">Time (ms)</th>
-									<th class="numeric">Memory (MB)</th>
-								</tr>
+							<div>
+								<button onclick="replace_by_log_file(this, '<%= dbe %>', '<%= dbi %>', '<%= efn %>')">
+									Show...
+								</button>
+							</div>
 						<%
-						OperationLogReader reader = new OperationLogReader(f);
-						
-						for (OperationLogEntry e : reader) {
-							String argumentsStr = "";
-							String[] a = e.getArgs();
-							for (int i = 0; i < a.length; i++) {
-								if (i > 0) argumentsStr += ", ";
-								argumentsStr += a[i];
-							}
-							%>
-								<tr>
-									<td><%= e.getOpId() %></td>
-									<td><%= e.getName() %></td>
-									<td><%= argumentsStr %></td>
-									<td><%= e.getResult() %></td>
-									<td class="numeric"><%= String.format("%.3f", e.getTime() / 1000000.0) %></td>
-									<td class="numeric"><%= String.format("%.3f", e.getMemory() / 1000000.0) %></td>
-								</tr>
-							<%
-							
-						}
+					}
+				%>
+				
+				
+				<h3>Warmup Log File</h3>
+								
+				<%
+					f = job.getWarmupLogFile();
+					if (f == null) {
 						%>
-							</table>
+							<p class="simple_status_warning">Not found.</p>
+						<%
+					}
+					else {
+						String efn = StringEscapeUtils.escapeJavaScript(f.getName());
+						String dbe = job.getDbEngine();
+						String dbi = job.getDbInstance();
+						if (dbi == null) dbi = "";
+						%>
+							<div>
+								<button onclick="replace_by_log_file(this, '<%= dbe %>', '<%= dbi %>', '<%= efn %>')">
+									Show...
+								</button>
+							</div>
 						<%
 					}
 				%>
