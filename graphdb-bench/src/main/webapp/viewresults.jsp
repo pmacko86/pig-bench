@@ -1,7 +1,8 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <%@ page import="com.tinkerpop.bench.Bench"%>
-<%@ page import="com.tinkerpop.bench.Workload"%>
 <%@ page import="com.tinkerpop.bench.DatabaseEngine"%>
+<%@ page import="com.tinkerpop.bench.LogUtils"%>
+<%@ page import="com.tinkerpop.bench.Workload"%>
 <%@ page import="com.tinkerpop.bench.benchmark.BenchmarkMicro"%>
 <%@ page import="com.tinkerpop.bench.log.OperationLogEntry"%>
 <%@ page import="com.tinkerpop.bench.log.OperationLogReader"%>
@@ -9,6 +10,7 @@
 <%@ page import="com.tinkerpop.bench.web.*"%>
 <%@ page import="java.io.*"%>
 <%@ page import="java.util.*"%>
+<%@ page import="au.com.bytecode.opencsv.CSVReader"%>
 <%@ page import="org.apache.commons.lang.StringEscapeUtils"%>
 
 <%
@@ -248,14 +250,13 @@
 						%>
 							<table class="basic_table">
 						<%
-						BufferedReader b = new BufferedReader(new FileReader(f));
-						String line;
+						CSVReader reader = new CSVReader(new FileReader(f), LogUtils.LOG_DELIMITER.charAt(0));
+						String[] tokens;
 						boolean firstLine = true;
-						while ((line = b.readLine()) != null)   {
+						while ((tokens = reader.readNext()) != null)   {
 							%>
 								<tr>
 							<%
-							String[] tokens = line.split(";");
 							boolean first = true;
 							for (String t : tokens) {
 								String extraTags = "";
@@ -275,8 +276,10 @@
 								}
 								else {
 									if (!first) {
-										double d = Double.parseDouble(t);
-										t = String.format("%.3f", d / 1000000.0);
+										if (!"".equals(t)) {
+											double d = Double.parseDouble(t);
+											t = String.format("%.3f", d / 1000000.0);
+										}
 									}
 									%>
 										<td <%= extraTags %>><%= t %></td>
@@ -289,7 +292,7 @@
 								</tr>
 							<%
 						}
-						b.close();
+						reader.close();
 						%>
 							</table>
 						<%

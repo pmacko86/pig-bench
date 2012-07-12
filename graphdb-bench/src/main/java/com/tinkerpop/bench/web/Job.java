@@ -110,7 +110,7 @@ public class Job {
 		if (dbInstance != null) {
 			if (dbInstance.equals("")) dbInstance = null;
 		}
-		if (DatabaseEngine.ENGINES.containsKey(dbEngine)) {
+		if (!DatabaseEngine.ENGINES.containsKey(dbEngine)) {
 			throw new IllegalArgumentException("Unknown database engine: " + dbEngine);
 		}
 		if (dbInstance != null) {

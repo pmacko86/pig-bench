@@ -1,6 +1,5 @@
 package com.tinkerpop.bench.log;
 
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -11,6 +10,8 @@ import java.util.Map;
 import java.util.Vector;
 import java.util.Map.Entry;
 
+import au.com.bytecode.opencsv.CSVWriter;
+
 import com.tinkerpop.bench.ConsoleUtils;
 import com.tinkerpop.bench.LogUtils;
 
@@ -18,7 +19,7 @@ import edu.harvard.pass.cpl.CPL;
 import edu.harvard.pass.cpl.CPLFile;
 
 public class SummaryLogWriter {
-	private static final String logDelim = LogUtils.LOG_DELIMITER;
+	private final char logDelim = LogUtils.LOG_DELIMITER.charAt(0);
 	
 	/// The summary
 	LinkedHashMap<String, ArrayList<GraphRunTimes>> summarizedFiles;
@@ -228,62 +229,65 @@ public class SummaryLogWriter {
 	private void writeSummaryFile(String summaryFilePath,
 			LinkedHashMap<String, ArrayList<GraphRunTimes>> summarizedResults)
 			throws IOException {
-
-		File summaryFile = new File(summaryFilePath);
-		(new File(summaryFile.getParent())).mkdirs();
-
-		BufferedWriter bufferedLogWriter = new BufferedWriter(new FileWriter(
-				new File(summaryFilePath)));
-
-		// write .csv column headers
-		bufferedLogWriter.write("operation");
-		bufferedLogWriter.write(logDelim);
-
-		for (Entry<String, ArrayList<GraphRunTimes>> opGraphRunTimes : summarizedResults
-				.entrySet()) {
-			Collections.sort(opGraphRunTimes.getValue());
-			for (GraphRunTimes graphRunTimes : opGraphRunTimes.getValue()) {
-				bufferedLogWriter.write(graphRunTimes.getGraphName() + "-mean");
-				bufferedLogWriter.write(logDelim);
-				bufferedLogWriter
-						.write(graphRunTimes.getGraphName() + "-stdev");
-				bufferedLogWriter.write(logDelim);
-				bufferedLogWriter.write(graphRunTimes.getGraphName() + "-min");
-				bufferedLogWriter.write(logDelim);
-				bufferedLogWriter.write(graphRunTimes.getGraphName() + "-max");
-				bufferedLogWriter.write(logDelim);
+		
+		int numDatasets = 0;
+		for (Entry<String, ArrayList<GraphRunTimes>> opGraphRunTimes : summarizedResults.entrySet()) {
+			for (@SuppressWarnings("unused") GraphRunTimes graphRunTimes : opGraphRunTimes.getValue()) {
+				numDatasets++;
 			}
 			break;
 		}
 
-		bufferedLogWriter.newLine();
+		File summaryFile = new File(summaryFilePath);
+		(new File(summaryFile.getParent())).mkdirs();
 
-		// write .csv column data
-		for (Entry<String, ArrayList<GraphRunTimes>> opGraphRunTimes : summarizedResults
-				.entrySet()) {
-			bufferedLogWriter.write(opGraphRunTimes.getKey());
-			bufferedLogWriter.write(logDelim);
+		CSVWriter writer = new CSVWriter(new FileWriter(summaryFilePath), logDelim);
+		String[] buffer = new String[1 + 4 * numDatasets];
+
+		
+		// Write .csv column headers
+		
+		int index = 0;
+		buffer[index++] = "operation";
+
+		for (Entry<String, ArrayList<GraphRunTimes>> opGraphRunTimes : summarizedResults.entrySet()) {
+			Collections.sort(opGraphRunTimes.getValue());
+			for (GraphRunTimes graphRunTimes : opGraphRunTimes.getValue()) {
+				buffer[index++] = graphRunTimes.getGraphName() + "-mean";
+				buffer[index++] = graphRunTimes.getGraphName() + "-stdev";
+				buffer[index++] = graphRunTimes.getGraphName() + "-min";
+				buffer[index++] = graphRunTimes.getGraphName() + "-max";
+			}
+			break;
+		}
+
+		writer.writeNext(buffer);
+
+		
+		// Write .csv column data
+		
+		for (Entry<String, ArrayList<GraphRunTimes>> opGraphRunTimes : summarizedResults.entrySet()) {
+			
+			index = 0;
+			buffer[index++] = opGraphRunTimes.getKey();
 
 			Collections.sort(opGraphRunTimes.getValue());
 			for (GraphRunTimes graphRunTimes : opGraphRunTimes.getValue()) {
-				bufferedLogWriter.write(graphRunTimes.getMean().toString());
-				bufferedLogWriter.write(logDelim);
-				bufferedLogWriter.write(graphRunTimes.getStdev().toString());
-				bufferedLogWriter.write(logDelim);
-				bufferedLogWriter.write(graphRunTimes.getMin().toString());
-				bufferedLogWriter.write(logDelim);
-				bufferedLogWriter.write(graphRunTimes.getMax().toString());
-				bufferedLogWriter.write(logDelim);
+				buffer[index++] = graphRunTimes.getMean().toString();
+				buffer[index++] = graphRunTimes.getStdev().toString();
+				buffer[index++] = graphRunTimes.getMin().toString();
+				buffer[index++] = graphRunTimes.getMax().toString();
 			}
 
-			bufferedLogWriter.newLine();
+			writer.writeNext(buffer);
 		}
 
-		bufferedLogWriter.flush();
-		bufferedLogWriter.close();
+		writer.close();
 	}
 
+	
 	// Encapsulates the run times for one Graph & one Operation
+	
 	public class GraphRunTimes implements Comparable<GraphRunTimes> {
 		private String graphName = null;
 		private ArrayList<Long> runTimes = new ArrayList<Long>();

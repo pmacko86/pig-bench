@@ -1,12 +1,13 @@
 package com.tinkerpop.bench.log;
 
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import java.util.Scanner;
-import java.util.StringTokenizer;
 import java.util.Vector;
+
+import au.com.bytecode.opencsv.CSVReader;
 
 import com.tinkerpop.bench.LogUtils;
 
@@ -15,7 +16,7 @@ import com.tinkerpop.bench.LogUtils;
  */
 public class OperationLogReader implements Iterable<OperationLogEntry> {
 
-	private final String logDelim = LogUtils.LOG_DELIMITER;
+	private final char logDelim = LogUtils.LOG_DELIMITER.charAt(0);
 	private File logFile = null;
 
 	public OperationLogReader(File logFile) {
@@ -26,7 +27,8 @@ public class OperationLogReader implements Iterable<OperationLogEntry> {
 	public Iterator<OperationLogEntry> iterator() {
 		try {
 			return new OperationLogEntryIterator(logFile);
-		} catch (FileNotFoundException e) {
+		}
+		catch (IOException e) {
 			throw new RuntimeException(
 					"Could not create OperationLogEntryIterator: Cannot open '" + logFile + "'", e.getCause());
 		}
@@ -36,14 +38,14 @@ public class OperationLogReader implements Iterable<OperationLogEntry> {
 			Iterator<OperationLogEntry> {
 
 		private OperationLogEntry nextLogEntry = null;
-		private Scanner logScanner = null;
+		private CSVReader reader = null;
 
 		public OperationLogEntryIterator(File logFile)
-				throws FileNotFoundException {
-			this.logScanner = new Scanner(logFile);
+				throws IOException {
+			this.reader = new CSVReader(new FileReader(logFile), logDelim);
 
 			// skip first line: .csv headers
-			logScanner.nextLine();
+			reader.readNext();
 		}
 
 		@Override
@@ -51,7 +53,12 @@ public class OperationLogReader implements Iterable<OperationLogEntry> {
 			if (nextLogEntry != null)
 				return true;
 
-			return ((nextLogEntry = parseLogEntry()) != null);
+			try {
+				return ((nextLogEntry = parseLogEntry()) != null);
+			} 
+			catch (IOException e) {
+				throw new RuntimeException(e);
+			}
 		}
 
 		@Override
@@ -69,17 +76,18 @@ public class OperationLogReader implements Iterable<OperationLogEntry> {
 			throw new UnsupportedOperationException();
 		}
 
-		private OperationLogEntry parseLogEntry() {
-			if (logScanner.hasNextLine() == false) {
-				logScanner.close();
-				logScanner = null;
+		private OperationLogEntry parseLogEntry() throws IOException {
+			String[] tokens = reader.readNext();
+			if (tokens == null) {
+				reader.close();
+				reader = null;
 				return null;
 			}
 
-			return extractLogEntry(logScanner.nextLine());
+			return extractLogEntry(tokens);
 		}
 
-		private OperationLogEntry extractLogEntry(String currentLine) {
+		private OperationLogEntry extractLogEntry(String[] tokens) {
 			int opId = -1;
 			String name = null;
 			String type = null;
@@ -88,14 +96,8 @@ public class OperationLogReader implements Iterable<OperationLogEntry> {
 			String result = null;
 			long memory = -1;
 
-			int index = -1;
-			String token = null;
-			StringTokenizer tokenizer = new StringTokenizer(currentLine,
-					logDelim + "\t\n\r\f");
-
-			while (tokenizer.hasMoreTokens()) {
-				index++;
-				token = tokenizer.nextToken();
+			for (int index = 0; index < tokens.length; index++) {
+				String token = tokens[index];
 
 				switch (index) {
 				case 0:
@@ -111,7 +113,6 @@ public class OperationLogReader implements Iterable<OperationLogEntry> {
 					args = extractArgs(token);
 					break;
 				case 4:
-					//XXX dmargo: was Integer.parseInt(); looked like a bug to me.
 					time = Long.parseLong(token);
 					break;
 				case 5:
