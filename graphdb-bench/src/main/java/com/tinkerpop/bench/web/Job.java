@@ -23,6 +23,10 @@ import com.tinkerpop.bench.benchmark.BenchmarkMicro;
  * @author Peter Macko (pmacko@eecs.harvard.edu)
  */
 public class Job {
+	
+	// TODO Need to have an ability to link "finished" jobs loaded from a file to their counterparts in JobList,
+	// so that for example, the currently running job can be identified as such in viewresults.jsp (now it appears
+	// as a failed job)
 
 	int id;
 	private List<String> arguments;
@@ -138,9 +142,6 @@ public class Job {
 				if (workload.isUsingOpCount()) usesOpCount = true;
 			}
 		}
-		
-		
-		// Sanitize the input
 
 		
 		// Build the list of command-line arguments
