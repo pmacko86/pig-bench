@@ -3,15 +3,19 @@ package com.tinkerpop.bench.web;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Arrays;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import au.com.bytecode.opencsv.CSVWriter;
+
 import com.tinkerpop.bench.DatabaseEngine;
 import com.tinkerpop.bench.log.OperationLogEntry;
 import com.tinkerpop.bench.log.OperationLogReader;
+import com.tinkerpop.bench.log.OperationLogWriter;
 
 
 /**
@@ -123,6 +127,29 @@ public class ShowLogFile extends HttpServlet {
 			}
 			writer.println("</table>");
 		}
+		
+		else if ("csv".equals(format)) {
+	        response.setContentType("text/plain");
+	        response.setStatus(HttpServletResponse.SC_OK);
+	        
+	        CSVWriter w = new CSVWriter(writer);
+	        w.writeNext(OperationLogWriter.HEADERS);
+	        
+	        String[] buffer = new String[OperationLogWriter.HEADERS.length];
+			for (OperationLogEntry e : reader) {
+				
+				buffer[0] = Integer.toString(e.getOpId());
+				buffer[1] = e.getName();
+				buffer[2] = e.getType();
+				buffer[3] = Arrays.toString(e.getArgs());
+				buffer[4] = Long.toString(e.getTime());
+				buffer[5] = e.getResult().toString();
+				buffer[6] = Long.toString(e.getMemory());
+				
+				w.writeNext(buffer);
+			}
+		}
+		
 		else {
 	        response.setContentType("text/plain");
 	        response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);

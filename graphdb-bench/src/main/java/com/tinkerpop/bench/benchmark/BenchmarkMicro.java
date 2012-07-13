@@ -908,17 +908,17 @@ public class BenchmarkMicro extends Benchmark {
 			if (options.has("get-k")) {				
 				for (int k : kHops) {
 					operationFactories.add(new OperationFactoryRandomVertex(
-							OperationGetKFirstNeighbors.class, opCount, new Integer[] { k }));
+							OperationGetKFirstNeighbors.class, opCount, new Integer[] { k }, "" + k));
 				}
 				
 				for (int k : kHops) {				
 					operationFactories.add(new OperationFactoryRandomVertex(
-							OperationGetKRandomNeighbors.class, opCount, new Integer[] { k }));
+							OperationGetKRandomNeighbors.class, opCount, new Integer[] { k }, "" + k));
 				}
 				
 				for (int k : kHops) {
 					operationFactories.add(new OperationFactoryRandomVertex(
-							OperationGetKHopNeighbors.class, opCount, new Integer[] { k }));
+							OperationGetKHopNeighbors.class, opCount, new Integer[] { k }, "" + k));
 				}
 			}
 			

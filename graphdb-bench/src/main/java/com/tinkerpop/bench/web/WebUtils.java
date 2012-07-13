@@ -22,7 +22,7 @@ import com.tinkerpop.bench.util.Pair;
 public class WebUtils {
 
 	private static Pattern fileNamePattern
-		= Pattern.compile("[_a-zA-Z0-9\\-][_a-zA-Z0-9\\-\\.]*");
+		= Pattern.compile("[_a-zA-Z0-9\\-][_a-zA-Z0-9\\-\\.:=]*");
 
 	private static Pattern dbInstancePattern
 		= Pattern.compile("^[a-z][a-z0-9_]*$");

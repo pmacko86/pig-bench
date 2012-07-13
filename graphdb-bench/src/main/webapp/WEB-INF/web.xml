@@ -49,6 +49,13 @@ xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns
 		<servlet-class>com.tinkerpop.bench.web.ShowOutput</servlet-class>
 		<load-on-startup>1</load-on-startup>
 	 </servlet>
+	
+	<servlet>
+		<display-name>ShowSummaryLogFile</display-name>
+		<servlet-name>ShowSummaryLogFile</servlet-name>
+		<servlet-class>com.tinkerpop.bench.web.ShowSummaryLogFile</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	 </servlet>
 
 	<servlet-mapping>
 		<servlet-name>AddJob</servlet-name>
@@ -79,5 +86,10 @@ xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns
 		<servlet-name>ShowOutput</servlet-name>
 		<url-pattern>/ShowOutput</url-pattern>
 	</servlet-mapping>
- 
+  
+	<servlet-mapping>
+		<servlet-name>ShowSummaryLogFile</servlet-name>
+		<url-pattern>/ShowSummaryLogFile</url-pattern>
+	</servlet-mapping>
+
 </web-app>

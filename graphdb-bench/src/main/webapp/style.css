@@ -104,6 +104,14 @@ button {
 	border: solid 1px #aacfe4;
 }
 
+.chart {
+}
+
+.chart rect {
+	stroke: white;
+	fill: steelblue;
+}
+
 
 /* -------------------------------------------------------- *
  *  Header                                                  *
@@ -440,6 +448,12 @@ table.db_table td.db_table_checkbox {
 	padding-right: 210px;
 	clear: none;
 	float:left;
+}
+
+.basic_form div.chart_outer {
+	border: solid 1px #aacfe4;
+	padding-bottom: 10px;
+	margin-bottom: 10px;
 }
 
 
