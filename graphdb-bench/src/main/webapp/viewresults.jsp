@@ -272,7 +272,7 @@
 						
 						%>
 							<div class="chart_outer"><div class="chart">
-							<%@ include file="include/d3barchart.jsp" %>
+							<%@ include file="include/d3barchart_horizontal.jsp" %>
 							</div></div>
 
 							<%= writer.toString() %>

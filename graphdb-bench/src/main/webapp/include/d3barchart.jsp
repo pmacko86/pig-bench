@@ -2,12 +2,15 @@
 <script language="JavaScript">
 	<!-- Begin
 	
-	var char_inner_width = 420;
-	var bar_height = 20;
-	var padding_left = 300;
-	var padding_right = 100;
-	var padding_top = 20;
-	var padding_bottom = 0;
+	var chart_inner_height = 420;
+	var bar_width = 20;
+	var padding_left = 100;
+	var padding_right = 150;
+	var padding_top = 50;
+	var padding_bottom = 150;
+	var bars_margin = 10;
+	var chart_margin = 10;
+	var ylabel_from_chart_margin = 40;
 	
 	d3.csv('<%= d3_source %>', function(data) {
 		
@@ -25,40 +28,59 @@
 		
 		var chart = d3.select(".<%= d3_attach %>").append("svg")
 					  .attr("class", "chart")
-					  .attr("width", char_inner_width + padding_left + padding_right)
-					  .attr("height", bar_height * data.length + padding_top + padding_bottom)
+					  .attr("width",  bar_width * data.length + padding_left + padding_right)
+					  .attr("height", chart_inner_height + padding_top + padding_bottom)
 					  .append("g")
 					  	.attr("transform", "translate(" + padding_left + ", " + padding_top + ")");
 		
-		var x = d3.scale.linear()
-				  .domain([0, d3.max(data, function(d) { return d.mean; })])
-				  .range([0, char_inner_width]);
+		var y = d3.scale.linear()
+				  .domain([0, 1.1 * d3.max(data, function(d) { return d.mean; })])
+				  .range([chart_inner_height, 0]);
 		
-		var y = d3.scale.ordinal()
+		var x = d3.scale.ordinal()
 				  .domain(labels)
-				  .rangeBands([0, bar_height * data.length]);
+				  .rangeBands([0, bar_width * data.length]);
 
 
-		// The horizontal ruler (ticks)
+		// The vertical ruler (ticks) and the axis
 		
 		chart.selectAll("line")
-			 .data(x.ticks(10))
+			 .data(y.ticks(10))
 			 .enter().append("line")
-			 .attr("x1", x)
-			 .attr("x2", x)
-			 .attr("y1", 0)
-			 .attr("y2", data.length * bar_height)
+			 .attr("x1", -bars_margin)
+			 .attr("x2", data.length * bar_width + bars_margin)
+			 .attr("y1", y)
+			 .attr("y2", y)
 			 .style("stroke", "#ccc");
 		
 		chart.selectAll(".rule")
-			 .data(x.ticks(10))
+			 .data(y.ticks(10))
 			 .enter().append("text")
 			 .attr("class", "rule")
-			 .attr("x", x)
-			 .attr("y", 0)
-			 .attr("dy", -3)
-			 .attr("text-anchor", "middle")
+			 .attr("x", -chart_margin-bars_margin)
+			 .attr("y", y)
+			 .attr("dx", 0)
+			 .attr("dy", ".35em")
+			 .attr("text-anchor", "end")
 			 .text(String);
+		
+		chart.append("line")
+			 .attr("x1", -bars_margin)
+			 .attr("y1", 0)
+			 .attr("x2", -bars_margin)
+			 .attr("y2", chart_inner_height)
+			 .style("stroke", "#000");
+			 
+		chart.append("text")
+			 .attr("x", 0)
+			 .attr("y", 0)
+			 .attr("dx", 0)
+			 .attr("dy", 0)
+			 .attr("text-anchor", "middle")
+			 .attr("transform", "translate("
+			 	+ (-bars_margin*2 - ylabel_from_chart_margin) + ", "
+			 	+ (chart_inner_height/2)  + "), rotate(-90)")
+			 .text("<%= d3_ylabel %>");
 		
 		
 		// Data and labels
@@ -66,35 +88,106 @@
 		chart.selectAll("rect")
 			 .data(data)
 			 .enter().append("rect")
-			 .attr("y", function(d, i) { return i * y.rangeBand(); })
-			 .attr("width", function(d, i) { return x(d.mean); })
-			 .attr("height", y.rangeBand());
+			 .attr("x", function(d, i) { return i * x.rangeBand(); })
+			 .attr("y", function(d, i) { return y(d.mean); })
+			 .attr("width", x.rangeBand())
+			 .attr("height", function(d, i) { return chart_inner_height - y(d.mean); });
 			 
-		chart.selectAll("labels")
-			 .data(data)
-			 .enter().append("text")
-			 .attr("x", -8)
-			 .attr("y", function(d, i) { return y.rangeBand() * i + y.rangeBand() / 2; })
-			 .attr("dx", 0) // padding-right
+		data.forEach(function(d, i) {
+		
+			if (d.label.indexOf("----") == 0) return;
+		
+			<%
+				if (d3_group_by == null) {
+					%>
+						chart.append("text")
+						 .attr("x", 0)
+						 .attr("y", 0)
+						 .attr("dx", 0) // padding-right
+						 .attr("dy", ".35em") // vertical-align: middle
+						 .attr("transform", "translate("
+						 	+ (x.rangeBand() * i + x.rangeBand() / 2) + ", "
+						 	+ (chart_inner_height + chart_margin)  + "), rotate(45)")
+						 .text(d.label);
+					<%
+				}
+			%>
+				 
+			chart.append("text")
+			 .attr("x", 0)
+			 .attr("y", 0)
+			 .attr("dx", 0)
 			 .attr("dy", ".35em") // vertical-align: middle
-			 .attr("text-anchor", "end") // text-align: right
-			 .text(function(d, i) { return d.label; });
-			 
-		chart.selectAll("data_values")
-			 .data(data)
-			 .enter().append("text")
-			 .attr("x", function(d, i) { return x(d.mean); })
-			 .attr("y", function(d, i) { return y.rangeBand() * i + y.rangeBand() / 2; })
-			 .attr("dx", 5) // padding-right
-			 .attr("dy", ".35em") // vertical-align: middle
-			 .text(function(d, i) { return "" + d.mean.toFixed(2) + " ms"; });
+			 .attr("transform", "translate("
+			 	+ (x.rangeBand() * i + x.rangeBand() / 2) + ", "
+			 	+ (y(d.mean) - 10)  + "), rotate(-90)")
+			 .text("" + d.mean.toFixed(3) + " ms");
+		});
+		
+		
+		<%
+			// Group labels
+			
+			// TODO Bars within a group need different colors + we need a legend
+			
+			if (d3_group_by != null) {
+				%>
+					var group_lengths = [];
+					var group_names = [];
+					var group_offsets = [];
+					
+					var __last_group_name = "";
+					var __last_group_length = -1;
+					
+					data.forEach(function(d, i) {
+						var g = d.<%= d3_group_by %>;
+						if (g != __last_group_name) {
+							if (__last_group_length > 0) {
+								group_names.push(__last_group_name)
+								group_lengths.push(__last_group_length)
+							}
+							if (__last_group_length == -1) {
+								group_offsets.push(0);
+							}
+							else {
+								group_offsets.push(group_offsets[group_offsets.length-1] + __last_group_length);
+							}
+							__last_group_name = g;
+							__last_group_length = 0;
+						}
+						__last_group_length++;
+					});
+					if (__last_group_length > 0) {
+						group_names.push(__last_group_name)
+						group_lengths.push(__last_group_length)
+					}
+					
+					for (var i = 0; i < group_names.length; i++) {
+						if (group_names[i].indexOf("----") == 0) continue;
+						var p = group_offsets[i] + 0.5 * group_lengths[i] - 0.5;
+						
+						chart.append("text")
+						 .attr("x", 0)
+						 .attr("y", 0)
+						 .attr("dx", 0)
+						 .attr("dy", ".35em") // vertical-align: middle
+						 .attr("transform", "translate("
+						 	+ (x.rangeBand() * p + x.rangeBand() / 2) + ", "
+						 	+ (chart_inner_height + chart_margin)  + "), rotate(45)")
+						 .text(group_names[i]);
+					}
+				<%
+			}
+		%>
 
 
 		// Zero axis line
 		
 		chart.append("line")
-			 .attr("y1", 0)
-			 .attr("y2", bar_height * data.length + padding_top)
+			 .attr("x1", -bars_margin)
+			 .attr("y1", chart_inner_height)
+			 .attr("x2", bar_width * data.length + bars_margin)
+			 .attr("y2", chart_inner_height)
 			 .style("stroke", "#000");
 	});
 	

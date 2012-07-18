@@ -286,6 +286,58 @@
 		
 	<div class="basic_form">
 		<%
+			if (selectedOperations.size() > 1) {
+				
+				TreeMap<String, Collection<Job>> operationsToJobs = new TreeMap<String, Collection<Job>>();
+				for (String operationName : selectedOperations) {
+					LinkedList<Job> currentJobs = new LinkedList();
+					for (String s : selectedDatabaseInstances.keySet()) {
+						String inputName = s.replace('|', '-') + "-" + operationName;
+						String s_id = selectedJobIds.get(inputName);
+						if (s_id == null) continue;
+						Job job = JobList.getInstance().getFinishedJob(Integer.parseInt(s_id));
+						currentJobs.add(job);
+					}
+					operationsToJobs.put(operationName, currentJobs);
+				}
+				
+				%>
+					<h2>Summary</h2>
+				<%
+				
+				StringWriter writer = new StringWriter();
+				ShowOperationRunTimes.printRunTimes(new PrintWriter(writer), operationsToJobs, "html", null);
+				
+				String link = "/ShowOperationRunTimes?format=csv&group_by=operation";
+				
+				for (String operationName : selectedOperations) {
+					String eon = StringEscapeUtils.escapeJavaScript(operationName);
+					link += "&operations=" + eon;
+					for (Job j : operationsToJobs.get(operationName)) {
+						link += "&jobs-" + eon + "=" + j.getId();
+					}
+				}
+				
+				String d3_source = link;
+				String d3_attach = "chart_all";
+				String d3_foreach = "";
+				String d3_filter = "true";
+				String d3_ylabel = "Execution Time (ms)";
+				String d3_group_by = "operation";
+				
+				%>
+					<div class="chart_outer"><div class="chart chart_all">
+					<%@ include file="include/d3barchart.jsp" %>
+					</div></div>
+	
+					<%= writer.toString() %>
+					
+					<div style="height:40px"></div>
+				<%
+			}
+		%>
+		
+		<%
 			for (String operationName : selectedOperations) {
 				
 				String niceOperationName = operationName;
@@ -293,31 +345,36 @@
 					niceOperationName = niceOperationName.substring(9);
 				}
 				
-				TreeMap<String, Job> currentJobs = new TreeMap<String, Job>();
+				TreeMap<String, Collection<Job>> operationsToJobs = new TreeMap<String, Collection<Job>>();
+				LinkedList<Job> currentJobs = new LinkedList();
 				for (String s : selectedDatabaseInstances.keySet()) {
 					String inputName = s.replace('|', '-') + "-" + operationName;
 					String s_id = selectedJobIds.get(inputName);
 					if (s_id == null) continue;
 					Job job = JobList.getInstance().getFinishedJob(Integer.parseInt(s_id));
-					currentJobs.put(s, job);
+					currentJobs.add(job);
 				}
+				operationsToJobs.put(operationName, currentJobs);
 					
 				%>
 					<h2><%= niceOperationName %></h2>
 				<%
 				
 				StringWriter writer = new StringWriter();
-				ShowOperationRunTimes.printRunTimes(new PrintWriter(writer), operationName, currentJobs.values(), "html", null);
+				ShowOperationRunTimes.printRunTimes(new PrintWriter(writer), operationsToJobs, "html", null);
 				
-				String link = "/ShowOperationRunTimes?format=csv&operation=" + StringEscapeUtils.escapeJavaScript(operationName);
-				for (Job j : currentJobs.values()) {
-					link += "&jobs=" + j.getId();
+				String eon = StringEscapeUtils.escapeJavaScript(operationName);
+				String link = "/ShowOperationRunTimes?format=csv&operations=" + eon;
+				for (Job j : currentJobs) {
+					link += "&jobs-" + eon + "=" + j.getId();
 				}
 				
 				String d3_source = link;
 				String d3_attach = "chart_" + operationName;
 				String d3_foreach = "";
 				String d3_filter = "true";
+				String d3_ylabel = "Execution Time (ms)";
+				String d3_group_by = null;
 				
 				%>
 					<div class="chart_outer"><div class="chart chart_<%= operationName %>">
