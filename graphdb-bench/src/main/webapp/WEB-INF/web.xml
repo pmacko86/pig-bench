@@ -51,6 +51,13 @@ xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns
 	 </servlet>
 	
 	<servlet>
+		<display-name>ShowOperationRunTimes</display-name>
+		<servlet-name>ShowOperationRunTimes</servlet-name>
+		<servlet-class>com.tinkerpop.bench.web.ShowOperationRunTimes</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	 </servlet>
+	
+	<servlet>
 		<display-name>ShowSummaryLogFile</display-name>
 		<servlet-name>ShowSummaryLogFile</servlet-name>
 		<servlet-class>com.tinkerpop.bench.web.ShowSummaryLogFile</servlet-class>
@@ -80,6 +87,11 @@ xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns
 	<servlet-mapping>
 		<servlet-name>ShowLogFile</servlet-name>
 		<url-pattern>/ShowLogFile</url-pattern>
+	</servlet-mapping>
+ 
+	<servlet-mapping>
+		<servlet-name>ShowOperationRunTimes</servlet-name>
+		<url-pattern>/ShowOperationRunTimes</url-pattern>
 	</servlet-mapping>
  
 	<servlet-mapping>

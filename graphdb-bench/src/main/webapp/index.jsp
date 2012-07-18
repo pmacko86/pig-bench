@@ -150,7 +150,7 @@
 											<%
 										}
 									%>
-									<label class="checkbox <%= c %>">
+									<label class="<%= c %>">
 										<p class="checkbox <%= c %>"
 										   onclick="toggle_one_unselect_others('<%= job.getId() %>')">
 											<%= job.toString() %>

@@ -275,6 +275,18 @@ button {
 	padding-right:210px;
 }
 
+.stylized_form p.middle_inner {
+	float:left;
+	width: 100%;
+	display:block;
+	font-weight:bold;
+	margin-top:0px;
+	padding-top:10px;
+	padding-bottom:10px;
+	padding-right:210px;
+	padding-left: 10px;
+}
+
 .stylized_form label {
 	display:block;
 	font-weight:bold;
@@ -282,6 +294,10 @@ button {
 	width:195px;
 	float:left;
 	clear:left;	
+}
+
+.stylized_form label.lesser {
+	font-weight:normal;
 }
 
 .stylized_form label.checkbox {
@@ -333,6 +349,11 @@ button {
 	color:#FFFFFF;
 	font-size:11px;
 	font-weight:bold;
+}
+
+.stylized_form div.db_table_div {
+	clear: none;
+	float:left;
 }
 
 table.db_table, table.db_table td, table.db_table th {
@@ -454,6 +475,26 @@ table.db_table td.db_table_checkbox {
 	border: solid 1px #aacfe4;
 	padding-bottom: 10px;
 	margin-bottom: 10px;
+}
+
+.basic_form label.checkbox {
+	display:inline;
+	font-weight:normal;
+	text-align:left;
+	width:auto;
+	float:left;
+	clear:both;
+	padding-left:10px;
+	padding-bottom:2px;
+}
+
+.basic_form input.checkbox {
+	background-color: white;
+	font-size:12px;
+	float:none;
+	margin:0;
+	padding:0 0 0 10px;
+	width:auto;
 }
 
 
