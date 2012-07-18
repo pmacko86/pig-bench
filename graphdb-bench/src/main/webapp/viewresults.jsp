@@ -9,6 +9,7 @@
 <%@ page import="com.tinkerpop.bench.util.Pair"%>
 <%@ page import="com.tinkerpop.bench.web.*"%>
 <%@ page import="java.io.*"%>
+<%@ page import="java.text.SimpleDateFormat"%>
 <%@ page import="java.util.*"%>
 <%@ page import="au.com.bytecode.opencsv.CSVReader"%>
 <%@ page import="org.apache.commons.lang.StringEscapeUtils"%>
@@ -31,7 +32,7 @@
 		 */
 		function check_radio(value)
 		{
-			field = document.getElementsByName('job_file');
+			field = document.getElementsByName('job');
 			for (i = 0; i < field.length; i++) {
 				if (field[i].value == value) {
 					field[i].checked = true;
@@ -47,7 +48,7 @@
 		 */
 		function job_radio_set_class_for_all()
 		{			
-			field = document.getElementsByName('job_file');
+			field = document.getElementsByName('job');
 			for (i = 0; i < field.length; i++) {
 				parent = field[i].parentNode.parentNode;
 				parent.className = parent.className.replace('checked_job_', 'job_');
@@ -71,31 +72,29 @@
 		/*
 		 * Get a log file URL
 		 */
-		function get_log_file_url(db_name, db_instance, log_file, format)
+		function get_log_file_url(id, warmup, format)
 		{
-			return "/ShowLogFile?database_name=" + db_name
-				+ "&database_instance=" + db_instance + "&log_file=" + escape(log_file)
+			return "/ShowLogFile?job=" + id
+				+ "&warmup=" + (warmup ? "true" : "false")
 				+ "&format=" + format;
 		}
 		
 		/*
 		 * Get a log file URL
 		 */
-		function get_summary_log_file_url(db_name, db_instance, log_file, format)
+		function get_summary_log_file_url(id, format)
 		{
-			return "/ShowSummaryLogFile?database_name=" + db_name
-				+ "&database_instance=" + db_instance + "&log_file=" + escape(log_file)
-				+ "&format=" + format;
+			return "/ShowSummaryLogFile?job=" + id + "&format=" + format;
 		}
 		
 		/*
 		 * Replace the parent of the given element by the contents of the log file
 		 */
-		function replace_by_log_file(element, db_name, db_instance, log_file)
+		function replace_by_log_file(element, id, warmup)
 		{
 			var node = element.parentNode;
 			var http_request = new XMLHttpRequest();
-			http_request.open("GET", get_log_file_url(db_name, db_instance, log_file, "html"), true);
+			http_request.open("GET", get_log_file_url(id, warmup, "html"), true);
 			http_request.onreadystatechange = function () {
 				if (http_request.readyState == 1) {
 					node.innerHTML = '<p class="basic_status_running">Loading...</p>';
@@ -149,6 +148,7 @@
 			<%
 				int numJobs = 0;
 				TreeMap<String, Job> jobMap = new TreeMap<String, Job>();
+				SimpleDateFormat dateTimeFormatter = new SimpleDateFormat("[yyyy/MM/dd HH:mm:ss]");
 				
 				String[] a_selectedDatabaseInstances = WebUtils.getStringParameterValues(request, "database_engine_instance");
 				HashSet<String> selectedDatabaseInstances = new HashSet<String>();
@@ -161,18 +161,22 @@
 				for (String s : selectedDatabaseInstances) {
 					String[] p = s.split("\\|");
 					if (p.length == 1 || p.length == 2) {
-						for (Job job : WebUtils.getFinishedJobs(p[0], p.length == 2 ? p[1] : null)) {
-							jobMap.put(job.toString(), job);
+						for (Job job : JobList.getInstance().getFinishedJobs(p[0], p.length == 2 ? p[1] : null)) {
+							String prefix = "";
+							if (job.getExecutionTime() != null) {
+								prefix = dateTimeFormatter.format(job.getExecutionTime()) + " ";
+							}
+							jobMap.put(prefix + job.toString(), job);
 							numJobs++;
 						}
 					}
 				}
 				
-				String[] a_selectedJobLogFiles = WebUtils.getFileNameParameterValues(request, "job_file");
-				TreeSet<String> selectedJobLogFiles = new TreeSet<String>();
-				if (a_selectedJobLogFiles != null) {
-					for (String a : a_selectedJobLogFiles) {
-						selectedJobLogFiles.add(a);
+				String[] a_selectedJobIds = WebUtils.getFileNameParameterValues(request, "job");
+				TreeSet<String> selectedJobIds = new TreeSet<String>();
+				if (a_selectedJobIds != null) {
+					for (String a : a_selectedJobIds) {
+						selectedJobIds.add(a);
 					}
 				}
 				
@@ -192,18 +196,17 @@
 						<%
 							for (String jobString : jobMap.keySet()) {
 								Job job = jobMap.get(jobString);
-								String fileName = job.getLogFile(false).getName();
 								String extraTags = "";
-								String escapedFileName = StringEscapeUtils.escapeJavaScript(fileName);
+								String id = "" + job.getId();
 								
-								if (selectedJobLogFiles.contains(fileName)) {
-									selectedJobs.put(fileName, job);
+								if (selectedJobIds.contains(id)) {
+									selectedJobs.put(id, job);
 									extraTags += " checked=\"checked\"";
 								}
 								
 								String c = "job_neutral";
 								if (job.isRunning()) {
-									//TODO c = "job_running";
+									c = "job_running";
 								}
 								else if (job.getExecutionCount() > 0) {
 									if (job.getLastStatus() == 0) {
@@ -217,13 +220,13 @@
 									<div class="checkbox_outer">
 										<div class="checkbox <%= c %>">
 											<div class="checkbox_inner">
-												<input class="checkbox" type="radio" name="job_file"
-												       value="<%= escapedFileName %>" <%= extraTags %>
+												<input class="checkbox" type="radio" name="job"
+												       value="<%= id %>" <%= extraTags %>
 												       onchange="job_radio_on_change(this)"/>
 											</div>
 											<label class="checkbox <%= c %>">
 												<p class="checkbox <%= c %>"
-												   onclick="check_radio('<%= escapedFileName %>')">
+												   onclick="check_radio('<%= id %>')">
 													<%= jobString %>
 												</p>
 											</label>
@@ -270,11 +273,6 @@
 						StringWriter writer = new StringWriter();
 						ShowSummaryLogFile.printSummaryLogFile(new PrintWriter(writer), f, "html", null);
 						
-						String efn = StringEscapeUtils.escapeJavaScript(f.getName());
-						String dbe = job.getDbEngine();
-						String dbi = job.getDbInstance();
-						if (dbi == null) dbi = "";
-						
 						%>
 							<div class="chart_outer"><div class="chart">
 										
@@ -288,7 +286,7 @@
 								var padding_top = 20;
 								var padding_bottom = 0;
 								
-								d3.csv(get_summary_log_file_url('<%= dbe %>', '<%= dbi %>', '<%= efn %>', 'csv'), function(data) {
+								d3.csv(get_summary_log_file_url('<%= job.getId() %>', 'csv'), function(data) {
 									
 									data.forEach(function(d) {
 										d.label = d.operation;
@@ -398,13 +396,9 @@
 						<%
 					}
 					else {
-						String efn = StringEscapeUtils.escapeJavaScript(f.getName());
-						String dbe = job.getDbEngine();
-						String dbi = job.getDbInstance();
-						if (dbi == null) dbi = "";
 						%>
 							<div>
-								<button onclick="replace_by_log_file(this, '<%= dbe %>', '<%= dbi %>', '<%= efn %>')">
+								<button onclick="replace_by_log_file(this, '<%= job.getId() %>', false)">
 									Show...
 								</button>
 							</div>
@@ -429,7 +423,7 @@
 						if (dbi == null) dbi = "";
 						%>
 							<div>
-								<button onclick="replace_by_log_file(this, '<%= dbe %>', '<%= dbi %>', '<%= efn %>')">
+								<button onclick="replace_by_log_file(this, '<%= job.getId() %>', true)">
 									Show...
 								</button>
 							</div>

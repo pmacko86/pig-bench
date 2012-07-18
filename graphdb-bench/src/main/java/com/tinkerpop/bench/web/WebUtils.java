@@ -3,7 +3,6 @@ package com.tinkerpop.bench.web;
 import java.io.File;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 
@@ -305,40 +304,6 @@ public class WebUtils {
 			else {
 				if (DatabaseEngine.ENGINES.containsKey(name)) {
 					r.add(new Pair<String, String>(name, ""));
-				}
-			}
-		}
-		
-		return r;
-	}
-	
-	
-	/**
-	 * Get a collection of previously executed jobs
-	 * 
-	 * @param dbEngine the database engine name
-	 * @param dbInstance the database instance name
-	 * @return the collection of previously executed jobs
-	 */
-	public static Collection<Job> getFinishedJobs(String dbEngine, String dbInstance) {
-		
-		LinkedList<Job> r = new LinkedList<Job>();
-		File dir = getResultsDirectory(dbEngine, dbInstance);
-		String logFilePrefix = getLogFilePrefix(dbEngine, dbInstance);
-		String logFilePrefixWarmup = getWarmupLogFilePrefix(dbEngine, dbInstance);
-				
-		for (File f : dir.listFiles()) {
-			if (f.isDirectory()) continue;
-			String name = f.getName();
-			
-			if (name.endsWith(".csv")) {
-				if (name.startsWith(logFilePrefix)) {
-					r.add(new Job(f, dbEngine, dbInstance));
-				}
-				if (name.startsWith(logFilePrefixWarmup)) {
-					File log = new File(dir, name.substring(0, logFilePrefix.length() - 1)
-							+ "_" + name.substring(logFilePrefixWarmup.length()));
-					if (!log.exists()) r.add(new Job(log, dbEngine, dbInstance));
 				}
 			}
 		}

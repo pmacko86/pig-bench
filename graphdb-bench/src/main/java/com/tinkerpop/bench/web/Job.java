@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -24,10 +26,6 @@ import com.tinkerpop.bench.benchmark.BenchmarkMicro;
  */
 public class Job {
 	
-	// TODO Need to have an ability to link "finished" jobs loaded from a file to their counterparts in JobList,
-	// so that for example, the currently running job can be identified as such in viewresults.jsp (now it appears
-	// as a failed job)
-
 	int id;
 	private List<String> arguments;
 	private String dbEngine;
@@ -36,7 +34,7 @@ public class Job {
 	protected File logFile;
 	protected int status;
 	protected int executionCount;
-	private String displayPrefix;
+	private Date executionTime;
 	
 	private ExecutionThread current = null;
 	private ExecutionThread last = null;
@@ -51,7 +49,7 @@ public class Job {
 		id = -1;
 		status = -1;
 		executionCount = 0;
-		displayPrefix = null;
+		executionTime = null;
 		logFile = null;
 	}
 	
@@ -103,7 +101,7 @@ public class Job {
 		id = -1;
 		status = -1;
 		executionCount = 0;
-		displayPrefix = null;
+		executionTime = null;
 		logFile = null;
 		
 		
@@ -291,12 +289,13 @@ public class Job {
 		}
 		
 		if (date != null) {
-			String d = date;
 			if (date.length() == 8 + 1 + 6 && date.charAt(8) == '-') {
-				d = date.substring(0, 4) + "/" + date.substring(4, 6) + "/" + date.substring(6, 8)
-						+ " " + date.substring(9, 11) + ":" + date.substring(11, 13) + ":" + date.substring(13);
+				Calendar c = Calendar.getInstance();
+				c.set(Integer.parseInt(date.substring( 0,  4)), Integer.parseInt(date.substring( 4,  6)) - 1,
+					  Integer.parseInt(date.substring( 6,  8)), Integer.parseInt(date.substring( 9, 11)),
+					  Integer.parseInt(date.substring(11, 13)), Integer.parseInt(date.substring(13    )));
+				executionTime = c.getTime();
 			}
-			displayPrefix = "[" + d + "] ";
 		}
 	}
 	
@@ -313,7 +312,6 @@ public class Job {
 		j.arguments = new ArrayList<String>(arguments);
 		j.dbEngine = dbEngine;
 		j.dbInstance = dbInstance;
-		j.displayPrefix = displayPrefix;
 		j.logFile = logFile;
 		
 		return j;
@@ -331,6 +329,16 @@ public class Job {
 	
 	
 	/**
+	 * Get the execution time
+	 * 
+	 * @return the execution (start) time, or null if never executed or unknown
+	 */
+	public Date getExecutionTime() {
+		return executionTime;
+	}
+	
+	
+	/**
 	 * Return the job description as a single-line or a multi-line string
 	 * 
 	 * @param multiline true to return a multi-line string
@@ -343,8 +351,6 @@ public class Job {
 		
 		boolean first = true;
 		StringBuilder sb = new StringBuilder();
-		
-		if (displayPrefix != null) sb.append(displayPrefix);
 		
 		
 		// Process each argument
@@ -493,6 +499,16 @@ public class Job {
 	public String getDbInstance() {
 		return dbInstance;
 	}
+
+
+	/**
+	 * Return the name of the database instance
+	 * 
+	 * @return the name of the database instance, or "" if not specified
+	 */
+	public String getDbInstanceSafe() {
+		return dbInstance == null ? "" : dbInstance;
+	}
 	
 	
 	/**
@@ -582,6 +598,8 @@ public class Job {
 		if (current != null) {
 			throw new IllegalStateException("The job is already running");
 		}
+		
+		executionTime = new Date();
 		
 		current = new ExecutionThread();
 		current.start();
@@ -772,6 +790,21 @@ public class Job {
 				}
 			}
 			finally {
+				
+				// Extract the log file name from the output
+				
+				String s = output.toString();
+				int p_start = s.indexOf("Tinkubator Graph Database Benchmark");
+				int p_key = p_start < 0 ? -1 : s.indexOf("Log File", p_start);
+				int p = p_key < 0 ? -1 : s.indexOf(':', p_key);
+				if (p > 0) {
+					p += 2;
+					int p_end = s.indexOf('\n', p);
+					logFile = new File(s.substring(p, p_end));
+				}
+				
+				
+				// Finish
 				
 				Job.this.status = status;
 				Job.this.executionCount++;

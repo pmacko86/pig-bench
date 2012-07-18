@@ -12,7 +12,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import au.com.bytecode.opencsv.CSVWriter;
 
-import com.tinkerpop.bench.DatabaseEngine;
 import com.tinkerpop.bench.log.OperationLogEntry;
 import com.tinkerpop.bench.log.OperationLogReader;
 import com.tinkerpop.bench.log.OperationLogWriter;
@@ -51,33 +50,18 @@ public class ShowLogFile extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
 		
-		// Get the database engine name and the instance name
+		// Whether it is the warmup file
 		
-		String dbEngine = WebUtils.getStringParameter(request, "database_name");
-		String dbInstance = WebUtils.getStringParameter(request, "database_instance");
-		if (dbInstance != null) if (dbInstance.equals("")) dbInstance = null;
-		if (dbInstance != null) {
-			WebUtils.asssertDatabaseInstanceNameValidity(dbInstance);
-		}
-		if (!DatabaseEngine.ENGINES.containsKey(dbEngine)) {
-			throw new IllegalArgumentException("Unknown database engine: " + dbEngine);
-		}
-		if (dbInstance != null) {
-			WebUtils.asssertDatabaseInstanceNameValidity(dbInstance);
-		}
+		boolean warmup = WebUtils.getBooleanParameter(request, "warmup", false);
 		
 		
-		// Get the log file name
+		// Get the job and the corresponding log file
 		
-		String logFileName = WebUtils.getFileNameParameter(request, "log_file");
-		if (logFileName == null) {
-			throw new IllegalArgumentException("No log file is specified");
-		}
-		
-		File dir = WebUtils.getResultsDirectory(dbEngine, dbInstance);
-		File logFile = new File(dir, logFileName);
-		if (!logFile.exists() || !logFile.isFile()) {
-			throw new IllegalArgumentException("The specfied log file does not exist or is not a regular file");
+		File logFile = null;
+		String jobId = WebUtils.getStringParameter(request, "job");
+		if (jobId != null) {
+			Job j = JobList.getInstance().getFinishedJob(Integer.parseInt(jobId));
+			if (j != null) logFile = warmup ? j.getWarmupLogFile() : j.getLogFile();
 		}
 		
 		
@@ -87,10 +71,35 @@ public class ShowLogFile extends HttpServlet {
 		if (format == null) format = "plain";
 		
 		
-		// Get the log file reader and the response writer
+		
+		// Get the writer and write out the log file
+		
+		PrintWriter writer = response.getWriter();
+		printLogFile(writer, logFile, format, response);
+	}
+		
+	
+	/**
+	 * Write out a log file to the given writer
+	 * 
+	 * @param writer the writer
+	 * @param logFile the log file
+	 * @param format the format
+	 * @param response the response, or null if none
+	 */
+	public static void printLogFile(PrintWriter writer, File logFile, String format, HttpServletResponse response) {
+
+		if (logFile == null) {
+			if (response != null) {
+		        response.setContentType("text/plain");
+		        response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
+			}
+	        
+	        writer.println("No such file.");
+	        return;
+		}
 		
 		OperationLogReader reader = new OperationLogReader(logFile);
-		PrintWriter writer = response.getWriter();
 		
 		
 		// Depending on the format type...

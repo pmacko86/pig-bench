@@ -1,7 +1,14 @@
 package com.tinkerpop.bench.web;
 
+import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+
+import com.tinkerpop.bench.util.Pair;
 
 
 /**
@@ -12,9 +19,24 @@ import java.util.HashMap;
 public class JobList {
 	
 	private static JobList instance = new JobList();
+	
+	
+	// Jobs on the main page
 
 	private ArrayList<Job> jobs;
 	private HashMap<Integer, Job> jobMap;
+	
+	
+	// Finished jobs
+	
+	// Map: (database name, database instance) ---> list of finished jobs
+	private HashMap<Pair<String, String>, LinkedList<Job>> finishedJobs;
+	
+	// Map: id ---> finished job
+	private HashMap<Integer, Job> finishedJobMap;
+	
+	
+	// Job execution control
 	
 	private int currentJobIndex;
 	private int lastId;
@@ -28,8 +50,29 @@ public class JobList {
 	 * Create an instance of a job list
 	 */
 	protected JobList() {
+		
+		
+		// Jobs on the main page
+		
 		jobs = new ArrayList<Job>();
 		jobMap = new HashMap<Integer, Job>();
+		
+		
+		// Finished jobs
+		
+		finishedJobs = new HashMap<Pair<String,String>, LinkedList<Job>>();
+		finishedJobMap = new HashMap<Integer, Job>();
+		
+		Collection<Pair<String, String>> dbis = WebUtils.getDatabaseInstancePairs();
+		for (Pair<String, String> p : dbis) {
+			LinkedList<Job> l = fetchFinishedJobs(p.first, p.second);
+			for (Job j : l) finishedJobMap.put(j.getId(), j);
+			finishedJobs.put(p, l);
+		}
+		
+		
+		// Job execution control
+
 		currentJobIndex = 0;
 		lastId = -1;
 		thread = new ExecutionThread();
@@ -121,6 +164,17 @@ public class JobList {
 	public Job getJob(int id) {
 		return jobMap.get(id);
 	}
+
+
+	/**
+	 * Get a finished job based on its ID
+	 * 
+	 * @param id the job ID
+	 * @return the finished job, or null if not found, not yet executed, or still running
+	 */
+	public Job getFinishedJob(int id) {
+		return finishedJobMap.get(id);
+	}
 	
 	
 	/**
@@ -186,6 +240,66 @@ public class JobList {
 	
 	
 	/**
+	 * Fetch a collection of previously executed jobs
+	 * 
+	 * @param dbEngine the database engine name
+	 * @param dbInstance the database instance name
+	 * @return the collection of previously executed jobs
+	 */
+	private LinkedList<Job> fetchFinishedJobs(String dbEngine, String dbInstance) {
+		
+		LinkedList<Job> r = new LinkedList<Job>();
+		File dir = WebUtils.getResultsDirectory(dbEngine, dbInstance);
+		String logFilePrefix = WebUtils.getLogFilePrefix(dbEngine, dbInstance);
+		String logFilePrefixWarmup = WebUtils.getWarmupLogFilePrefix(dbEngine, dbInstance);
+				
+		for (File f : dir.listFiles()) {
+			if (f.isDirectory()) continue;
+			String name = f.getName();
+			
+			if (name.endsWith(".csv")) {
+				if (name.startsWith(logFilePrefix)) {
+					Job j = new Job(f, dbEngine, dbInstance);
+					j.id = allocateJobId();
+					r.add(j);
+				}
+				if (name.startsWith(logFilePrefixWarmup)) {
+					File log = new File(dir, name.substring(0, logFilePrefix.length() - 1)
+							+ "_" + name.substring(logFilePrefixWarmup.length()));
+					if (!log.exists()) {
+						Job j = new Job(log, dbEngine, dbInstance);
+						j.id = allocateJobId();
+						r.add(j);
+					}
+				}
+			}
+		}
+		
+		return r;
+	}
+	
+	
+	/**
+	 * Get a collection of previously executed jobs
+	 * 
+	 * @param dbEngine the database engine name
+	 * @param dbInstance the database instance name
+	 * @return the collection of previously executed jobs
+	 */
+	public List<Job> getFinishedJobs(String dbEngine, String dbInstance) {
+		
+		Pair<String, String> key = new Pair<String, String>(dbEngine,
+				dbInstance == null ? "" : dbInstance);
+		if (finishedJobs.containsKey(key)) {
+			return finishedJobs.get(key);
+		}
+		else {
+			return Collections.<Job>emptyList();
+		}
+	}
+
+	
+	/**
 	 * A thread for running the jobs
 	 */
 	private class ExecutionThread extends Thread {
@@ -217,12 +331,24 @@ public class JobList {
 					
 					current.start();
 					current.join();
+					
+					Pair<String, String> key = new Pair<String, String>(current.getDbEngine(),
+							current.getDbInstanceSafe());
+					if (finishedJobs.containsKey(key)) {
+						finishedJobs.get(key).add(current);
+					}
+					else {
+						LinkedList<Job> l = new LinkedList<Job>();
+						l.add(current);
+						finishedJobs.put(key, l);
+					}
+					finishedJobMap.put(current.getId(), current);
 				}
 			}
 			catch (InterruptedException e) {
 				throw new RuntimeException(e);
 			}
-			finally {
+			finally {				
 				current = null;
 				paused = true;
 				running = false;

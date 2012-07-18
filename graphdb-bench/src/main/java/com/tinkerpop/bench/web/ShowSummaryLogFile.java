@@ -11,7 +11,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import au.com.bytecode.opencsv.CSVWriter;
 
-import com.tinkerpop.bench.DatabaseEngine;
 import com.tinkerpop.bench.log.GraphRunTimes;
 import com.tinkerpop.bench.log.SummaryLogEntry;
 import com.tinkerpop.bench.log.SummaryLogReader;
@@ -49,34 +48,15 @@ public class ShowSummaryLogFile extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
 		
-		// Get the database engine name and the instance name
+		// Get the job and the corresponding log file
 		
-		String dbEngine = WebUtils.getStringParameter(request, "database_name");
-		String dbInstance = WebUtils.getStringParameter(request, "database_instance");
-		if (dbInstance != null) if (dbInstance.equals("")) dbInstance = null;
-		if (dbInstance != null) {
-			WebUtils.asssertDatabaseInstanceNameValidity(dbInstance);
+		File logFile = null;
+		String jobId = WebUtils.getStringParameter(request, "job");
+		if (jobId != null) {
+			Job j = JobList.getInstance().getFinishedJob(Integer.parseInt(jobId));
+			if (j != null) logFile = j.getSummaryFile();
 		}
-		if (!DatabaseEngine.ENGINES.containsKey(dbEngine)) {
-			throw new IllegalArgumentException("Unknown database engine: " + dbEngine);
-		}
-		if (dbInstance != null) {
-			WebUtils.asssertDatabaseInstanceNameValidity(dbInstance);
-		}
-		
-		
-		// Get the log file name
-		
-		String logFileName = WebUtils.getFileNameParameter(request, "log_file");
-		if (logFileName == null) {
-			throw new IllegalArgumentException("No summary log file is specified");
-		}
-		
-		File dir = WebUtils.getResultsDirectory(dbEngine, dbInstance);
-		File logFile = new File(dir, logFileName);
-		if (!logFile.exists() || !logFile.isFile()) {
-			throw new IllegalArgumentException("The specfied summary log file does not exist or is not a regular file");
-		}
+
 		
 		
 		// Other parameters
@@ -102,8 +82,18 @@ public class ShowSummaryLogFile extends HttpServlet {
 	 */
 	public static void printSummaryLogFile(PrintWriter writer, File logFile, String format, HttpServletResponse response) {
 		
+		if (logFile == null) {
+			if (response != null) {
+		        response.setContentType("text/plain");
+		        response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
+			}
+	        
+	        writer.println("No such file.");
+	        return;
+		}
 		
-		// Get the log file reader and the response writer
+		
+		// Get the log file reader
 		
 		SummaryLogReader reader = new SummaryLogReader(logFile);
 		
