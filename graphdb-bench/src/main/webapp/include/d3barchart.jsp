@@ -117,11 +117,11 @@
 					var __last_group_length = -1;
 					
 					var group_label_function = function(d, i) {
-						<%= d3_group_label_function %>
+						<%= d3_group_label_function %>;
 					};
 					
 					var category_label_function = function(d, i) {
-						<%= d3_category_label_function %>
+						<%= d3_category_label_function %>;
 					};
 					
 					data.forEach(function(d, i) {

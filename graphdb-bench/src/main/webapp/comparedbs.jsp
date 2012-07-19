@@ -230,7 +230,8 @@
 											<%= p.length == 2 ? ("".equals(p[1]) ? "&lt;default&gt;" : p[1]) : "&lt;default&gt;" %>
 											</span>
 										</label>
-										<select name="<%= inputName %>" id="<%= inputName %>">
+										<select name="<%= inputName %>" id="<%= inputName %>"
+												onchange="document.getElementById('form').submit();">
 									<%
 									
 									LinkedList<String> jobStrings = new LinkedList<String>();
@@ -309,12 +310,20 @@
 				ShowOperationRunTimes.printRunTimes(new PrintWriter(writer), operationsToJobs, "html", null);
 				
 				String link = "/ShowOperationRunTimes?format=csv&group_by=operation";
+				boolean sameDbInstance = true;
+				Job firstJob = null;
 				
 				for (String operationName : selectedOperations) {
 					String eon = StringEscapeUtils.escapeJavaScript(operationName);
 					link += "&operations=" + eon;
 					for (Job j : operationsToJobs.get(operationName)) {
 						link += "&jobs-" + eon + "=" + j.getId();
+						if (firstJob == null) {
+							firstJob = j;
+						}
+						else if (sameDbInstance) {
+							sameDbInstance = firstJob.getDbInstanceSafe().equals(j.getDbInstanceSafe());
+						}
 					}
 				}
 				
@@ -325,7 +334,8 @@
 				String d3_ylabel = "Execution Time (ms)";
 				String d3_group_by = "operation";
 				String d3_group_label_function = "return d.operation.replace(/^Operation/, '')";
-				String d3_category_label_function = "return d.dbengine + ', ' + d.dbinstance";
+				String d3_category_label_function = "return d.dbengine"
+					+ (sameDbInstance ? "" : " + ', ' + d.dbinstance");
 				
 				%>
 					<div class="chart_outer"><div class="chart chart_all">
