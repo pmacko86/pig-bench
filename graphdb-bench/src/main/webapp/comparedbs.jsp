@@ -324,6 +324,8 @@
 				String d3_filter = "true";
 				String d3_ylabel = "Execution Time (ms)";
 				String d3_group_by = "operation";
+				String d3_group_label_function = "return d.operation.replace(/^Operation/, '')";
+				String d3_category_label_function = "return d.dbengine + ', ' + d.dbinstance";
 				
 				%>
 					<div class="chart_outer"><div class="chart chart_all">
@@ -375,6 +377,8 @@
 				String d3_filter = "true";
 				String d3_ylabel = "Execution Time (ms)";
 				String d3_group_by = null;
+				String d3_group_label_function = null;
+				String d3_category_label_function = null;
 				
 				%>
 					<div class="chart_outer"><div class="chart chart_<%= operationName %>">
