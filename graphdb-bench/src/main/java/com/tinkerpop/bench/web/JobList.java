@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.tinkerpop.bench.util.Pair;
 
@@ -37,9 +38,6 @@ public class JobList {
 	
 	
 	// Job execution control
-	
-	private int currentJobIndex;
-	private int lastId;
 	
 	private ExecutionThread thread;
 	private boolean paused;
@@ -73,8 +71,6 @@ public class JobList {
 		
 		// Job execution control
 
-		currentJobIndex = 0;
-		lastId = -1;
 		thread = new ExecutionThread();
 		paused = true;
 		running = false;
@@ -99,26 +95,6 @@ public class JobList {
 	public ArrayList<Job> getJobs() {
 		return jobs;
 	}
-
-
-	/**
-	 * Return the index of the current job
-	 * 
-	 * @return the currentJobIndex
-	 */
-	public int getCurrentJobIndex() {
-		return currentJobIndex;
-	}
-	
-	
-	/**
-	 * Allocate a new job ID
-	 * 
-	 * @return the new ID
-	 */
-	protected synchronized int allocateJobId() {
-		return ++lastId;
-	}
 	
 	
 	/**
@@ -127,7 +103,6 @@ public class JobList {
 	 * @param job the job to add
 	 */
 	public synchronized void addJob(Job job) {
-		job.id = allocateJobId();
 		jobs.add(job);
 		jobMap.put(job.getId(), job);
 	}
@@ -259,17 +234,13 @@ public class JobList {
 			
 			if (name.endsWith(".csv")) {
 				if (name.startsWith(logFilePrefix)) {
-					Job j = new Job(f, dbEngine, dbInstance);
-					j.id = allocateJobId();
-					r.add(j);
+					r.add(new Job(f, dbEngine, dbInstance));
 				}
 				if (name.startsWith(logFilePrefixWarmup)) {
 					File log = new File(dir, name.substring(0, logFilePrefix.length() - 1)
 							+ "_" + name.substring(logFilePrefixWarmup.length()));
 					if (!log.exists()) {
-						Job j = new Job(log, dbEngine, dbInstance);
-						j.id = allocateJobId();
-						r.add(j);
+						r.add(new Job(log, dbEngine, dbInstance));
 					}
 				}
 			}

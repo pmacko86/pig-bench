@@ -291,7 +291,7 @@
 				
 				TreeMap<String, Collection<Job>> operationsToJobs = new TreeMap<String, Collection<Job>>();
 				for (String operationName : selectedOperations) {
-					LinkedList<Job> currentJobs = new LinkedList();
+					LinkedList<Job> currentJobs = new LinkedList<Job>();
 					for (String s : selectedDatabaseInstances.keySet()) {
 						String inputName = s.replace('|', '-') + "-" + operationName;
 						String s_id = selectedJobIds.get(inputName);
@@ -358,7 +358,7 @@
 				}
 				
 				TreeMap<String, Collection<Job>> operationsToJobs = new TreeMap<String, Collection<Job>>();
-				LinkedList<Job> currentJobs = new LinkedList();
+				LinkedList<Job> currentJobs = new LinkedList<Job>();
 				for (String s : selectedDatabaseInstances.keySet()) {
 					String inputName = s.replace('|', '-') + "-" + operationName;
 					String s_id = selectedJobIds.get(inputName);

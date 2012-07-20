@@ -233,6 +233,11 @@
 					<%
 				}
 			%>
+			
+			var fixed_length = 3;
+			if (d.mean > 10) fixed_length = 2;
+			if (d.mean > 100) fixed_length = 1;
+			if (d.mean > 1000) fixed_length = 0;
 				 
 			chart.append("text")
 			 .attr("x", 0)
@@ -242,7 +247,7 @@
 			 .attr("transform", "translate("
 			 	+ (x.rangeBand() * i + x.rangeBand() / 2) + ", "
 			 	+ (y(d.mean) - 10)  + "), rotate(-90)")
-			 .text("" + d.mean.toFixed(3) + " ms");
+			 .text("" + d.mean.toFixed(fixed_length) + " ms");
 		});
 
 

@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -26,7 +27,7 @@ import com.tinkerpop.bench.benchmark.BenchmarkMicro;
  */
 public class Job {
 	
-	int id;
+	private int id;
 	private List<String> arguments;
 	private String dbEngine;
 	private String dbInstance;
@@ -40,13 +41,15 @@ public class Job {
 	private ExecutionThread last = null;
 	private boolean bufferedThreadOutput = false;
 	
+	private static AtomicInteger lastId = new AtomicInteger(-1);
+
 	
 	/**
 	 * Create an instance of a Job
 	 */
 	protected Job() {
 		arguments = null;
-		id = -1;
+		id = lastId.incrementAndGet();
 		status = -1;
 		executionCount = 0;
 		executionTime = null;
@@ -72,6 +75,7 @@ public class Job {
 	 * @param dbInstance a specific database instance to use instead of the one from the request
 	 */
 	public Job(HttpServletRequest request, String dbEngine, String dbInstance) {
+		this();
 		loadFromRequest(request, dbEngine, dbInstance);
 	}
 	
@@ -84,6 +88,7 @@ public class Job {
 	 * @param dbInstance a specific database instance name
 	 */
 	public Job(File file, String dbEngine, String dbInstance) {
+		this();
 		loadFromLogFile(file, dbEngine, dbInstance);
 	}
 	
@@ -98,7 +103,6 @@ public class Job {
 	protected void loadFromRequest(HttpServletRequest request, String _dbEngine, String _dbInstance) {
 		
 		arguments = new ArrayList<String>();
-		id = -1;
 		status = -1;
 		executionCount = 0;
 		executionTime = null;
@@ -231,7 +235,6 @@ public class Job {
 		this.dbInstance = dbInstance;
 		
 		arguments = new ArrayList<String>();
-		id = -1;
 		status = getSummaryFile() == null ? -1 : 0;
 		executionCount = 1;
 		
