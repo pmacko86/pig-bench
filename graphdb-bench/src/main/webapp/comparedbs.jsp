@@ -23,9 +23,12 @@
 <%@ include file="include/header.jsp" %>
 	
 	<script src="/include/d3.v2.js"></script>
+	<script src="/include/scroll-sneak.js"></script>
 	
 	<script language="JavaScript">
 		<!-- Begin
+		
+		var scroll_sneak;
 				
 		/*
 		 * Handler for body load
@@ -42,6 +45,15 @@
 			}
 		}
 		
+		/*
+		 * Submit the form
+		 */
+		function form_submit() {
+			scroll_sneak.sneak();
+			document.getElementById('form').submit();
+			return true;
+		}
+		
 		//  End -->
 	</script>
 	
@@ -55,7 +67,7 @@
 				boolean dbinst_simple = false;
 				boolean dbinst_choose_many = true;
 				boolean dbinst_choose_nonexistent = false;
-				String dbinst_onchange = "document.getElementById('form').submit();";
+				String dbinst_onchange = "form_submit();";
 			%>
 			<div class="db_table_div">
 				<%@ include file="include/dbinsttable.jsp" %>
@@ -181,7 +193,7 @@
 						%>
 							<label class="checkbox">
 								<input class="checkbox" type="checkbox" name="operations"
-										onchange="document.getElementById('form').submit();" <%= extraTags %>
+										onchange="form_submit();" <%= extraTags %>
 										value="<%= n %>"/>
 								<%= niceName %>
 							</label>
@@ -231,7 +243,7 @@
 											</span>
 										</label>
 										<select name="<%= inputName %>" id="<%= inputName %>"
-												onchange="document.getElementById('form').submit();">
+												onchange="form_submit();">
 									<%
 									
 									LinkedList<String> jobStrings = new LinkedList<String>();
@@ -402,5 +414,13 @@
 			}
 		%>
 	</div>
+	
+	<script language="JavaScript">
+		<!-- Begin
+		
+		scroll_sneak = new ScrollSneak(location.href);
+		
+		//  End -->
+	</script>
 
 <%@ include file="include/footer.jsp" %>

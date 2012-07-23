@@ -10,9 +10,13 @@
 	boolean jsp_allow_cache = false;
 %>
 <%@ include file="include/header.jsp" %>
+
+	<script src="/include/scroll-sneak.js"></script>
 	
 	<script language="JavaScript">
 		<!-- Begin
+		
+		var scroll_sneak;
 		
 		/*
 		 * Toggle/check a checkbox and unselect all others in the group
@@ -187,12 +191,12 @@
 		<div id="job_control">
 			<p class="middle_header">Job Execution Control</p>
 			
-			<form method="post" action="/JobExecutionControl">
+			<form id="form_start" ethod="post" action="/JobExecutionControl">
 				<input type="hidden" name="action" value="start" />
 				<button type="submit"<%= running || numRunnableJobs == 0 ? " disabled=\"disabled\"" : "" %>>Start</button>
 			</form>
 			
-			<form method="post" action="/JobExecutionControl">
+			<form id="form_pause" method="post" action="/JobExecutionControl">
 				<input type="hidden" name="action" value="pause" />
 				<button type="submit"<%= !running || JobList.getInstance().isPaused() ? " disabled=\"disabled\"" : "" %>>Pause</button>
 			</form>
@@ -223,5 +227,16 @@
 			<div class="clear"></div>
 		</div>
 	</div>
+	
+	<script language="JavaScript">
+		<!-- Begin
+		
+		scroll_sneak = new ScrollSneak(location.href);
+		document.getElementById('form').onsubmit = scroll_sneak.sneak;
+		document.getElementById('form_start').onsubmit = scroll_sneak.sneak;
+		document.getElementById('form_pause').onsubmit = scroll_sneak.sneak;
+		
+		//  End -->
+	</script>
 
 <%@ include file="include/footer.jsp" %>

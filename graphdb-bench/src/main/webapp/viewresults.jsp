@@ -23,9 +23,12 @@
 <%@ include file="include/header.jsp" %>
 	
 	<script src="/include/d3.v2.js"></script>
+	<script src="/include/scroll-sneak.js"></script>
 	
 	<script language="JavaScript">
 		<!-- Begin
+		
+		var scroll_sneak;
 		
 		/*
 		 * Toggle/check a checkbox and unselect all others in the group
@@ -40,6 +43,7 @@
 			}
 			
 			job_radio_set_class_for_all();
+			scroll_sneak.sneak();
 			document.getElementById('form').submit();
 		}
 		
@@ -66,6 +70,7 @@
 		function job_radio_on_change(radio)
 		{			
 			job_radio_set_class_for_all();
+			scroll_sneak.sneak();
 			document.getElementById('form').submit();
 		}
 		
@@ -100,6 +105,15 @@
 			};
 			http_request.send(null);
 		}
+				
+		/*
+		 * Submit the form
+		 */
+		function form_submit() {
+			scroll_sneak.sneak();
+			document.getElementById('form').submit();
+			return true;
+		}
 		
 		/*
 		 * Handler for body load
@@ -131,7 +145,7 @@
 				boolean dbinst_simple = false;
 				boolean dbinst_choose_many = false;
 				boolean dbinst_choose_nonexistent = false;
-				String dbinst_onchange = "document.getElementById('form').submit();";
+				String dbinst_onchange = "form_submit();";
 			%>
 			<div class="db_table_div">
 				<%@ include file="include/dbinsttable.jsp" %>
@@ -329,5 +343,14 @@
 			}
 		%>
 	</div>
+	
+	<script language="JavaScript">
+		<!-- Begin
+		
+		scroll_sneak = new ScrollSneak(location.href);
+		
+		//  End -->
+	</script>
+		
 
 <%@ include file="include/footer.jsp" %>
