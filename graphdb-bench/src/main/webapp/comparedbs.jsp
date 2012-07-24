@@ -352,7 +352,23 @@
 					<div class="chart_outer"><div class="chart chart_all">
 					<%@ include file="include/d3barchart.jsp" %>
 					</div></div>
-	
+				<%
+				
+				chartProperties.source = link + "&show=details";
+				chartProperties.attach = "chart_all_details";
+				//chartProperties.scale = "log";
+				chartProperties.ylabel = "Execution Time (ms)";
+				chartProperties.group_by = "operation";
+				chartProperties.group_label_function = "return d.operation.replace(/^Operation/, '')";
+				chartProperties.category_label_function = "return d.dbengine" + (sameDbInstance ? "" : " + ', ' + d.dbinstance");
+				
+				%>
+					<div class="chart_outer"><div class="chart chart_all_details">
+					<%@ include file="include/d3boxplot.jsp" %>
+					</div></div>
+				<%
+
+				%>
 					<%= writer.toString() %>
 					
 					<div style="height:40px"></div>

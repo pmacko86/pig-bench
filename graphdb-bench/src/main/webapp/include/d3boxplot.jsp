@@ -3,8 +3,6 @@
 <script language="JavaScript">
 	<!-- Begin
 	
-	// XXX Group by does not work
-	
 	function class_boxplot() {
 		this.quantile25 = 0;
 		this.quantile50 = 0;
@@ -12,6 +10,7 @@
 		this.whisker_high = 0;
 		this.whisker_low = 0;
 		this.outliers = [];
+		this.category = null;
 	}
 	
 	// Computes the interquartile range
@@ -52,11 +51,36 @@
 		
 		var boxplot_width = 0.5;
 		
+
+		<% if (chartProperties.group_by != null) { %>
+			
+			var group_label_function = function(d, i) {
+				<%= chartProperties.group_label_function %>;
+			};
+			
+			var category_label_function = function(d, i) {
+				<%= chartProperties.category_label_function %>;
+			};
+
+		<% } else { %>
+			
+			var group_label_function = function(d, i) {
+				return null;
+			};
+			
+			var category_label_function = function(d, i) {
+				return null;
+			};
+
+		<% } %>
+
+
 		d3.csv('<%= chartProperties.source %>', function(data) {
 			
-			data.forEach(function(d) {
+			data.forEach(function(d, i) {
 				<%= chartProperties.foreach %>;
 				d.time = (+d.time) / 1000000.0;			// convert to ms
+				d._index = i;
 			});
 			
 			data = data.filter(function(d) {
@@ -67,7 +91,12 @@
 			
 			var data_scale = "<%= chartProperties.scale %>";
 			var y = d3.scale.<%= chartProperties.scale %>()
-					  .domain([<%= "log".equals(chartProperties.scale) ? "0.9 * d3.min(data, function(d) { return d.time; })" : "0" %>, 
+					  .domain([<%= "log".equals(chartProperties.scale)
+						  ? "0.9 * d3.min(data, function(d) { "
+						    + "  if (d.label.indexOf('----') == 0) return 1000 * 1000 * 1000;"
+							+ "  return d.time;"
+						  	+ "})"
+						  : "0" %>, 
 					  	      1.1 * d3.max(data, function(d) { return d.time; })])
 					  .range([chart_inner_height, 0])
 					  .nice();
@@ -151,10 +180,10 @@
 			x.domain().forEach(function(domain) {
 				if (domain.indexOf("----") == 0) return;
 			
-				d = data.filter(function(d) {
+				domain_data = data.filter(function(d) {
 					return d.label == domain;
 				});
-				d = d.map(function(d) { return d.time; }).sort(d3.ascending);
+				d = domain_data.map(function(d) { return d.time; }).sort(d3.ascending);
 				
 				var q = new class_boxplot();
 				
@@ -169,6 +198,7 @@
 				for (var i = 0; i < w[0]; i++) q.outliers.push(d[i]);
 				for (var i = w[1] + 1; i < d.length; i++) q.outliers.push(d[i]);
 				
+				q.category = category_label_function(domain_data[0], domain_data[0]._index);
 				boxplots[domain] = q;
 			});
 			
@@ -190,26 +220,21 @@
 						var group_lengths = [];
 						var group_columns = [];
 						var group_offsets = [];
+						var group_labels = [];
 						var categories = [];
 						
 						var __last_group_column = "";
+						var __last_group_label = "";
 						var __last_group_length = -1;
-						
-						var group_label_function = function(d, i) {
-							<%= chartProperties.group_label_function %>;
-						};
-						
-						var category_label_function = function(d, i) {
-							<%= chartProperties.category_label_function %>;
-						};
 						
 						data.forEach(function(d, i) {
 						
 							var g = d.<%= chartProperties.group_by %>;
 							if (g != __last_group_column) {
 								if (__last_group_length > 0) {
-									group_columns.push(__last_group_column)
-									group_lengths.push(__last_group_length)
+									group_columns.push(__last_group_column);
+									group_lengths.push(__last_group_length);
+									group_labels.push(group_label_function(data[i-1], i-1));
 								}
 								if (__last_group_length == -1) {
 									group_offsets.push(0);
@@ -220,17 +245,21 @@
 								__last_group_column = g;
 								__last_group_length = 0;
 							}
-							__last_group_length++;
+							if (__last_group_label != d.label) __last_group_length++;
 							
 							if (g != "" && g.indexOf("----") != 0) {
 								var c = category_label_function(d, i);
 								if (categories.indexOf(c) < 0) categories.push(c);
 							}
+							
+							__last_group_label = d.label;
 						});
 						
 						if (__last_group_length > 0) {
 							group_columns.push(__last_group_column)
 							group_lengths.push(__last_group_length)
+							group_labels.push(
+								group_label_function(data[data.length-1], data.length-1));
 						}
 						
 						
@@ -248,7 +277,7 @@
 							 .attr("transform", "translate("
 							 	+ (x.rangeBand() * p + x.rangeBand() / 2) + ", "
 							 	+ (chart_inner_height + chart_margin)  + "), rotate(45)")
-							 .text(group_label_function(data[group_offsets[i]], group_offsets[i]));
+							.text(group_labels[i]);
 						}
 						
 						
@@ -281,6 +310,12 @@
 			x.domain().forEach(function(d, i) {
 			
 				if (d.indexOf("----") == 0) return;
+
+				<% if (chartProperties.group_by != null) { %>
+					var stroke = band_colors(categories.indexOf(boxplots[d].category));
+				<% } else { %>
+					var stroke = "#000";
+				<% } %>
 				
 				chart.append("rect")
 				 .attr("x", 0.5 * (1 - boxplot_width) * x.rangeBand() + x(d))
@@ -288,42 +323,42 @@
 				 .attr("width", boxplot_width * x.rangeBand())
 				 .attr("height", y(boxplots[d].quantile25) - y(boxplots[d].quantile75))
 				 .style("fill", "none")
-				 .style("stroke", "#000");
+				 .style("stroke", stroke);
 				
 				chart.append("line")
 				 .attr("x1", 0.5 * (1 - boxplot_width) * x.rangeBand() + x(d))
 				 .attr("x2", (1 - 0.5 * (1 - boxplot_width)) * x.rangeBand() + x(d))
 				 .attr("y1", y(boxplots[d].quantile50))
 				 .attr("y2", y(boxplots[d].quantile50))
-				 .style("stroke", "#000");
+				 .style("stroke", stroke);
 				
 				chart.append("line")
 				 .attr("x1", 0.5 * x.rangeBand() + x(d))
 				 .attr("x2", 0.5 * x.rangeBand() + x(d))
 				 .attr("y1", y(boxplots[d].quantile25))
 				 .attr("y2", y(boxplots[d].whisker_low))
-				 .style("stroke", "#000");
+				 .style("stroke", stroke);
 				
 				chart.append("line")
 				 .attr("x1", 0.5 * x.rangeBand() + x(d))
 				 .attr("x2", 0.5 * x.rangeBand() + x(d))
 				 .attr("y1", y(boxplots[d].whisker_high))
 				 .attr("y2", y(boxplots[d].quantile75))
-				 .style("stroke", "#000");
+				 .style("stroke", stroke);
 				
 				chart.append("line")
 				 .attr("x1", 0.5 * (1 - boxplot_width) * x.rangeBand() + x(d))
 				 .attr("x2", (1 - 0.5 * (1 - boxplot_width)) * x.rangeBand() + x(d))
 				 .attr("y1", y(boxplots[d].whisker_low))
 				 .attr("y2", y(boxplots[d].whisker_low))
-				 .style("stroke", "#000");
+				 .style("stroke", stroke);
 				
 				chart.append("line")
 				 .attr("x1", 0.5 * (1 - boxplot_width) * x.rangeBand() + x(d))
 				 .attr("x2", (1 - 0.5 * (1 - boxplot_width)) * x.rangeBand() + x(d))
 				 .attr("y1", y(boxplots[d].whisker_high))
 				 .attr("y2", y(boxplots[d].whisker_high))
-				 .style("stroke", "#000");
+				 .style("stroke", stroke);
 				 
 				boxplots[d].outliers.forEach(function(outlier) {
 
@@ -331,7 +366,7 @@
 					 .attr("cx", 0.5 * x.rangeBand() + x(d))
 					 .attr("cy", y(outlier))
 					 .attr("r", 0.125 * x.rangeBand())
-					 .style("stroke", "#000")
+					 .style("stroke", stroke)
 					 .style("fill", "none");
 				});
 			
