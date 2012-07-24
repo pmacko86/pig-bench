@@ -16,6 +16,8 @@ import au.com.bytecode.opencsv.CSVWriter;
 
 import com.tinkerpop.bench.DatabaseEngine;
 import com.tinkerpop.bench.log.GraphRunTimes;
+import com.tinkerpop.bench.log.OperationLogEntry;
+import com.tinkerpop.bench.log.OperationLogReader;
 import com.tinkerpop.bench.log.SummaryLogEntry;
 import com.tinkerpop.bench.log.SummaryLogReader;
 import com.tinkerpop.bench.util.Triple;
@@ -83,11 +85,14 @@ public class ShowOperationRunTimes extends HttpServlet {
 		
 		String groupBy = WebUtils.getStringParameter(request, "group_by");
 		
+		String show = WebUtils.getStringParameter(request, "show");
+		if (show == null) show = "summary";
+		
 		
 		// Get the writer and write out the log file
 		
 		PrintWriter writer = response.getWriter();
-		printRunTimes(writer, operationsToJobs, format, response, groupBy);
+		printRunTimes(writer, operationsToJobs, format, response, groupBy, show);
 	}
 	
 	
@@ -101,7 +106,32 @@ public class ShowOperationRunTimes extends HttpServlet {
 	 */
 	public static void printRunTimes(PrintWriter writer, Map<String, Collection<Job>> operationsToJobs,
 			String format, HttpServletResponse response) {
-		printRunTimes(writer, operationsToJobs, format, response, null);
+		printRunTimes(writer, operationsToJobs, format, response, null, "summary");
+	}
+	
+	
+	/**
+	 * Write out a log file to the given writer
+	 * 
+	 * @param writer the writer
+	 * @param operationsToJobs the map of operation names to the jobs
+	 * @param format the format
+	 * @param response the response, or null if none
+	 * @param groupBy the group by column, or null if none
+	 * @param show what type of data to show (e.g. "summary" or "details")
+	 */
+	public static void printRunTimes(PrintWriter writer, Map<String, Collection<Job>> operationsToJobs,
+			String format, HttpServletResponse response, String groupBy, String show) {
+		
+		if ("summary".equals(show)) printRunTimesSummary(writer, operationsToJobs, format, response, groupBy);
+		else if ("details".equals(show)) printRunTimesDetails(writer, operationsToJobs, format, response, groupBy);
+		else {
+			if (response != null) {
+		        response.setContentType("text/plain");
+		        response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
+			}
+	        writer.println("Error: Invalid argument for \"show\"");
+		}
 	}
 	
 	
@@ -114,7 +144,7 @@ public class ShowOperationRunTimes extends HttpServlet {
 	 * @param response the response, or null if none
 	 * @param groupBy the group by column, or null if none
 	 */
-	public static void printRunTimes(PrintWriter writer, Map<String, Collection<Job>> operationsToJobs,
+	public static void printRunTimesSummary(PrintWriter writer, Map<String, Collection<Job>> operationsToJobs,
 			String format, HttpServletResponse response, String groupBy) {
 		
 		
@@ -289,6 +319,175 @@ public class ShowOperationRunTimes extends HttpServlet {
 				buffer[index++] = Double.toString(r.getMin());
 				buffer[index++] = Double.toString(r.getMax());
 				
+				w.writeNext(buffer);
+				
+				
+				// Finish the entry
+				
+				lastOperation = operation;
+			}
+		}
+		
+		else {
+			if (response != null) {
+		        response.setContentType("text/plain");
+		        response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
+			}
+	        
+	        writer.println("Invalid format.");
+		}		
+	}
+	
+	
+	/**
+	 * Write out a log file to the given writer
+	 * 
+	 * @param writer the writer
+	 * @param operationsToJobs the map of operation names to the jobs
+	 * @param format the format
+	 * @param response the response, or null if none
+	 * @param groupBy the group by column, or null if none
+	 */
+	public static void printRunTimesDetails(PrintWriter writer, Map<String, Collection<Job>> operationsToJobs,
+			String format, HttpServletResponse response, String groupBy) {
+		
+		
+		// Get the run time for each job
+		
+		LinkedList<Triple<String, Job, Long>> operationsJobsRunTimes
+			= new LinkedList<Triple<String, Job, Long>>();
+
+		boolean sameOperation = operationsToJobs.keySet().size() == 1;
+		boolean sameDbEngine = true;
+		boolean sameDbInstance = true;
+		
+		for (String operationName : operationsToJobs.keySet()) {
+			
+			Job firstJob = null;
+			
+			for (Job job : operationsToJobs.get(operationName)) {
+				
+				OperationLogReader reader = new OperationLogReader(job.getLogFile());
+				for (OperationLogEntry e : reader) {
+					if (e.getName().equals(operationName)) {
+						operationsJobsRunTimes.add(new Triple<String, Job, Long>(operationName, job, e.getTime()));
+					}
+				}
+				
+				if (firstJob == null) {
+					firstJob = job;
+				}
+				else {
+					if (!job.getDbEngine().equals(firstJob.getDbEngine())) {
+						sameDbEngine = false;
+					}
+					if (!job.getDbInstanceSafe().equals(firstJob.getDbInstanceSafe())) {
+						sameDbInstance = false;
+					}
+				}
+			}
+		}
+		
+		
+		
+		// Depending on the format type...
+		
+		if ("html".equals(format)) {
+			if (response != null) {
+		        response.setContentType("text/html");
+		        response.setStatus(HttpServletResponse.SC_OK);
+			}
+	        
+			writer.println("<table class=\"basic_table\">");
+			writer.println("<tr>");
+			if (!sameOperation) writer.println("\t<th>Operation</th>");
+			if (!sameDbEngine) writer.println("\t<th>Database Engine</th>");
+			if (!sameDbInstance) writer.println("\t<th>Database Instance</th>");
+			writer.println("\t<th class=\"numeric\">Time (ms)</th>");
+			writer.println("</tr>");
+
+			for (Triple<String, Job, Long> p : operationsJobsRunTimes) {
+				writer.println("<tr>");
+				if (!sameOperation) {
+					writer.println("\t<td>" + p.getFirst() + "</td>");
+				}
+				if (!sameDbEngine) {
+					writer.println("\t<td>" + DatabaseEngine.ENGINES.get(p.getSecond().getDbEngine()).getLongName() + "</td>");
+				}
+				if (!sameDbInstance) {
+					writer.println("\t<td>" + (p.getSecond().getDbInstance() == null
+													? "&lt;default&gt;" : p.getSecond().getDbInstance()) + "</td>");
+				}
+				Long r = p.getThird();
+				writer.println("\t<td class=\"numeric\">" + String.format("%.3f", r / 1000000.0) + "</td>");
+				writer.println("</tr>");
+			}
+			writer.println("</table>");
+		}
+		
+		else if ("csv".equals(format)) {
+			if (response != null) {
+		        response.setContentType("text/plain");
+		        response.setStatus(HttpServletResponse.SC_OK);
+			}
+	        
+	        CSVWriter w = new CSVWriter(writer);
+	        String[] buffer = new String[5];
+	        
+	        int index = 0;
+	        buffer[index++] = "label";
+	        buffer[index++] = "operation";
+	        buffer[index++] = "dbengine";
+	        buffer[index++] = "dbinstance";
+	       	buffer[index++] = "time";
+	        w.writeNext(buffer);
+	        
+	        String lastOperation = null;
+	        
+	        for (Triple<String, Job, Long> p : operationsJobsRunTimes) {
+	        	
+	        	String operation = p.getFirst();
+	        	String dbengine = DatabaseEngine.ENGINES.get(p.getSecond().getDbEngine()).getLongName();
+	        	String dbinstance = (p.getSecond().getDbInstance() == null ? "<default>" : p.getSecond().getDbInstance());
+				
+				 
+				// Group by placeholders
+	        	
+	        	if ("operation".equals(groupBy)) {
+	        		if (lastOperation != null && !operation.equals(lastOperation)) {
+	        			for (int i = 0; i < buffer.length; i++) buffer[i] = "";
+	        			buffer[0] = "----" + lastOperation;
+		        		w.writeNext(buffer);
+	        		}
+	        	}
+	        	
+
+	        	
+	        	// Actual data
+				
+	        	index = 0;
+				String label = "";
+				if (!sameOperation) {
+					if (!"".equals(label)) label += " : ";
+					label += operation;
+				}
+				if (!sameDbEngine) {
+					if (!"".equals(label)) label += " : ";
+					label += dbengine;
+				}
+				if (!sameDbInstance) {
+					if (!"".equals(label)) label += " : ";
+					label += dbinstance;
+				}
+				buffer[index++] = label;
+	        	
+				buffer[index++] = operation;
+				buffer[index++] = dbengine;
+				buffer[index++] = dbinstance;
+			
+				Long r = p.getThird();
+				buffer[index++] = Double.toString(r);
+
 				w.writeNext(buffer);
 				
 				

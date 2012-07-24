@@ -28,6 +28,7 @@ public class ChartProperties {
 	 * Chart appearance 
 	 */
 	
+	public String scale = "linear";
 	public String ylabel = "";
 	
 	

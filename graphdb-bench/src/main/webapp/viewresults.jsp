@@ -307,7 +307,21 @@
 						<%
 					}
 					else {
+						
+						ChartProperties chartProperties = new ChartProperties();
+						
+						chartProperties.source = "/ShowLogFile?job=" + job.getId() + "&format=csv";
+						chartProperties.attach = "chart_log";
+						chartProperties.foreach = "d.label = d.name";
+						chartProperties.filter = "['OperationOpenGraph', 'OperationDoGC', 'OperationShutdownGraph'].indexOf(d.name) < 0";
+						chartProperties.scale = "log";
+						chartProperties.ylabel = "Execution Time (ms)";
+							
 						%>
+							<div class="chart_outer"><div class="chart_log">
+							<%@ include file="include/d3boxplot.jsp" %>
+							</div></div>
+							
 							<div>
 								<button onclick="replace_by_log_file(this, '<%= job.getId() %>', false)">
 									Show...
