@@ -1,4 +1,5 @@
-			
+<%@ page import="com.tinkerpop.bench.web.ChartProperties"%>
+
 <script language="JavaScript">
 	<!-- Begin
 	
@@ -23,21 +24,23 @@
 	var legend_bar_height = bar_width;
 	var legend_vertical_spacing = 2;
 	
-	d3.csv('<%= d3_source %>', function(data) {
+	d3.csv('<%= chartProperties.source %>', function(data) {
 		
 		data.forEach(function(d) {
-			<%= d3_foreach %>;
+			<%= chartProperties.foreach %>;
 			d.mean = (+d.mean) / 1000000.0;			// convert to ms
 			d.stdev = (+d.stdev) / 1000000.0;		// convert to ms
+			d.min = (+d.min) / 1000000.0;			// convert to ms
+			d.max = (+d.max) / 1000000.0;			// convert to ms
 		});
 		
 		data = data.filter(function(d) {
-			return <%= d3_filter %>;
+			return <%= chartProperties.filter %>;
 		});
 		
 		var labels = data.map(function(d) { return d.label; });
 		
-		var chart = d3.select(".<%= d3_attach %>").append("svg")
+		var chart = d3.select(".<%= chartProperties.attach %>").append("svg")
 					  .attr("class", "chart")
 					  .attr("width",  bar_width * data.length + padding_left + padding_right)
 					  .attr("height", chart_inner_height + padding_top + padding_bottom)
@@ -45,7 +48,7 @@
 					  	.attr("transform", "translate(" + padding_left + ", " + padding_top + ")");
 		
 		var y = d3.scale.linear()
-				  .domain([0, 1.1 * d3.max(data, function(d) { return d.mean; })])
+				  .domain([0, 1.1 * d3.max(data, function(d) { return d.mean + d.stdev; })])
 				  .range([chart_inner_height, 0]);
 		
 		var x = d3.scale.ordinal()
@@ -91,7 +94,7 @@
 			 .attr("transform", "translate("
 			 	+ (-bars_margin*2 - ylabel_from_chart_margin) + ", "
 			 	+ (chart_inner_height/2)  + "), rotate(-90)")
-			 .text("<%= d3_ylabel %>");
+			 .text("<%= chartProperties.ylabel %>");
 		
 		
 		<%
@@ -99,11 +102,11 @@
 			
 			// TODO Bars within a group need different colors + we need a legend
 			
-			if (d3_group_label_function == null) {
-				d3_group_label_function = "return d." + d3_group_by;
+			if (chartProperties.group_label_function == null) {
+				chartProperties.group_label_function = "return d." + chartProperties.group_by;
 			}
 			
-			if (d3_group_by != null) {
+			if (chartProperties.group_by != null) {
 				%>
 				
 					// Get the groups and the categories 
@@ -117,16 +120,16 @@
 					var __last_group_length = -1;
 					
 					var group_label_function = function(d, i) {
-						<%= d3_group_label_function %>;
+						<%= chartProperties.group_label_function %>;
 					};
 					
 					var category_label_function = function(d, i) {
-						<%= d3_category_label_function %>;
+						<%= chartProperties.category_label_function %>;
 					};
 					
 					data.forEach(function(d, i) {
 					
-						var g = d.<%= d3_group_by %>;
+						var g = d.<%= chartProperties.group_by %>;
 						if (g != __last_group_column) {
 							if (__last_group_length > 0) {
 								group_columns.push(__last_group_column)
@@ -204,7 +207,7 @@
 			 .enter().append("rect")
 			 .attr("x", function(d, i) { return i * x.rangeBand(); })
 			 .attr("y", function(d, i) { return y(d.mean); })
-			<% if (d3_group_by != null) { %>
+			<% if (chartProperties.group_by != null) { %>
 				.style("fill", function(d, i) {
 					var c = category_label_function(d, i);
 					var index = categories.indexOf(c);
@@ -213,13 +216,41 @@
 			<% } %>
 			 .attr("width", x.rangeBand())
 			 .attr("height", function(d, i) { return chart_inner_height - y(d.mean); });
+				  
+		chart.selectAll("error_bars_middle")
+			 .data(data)
+			 .enter().append("line")
+			 .style("stroke", "#000")
+			 .attr("x1", function(d, i) { return (i + 0.5) * x.rangeBand(); })
+			 .attr("x2", function(d, i) { return (i + 0.5) * x.rangeBand(); })
+			 .attr("y1", function(d, i) { return y(d.mean + d.stdev); })
+			 .attr("y2", function(d, i) { return y(d.mean - d.stdev < 0 ? 0 : d.mean - d.stdev); });
+				  
+		chart.selectAll("error_bars_top")
+			 .data(data)
+			 .enter().append("line")
+			 .style("stroke", "#000")
+			 .attr("x1", function(d, i) { return (i + 0.25) * x.rangeBand(); })
+			 .attr("x2", function(d, i) { return (i + 0.75) * x.rangeBand(); })
+			 .attr("y1", function(d, i) { return y(d.mean + d.stdev); })
+			 .attr("y2", function(d, i) { return y(d.mean + d.stdev); });
+				  
+		chart.selectAll("error_bars_bottom")
+			 .data(data)
+			 .enter().append("line")
+			 .style("stroke", "#000")
+			 .attr("x1", function(d, i) { return (i + 0.25) * x.rangeBand(); })
+			 .attr("x2", function(d, i) { return (i + 0.75) * x.rangeBand(); })
+			 .attr("y1", function(d, i) { return y(d.mean - d.stdev < 0 ? 0 : d.mean - d.stdev); })
+			 .attr("y2", function(d, i) { return y(d.mean - d.stdev < 0 ? 0 : d.mean - d.stdev); });
+
 			 
 		data.forEach(function(d, i) {
 		
 			if (d.label.indexOf("----") == 0) return;
 		
 			<%
-				if (d3_group_by == null) {
+				if (chartProperties.group_by == null) {
 					%>
 						chart.append("text")
 						 .attr("x", 0)
@@ -246,7 +277,7 @@
 			 .attr("dy", ".35em") // vertical-align: middle
 			 .attr("transform", "translate("
 			 	+ (x.rangeBand() * i + x.rangeBand() / 2) + ", "
-			 	+ (y(d.mean) - 10)  + "), rotate(-90)")
+			 	+ (y(d.mean + d.stdev) - 10)  + "), rotate(-90)")
 			 .text("" + d.mean.toFixed(fixed_length) + " ms");
 		});
 

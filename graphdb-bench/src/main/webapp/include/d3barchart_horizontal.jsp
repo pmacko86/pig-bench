@@ -9,21 +9,23 @@
 	var padding_top = 20;
 	var padding_bottom = 0;
 	
-	d3.csv('<%= d3_source %>', function(data) {
+	d3.csv('<%= chartProperties.source %>', function(data) {
 		
 		data.forEach(function(d) {
-			<%= d3_foreach %>;
+			<%= chartProperties.foreach %>;
 			d.mean = (+d.mean) / 1000000.0;			// convert to ms
 			d.stdev = (+d.stdev) / 1000000.0;		// convert to ms
+			d.min = (+d.min) / 1000000.0;			// convert to ms
+			d.max = (+d.max) / 1000000.0;			// convert to ms
 		});
 		
 		data = data.filter(function(d) {
-			return <%= d3_filter %>;
+			return <%= chartProperties.filter %>;
 		});
 		
 		var labels = data.map(function(d) { return d.label; });
 		
-		var chart = d3.select(".<%= d3_attach %>").append("svg")
+		var chart = d3.select(".<%= chartProperties.attach %>").append("svg")
 					  .attr("class", "chart")
 					  .attr("width", char_inner_width + padding_left + padding_right)
 					  .attr("height", bar_height * data.length + padding_top + padding_bottom)
@@ -31,7 +33,7 @@
 					  	.attr("transform", "translate(" + padding_left + ", " + padding_top + ")");
 		
 		var x = d3.scale.linear()
-				  .domain([0, d3.max(data, function(d) { return d.mean; })])
+				  .domain([0, d3.max(data, function(d) { return d.mean + d.stdev; })])
 				  .range([0, char_inner_width]);
 		
 		var y = d3.scale.ordinal()
@@ -69,6 +71,33 @@
 			 .attr("y", function(d, i) { return i * y.rangeBand(); })
 			 .attr("width", function(d, i) { return x(d.mean); })
 			 .attr("height", y.rangeBand());
+			 				  
+		chart.selectAll("error_bars_middle")
+			 .data(data)
+			 .enter().append("line")
+			 .style("stroke", "#000")
+			 .attr("y1", function(d, i) { return (i + 0.5) * y.rangeBand(); })
+			 .attr("y2", function(d, i) { return (i + 0.5) * y.rangeBand(); })
+			 .attr("x1", function(d, i) { return x(d.mean + d.stdev); })
+			 .attr("x2", function(d, i) { return x(d.mean - d.stdev < 0 ? 0 : d.mean - d.stdev); });
+				  
+		chart.selectAll("error_bars_top")
+			 .data(data)
+			 .enter().append("line")
+			 .style("stroke", "#000")
+			 .attr("y1", function(d, i) { return (i + 0.25) * y.rangeBand(); })
+			 .attr("y2", function(d, i) { return (i + 0.75) * y.rangeBand(); })
+			 .attr("x1", function(d, i) { return x(d.mean + d.stdev); })
+			 .attr("x2", function(d, i) { return x(d.mean + d.stdev); });
+				  
+		chart.selectAll("error_bars_bottom")
+			 .data(data)
+			 .enter().append("line")
+			 .style("stroke", "#000")
+			 .attr("y1", function(d, i) { return (i + 0.25) * y.rangeBand(); })
+			 .attr("y2", function(d, i) { return (i + 0.75) * y.rangeBand(); })
+			 .attr("x1", function(d, i) { return x(d.mean - d.stdev < 0 ? 0 : d.mean - d.stdev); })
+			 .attr("x2", function(d, i) { return x(d.mean - d.stdev < 0 ? 0 : d.mean - d.stdev); });
 			 
 		chart.selectAll("labels")
 			 .data(data)
@@ -83,7 +112,7 @@
 		chart.selectAll("data_values")
 			 .data(data)
 			 .enter().append("text")
-			 .attr("x", function(d, i) { return x(d.mean); })
+			 .attr("x", function(d, i) { return x(d.mean + d.stdev); })
 			 .attr("y", function(d, i) { return y.rangeBand() * i + y.rangeBand() / 2; })
 			 .attr("dx", 5) // padding-right
 			 .attr("dy", ".35em") // vertical-align: middle

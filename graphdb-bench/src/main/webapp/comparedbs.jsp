@@ -339,15 +339,14 @@
 					}
 				}
 				
-				String d3_source = link;
-				String d3_attach = "chart_all";
-				String d3_foreach = "";
-				String d3_filter = "true";
-				String d3_ylabel = "Execution Time (ms)";
-				String d3_group_by = "operation";
-				String d3_group_label_function = "return d.operation.replace(/^Operation/, '')";
-				String d3_category_label_function = "return d.dbengine"
-					+ (sameDbInstance ? "" : " + ', ' + d.dbinstance");
+				ChartProperties chartProperties = new ChartProperties();
+				
+				chartProperties.source = link;
+				chartProperties.attach = "chart_all";
+				chartProperties.ylabel = "Execution Time (ms)";
+				chartProperties.group_by = "operation";
+				chartProperties.group_label_function = "return d.operation.replace(/^Operation/, '')";
+				chartProperties.category_label_function = "return d.dbengine" + (sameDbInstance ? "" : " + ', ' + d.dbinstance");
 				
 				%>
 					<div class="chart_outer"><div class="chart chart_all">
@@ -392,15 +391,12 @@
 				for (Job j : currentJobs) {
 					link += "&jobs-" + eon + "=" + j.getId();
 				}
+								
+				ChartProperties chartProperties = new ChartProperties();
 				
-				String d3_source = link;
-				String d3_attach = "chart_" + operationName;
-				String d3_foreach = "";
-				String d3_filter = "true";
-				String d3_ylabel = "Execution Time (ms)";
-				String d3_group_by = null;
-				String d3_group_label_function = null;
-				String d3_category_label_function = null;
+				chartProperties.source = link;
+				chartProperties.attach = "chart_" + operationName;
+				chartProperties.ylabel = "Execution Time (ms)";
 				
 				%>
 					<div class="chart_outer"><div class="chart chart_<%= operationName %>">

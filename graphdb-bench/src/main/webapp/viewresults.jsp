@@ -279,10 +279,12 @@
 						StringWriter writer = new StringWriter();
 						ShowSummaryLogFile.printSummaryLogFile(new PrintWriter(writer), f, "html", null);
 						
-						String d3_source = "/ShowSummaryLogFile?job=" + job.getId() + "&format=csv";
-						String d3_attach = "chart";
-						String d3_foreach = "d.label = d.operation";
-						String d3_filter = "['OperationOpenGraph', 'OperationDoGC', 'OperationShutdownGraph'].indexOf(d.operation) < 0";
+						ChartProperties chartProperties = new ChartProperties();
+						
+						chartProperties.source = "/ShowSummaryLogFile?job=" + job.getId() + "&format=csv";
+						chartProperties.attach = "chart";
+						chartProperties.foreach = "d.label = d.operation";
+						chartProperties.filter = "['OperationOpenGraph', 'OperationDoGC', 'OperationShutdownGraph'].indexOf(d.operation) < 0";
 						
 						%>
 							<div class="chart_outer"><div class="chart">
