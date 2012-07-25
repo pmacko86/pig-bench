@@ -108,7 +108,7 @@
 				d.result = result_tokens;
 				
 				d._index = i;
-				d._value = <%= chartProperties.value %>;
+				d._value = <%= chartProperties.yvalue %>;
 				//if (i < 10) console.log(d);
 			});
 			
@@ -156,10 +156,8 @@
 			
 				
 			//
-			// Determine the quantiles for each element in the domain
+			// Drop extreme values
 			//
-			
-			var boxplots = new Array();
 			
 			<% if (chartProperties.dropTopBottomExtremes) { %>
 							
@@ -180,6 +178,14 @@
 				});
 				
 			<% } %>
+			
+			
+				
+			//
+			// Determine the quantiles for each element in the domain
+			//
+			
+			var boxplots = new Array();
 							
 			x.domain().forEach(function(domain) {
 				if (domain.indexOf("----") == 0) return;
@@ -212,9 +218,9 @@
 			// Y Scale
 			//
 			
-			var data_scale = "<%= chartProperties.scale %>";
-			var y = d3.scale.<%= chartProperties.scale %>()
-					  .domain([<%= "log".equals(chartProperties.scale)
+			var data_scale = "<%= chartProperties.yscale %>";
+			var y = d3.scale.<%= chartProperties.yscale %>()
+					  .domain([<%= "log".equals(chartProperties.yscale)
 						  ? "0.9 * d3.min(data, function(d) { "
 						    + "  if (d.label.indexOf('----') == 0) return 1000 * 1000 * 1000;"
 							+ "  return d._value;"

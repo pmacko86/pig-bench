@@ -319,11 +319,30 @@
 				boolean boxPlots = WebUtils.getBooleanParameter(request, "boxplots", false);
 				boolean logScale = WebUtils.getBooleanParameter(request, "logscale", false);
 				boolean dropExtremes = WebUtils.getBooleanParameter(request, "dropextremes", false);
+				boolean plotTimeVsRetrievedNodes = WebUtils.getBooleanParameter(request, "plotTimeVsRetrievedNodes", false);
+				boolean additionalKHopNeighborsPlots = WebUtils.getBooleanParameter(request, "additionalKHopNeighborsPlots", false);
 				
 				String boxPlotYValue = WebUtils.getStringParameter(request, "boxplotyvalue");
 				if (boxPlotYValue == null) boxPlotYValue = "d.time";
 				// XXX Further sanitize boxPlotYValue!
 				boxPlotYValue = boxPlotYValue.replace(';', ' ');
+				
+				boolean plotTimeVsRetrievedNodes_enabled = true;
+				for (String s : selectedOperations) {
+					if (!s.startsWith("OperationGetAllNeighbors")
+							&& !s.startsWith("OperationGetKHopNeighbors")) {
+						plotTimeVsRetrievedNodes_enabled = false;
+						break;
+					}
+				}
+				
+				boolean additionalKHopNeighborsPlots_enabled = true;
+				for (String s : selectedOperations) {
+					if (!s.startsWith("OperationGetKHopNeighbors")) {
+						additionalKHopNeighborsPlots_enabled = false;
+						break;
+					}
+				}
 				
 				if (!selectedOperations.isEmpty()) {
 					%>
@@ -331,7 +350,7 @@
 							<p class="middle">4) Select display options:</p>
 							
 							
-							<p class="middle_inner">Bar Graphs</p>
+							<p class="middle_inner">Summary Bar Graphs</p>
 							
 							<label class="checkbox">
 								<input class="checkbox" type="checkbox"
@@ -351,7 +370,27 @@
 							
 							
 							<div style="height:10px"></div>
-							<p class="middle_inner">Box Plots</p>
+							<p class="middle_inner">Data Plots &ndash; Generic Options</p>
+							
+							<label class="checkbox">
+								<input class="checkbox" type="checkbox"
+										name="logscale" id="logscale"
+										onchange="form_submit();" <%= logScale ? "checked=\"checked\"" : "" %>
+										value="true"/>
+								Use log scale
+							</label>
+							
+							<label class="checkbox">
+								<input class="checkbox" type="checkbox"
+										name="dropextremes" id="dropextremes"
+										onchange="form_submit();" <%= dropExtremes ? "checked=\"checked\"" : "" %>
+										value="true"/>
+								Drop top and bottom 1% of values
+							</label>
+							
+							
+							<div style="height:10px"></div>
+							<p class="middle_inner">Data Plots &ndash; Box Plots</p>
 							
 							<label class="checkbox">
 								<input class="checkbox" type="checkbox"
@@ -373,20 +412,26 @@
 									onchange="form_submit();"
 									value="<%= StringEscapeUtils.escapeHtml(boxPlotYValue) %>"/>
 							
+							
+							<div style="height:10px"></div>
+							<p class="middle_inner">Data Plots &ndash; Specialty Plots</p>
+							
 							<label class="checkbox">
 								<input class="checkbox" type="checkbox"
-										name="logscale" id="logscale"
-										onchange="form_submit();" <%= logScale ? "checked=\"checked\"" : "" %>
+										name="plotTimeVsRetrievedNodes" id="plotTimeVsRetrievedNodes"
+										onchange="form_submit();" <%= plotTimeVsRetrievedNodes ? "checked=\"checked\"" : "" %>
+										<%= !plotTimeVsRetrievedNodes_enabled ? "disabled=\"disabled\"" : ""  %>
 										value="true"/>
-								Use log scale
+								Execution Time vs. Number of Returned Unique Nodes (GetAllNeighbors and GetKHopNeighbors only)
 							</label>
 							
 							<label class="checkbox">
 								<input class="checkbox" type="checkbox"
-										name="dropextremes" id="dropextremes"
-										onchange="form_submit();" <%= dropExtremes ? "checked=\"checked\"" : "" %>
+										name="additionalKHopNeighborsPlots" id="additionalKHopNeighborsPlots"
+										onchange="form_submit();" <%= additionalKHopNeighborsPlots ? "checked=\"checked\"" : "" %>
+										<%= !additionalKHopNeighborsPlots_enabled ? "disabled=\"disabled\"" : ""  %>
 										value="true"/>
-								Drop top and bottom 1% of values
+								Additional GetKHopNeighbors plots
 							</label>
 				
 							<p class="middle"></p>
@@ -400,6 +445,8 @@
 						<input type="hidden" name="boxplots" id="boxplots" value="<%= "" + boxPlots %>" />
 						<input type="hidden" name="logscale" id="logscale" value="<%= "" + logScale %>" />
 						<input type="hidden" name="dropextremes" id="dropextremes" value="<%= "" + dropExtremes %>" />
+						<input type="hidden" name="plotTimeVsRetrievedNodes" id="plotTimeVsRetrievedNodes" value="<%= "" + plotTimeVsRetrievedNodes %>" />
+						<input type="hidden" name="additionalKHopNeighborsPlots" id="additionalKHopNeighborsPlots" value="<%= "" + additionalKHopNeighborsPlots %>" />
 					<%
 				}
 			%>
@@ -457,7 +504,7 @@
 					
 					chartProperties.source = link + "&format=csv";
 					chartProperties.attach = "chart_all";
-					chartProperties.value = "d.mean";
+					chartProperties.yvalue = "d.mean";
 					chartProperties.ylabel = "Execution Time (ms)";
 					chartProperties.group_by = "operation";
 					chartProperties.group_label_function = "return d.operation.replace(/^Operation/, '')";
@@ -475,8 +522,8 @@
 					
 					chartProperties.source = link + "&show=details&format=csv";
 					chartProperties.attach = "chart_all_details";
-					chartProperties.value = boxPlotYValue;
-					if (logScale) chartProperties.scale = "log";
+					chartProperties.yvalue = boxPlotYValue;
+					if (logScale) chartProperties.yscale = "log";
 					if (dropExtremes) chartProperties.dropTopBottomExtremes = true;
 					chartProperties.ylabel = "d.time".equals(boxPlotYValue) 
 							? "Execution Time (ms)" : StringEscapeUtils.escapeXml(boxPlotYValue);	// TODO Need better escape
@@ -487,6 +534,58 @@
 					%>
 						<div class="chart_outer"><div class="chart chart_all_details">
 						<%@ include file="include/d3boxplot.jsp" %>
+						</div></div>
+					<%
+				}
+				
+				if (plotTimeVsRetrievedNodes && plotTimeVsRetrievedNodes_enabled) {
+					ChartProperties chartProperties = new ChartProperties();
+					
+					chartProperties.source = link + "&show=details&format=csv";
+					chartProperties.attach = "chart_all_plotTimeVsRetrievedNodes";
+					chartProperties.xvalue = "d.result[0]";
+					chartProperties.yvalue = "d.time";
+					if (logScale) chartProperties.yscale = "log";
+					if (dropExtremes) chartProperties.dropTopBottomExtremes = true;
+					chartProperties.xlabel = "Number of Retrieved Unique Nodes";
+					chartProperties.ylabel = "Execution Time (ms)";
+					chartProperties.series_column = "label";
+					chartProperties.series_label_function = "return d.label.replace(/^Operation/, '')";
+					
+					%>
+						<div class="chart_outer"><div class="chart chart_all_plotTimeVsRetrievedNodes">
+						<%@ include file="include/d3scatterplot.jsp" %>
+						</div></div>
+					<%
+				}
+				
+				if (additionalKHopNeighborsPlots && additionalKHopNeighborsPlots_enabled) {
+					ChartProperties chartProperties = new ChartProperties();
+					
+					chartProperties.source = link + "&show=details&format=csv";
+					chartProperties.attach = "chart_all_additionalKHopNeighborsPlots_1";
+					chartProperties.xvalue = "d.result[2]";
+					chartProperties.yvalue = "d.time";
+					if (logScale) chartProperties.yscale = "log";
+					if (dropExtremes) chartProperties.dropTopBottomExtremes = true;
+					chartProperties.xlabel = "Number of Calls to Vertex.getOutEdges()";
+					chartProperties.ylabel = "Execution Time (ms)";
+					chartProperties.series_column = "label";
+					chartProperties.series_label_function = "return d.label.replace(/^Operation/, '')";
+					
+					%>
+						<div class="chart_outer"><div class="chart chart_all_additionalKHopNeighborsPlots_1">
+						<%@ include file="include/d3scatterplot.jsp" %>
+						</div></div>
+					<%
+					
+					chartProperties.attach = "chart_all_additionalKHopNeighborsPlots_2";
+					chartProperties.xvalue = "d.result[3]";
+					chartProperties.xlabel = "Number of Calls to Edge.getInVertex()";
+					
+					%>
+						<div class="chart_outer"><div class="chart chart_all_additionalKHopNeighborsPlots_2">
+						<%@ include file="include/d3scatterplot.jsp" %>
 						</div></div>
 					<%
 				}

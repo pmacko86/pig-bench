@@ -9,16 +9,27 @@ package com.tinkerpop.bench.web;
 public class ChartProperties {
 	
 	/*
-	 * Data source, transformation, and filtering
+	 * Data source
 	 */
 	
 	public String source = null;
-	public String value = "d.time";
+	public String xvalue = "null";
+	public String yvalue = "d.time";
+	
+	
+	/*
+	 * Data transformation
+	 */
 	
 	public String foreach = "";
 	
-	public boolean dropTopBottomExtremes = false;
+	
+	/*
+	 * Data filters
+	 */
+	
 	public String filter = "true";
+	public boolean dropTopBottomExtremes = false;
 	
 	
 	/*
@@ -32,8 +43,18 @@ public class ChartProperties {
 	 * Chart appearance 
 	 */
 	
-	public String scale = "linear";
+	public String xscale = "linear";
+	public String xlabel = "";
+	public String yscale = "linear";
 	public String ylabel = "";
+	
+	
+	/*
+	 * Simple series
+	 */
+	
+	public String series_column = null;
+	public String series_label_function = null;
 	
 	
 	/*

@@ -314,7 +314,7 @@
 						chartProperties.attach = "chart_log";
 						chartProperties.foreach = "d.label = d.name";
 						chartProperties.filter = "['OperationOpenGraph', 'OperationDoGC', 'OperationShutdownGraph'].indexOf(d.name) < 0";
-						chartProperties.scale = "log";
+						chartProperties.yscale = "log";
 						chartProperties.ylabel = "Execution Time (ms)";
 							
 						%>
