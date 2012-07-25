@@ -26,7 +26,7 @@
 		return [i, j];
 	}
 	
-	plot = function() {
+	function boxplot() {
 		
 		var chart_inner_height = 420;
 		var chart_margin = 10;
@@ -75,35 +75,65 @@
 		<% } %>
 
 
+
+		//
+		// Load the data and create the chart
+		//
+
 		d3.csv('<%= chartProperties.source %>', function(data) {
+		
+		
+			//
+			// Prepare and filter the data
+			//
 			
 			data.forEach(function(d, i) {
+			
 				<%= chartProperties.foreach %>;
 				d.time = (+d.time) / 1000000.0;			// convert to ms
+				
+				tokens = d.result.split(":");
+				result_tokens = new Array();
+				for (var t = 0; t < tokens.length; t++) {
+					var token = tokens[t].split("=");
+					if (token.length > 1) {
+						result_tokens[token[0]] = parseFloat(token[1]);
+						result_tokens[t] = parseFloat(tokens[t]);
+					}
+					else {
+						result_tokens[t] = parseFloat(tokens[t]);
+					}
+				}
+				d.result_string = d.result;
+				d.result = result_tokens;
+				
 				d._index = i;
+				d._value = <%= chartProperties.value %>;
+				//if (i < 10) console.log(d);
 			});
 			
 			data = data.filter(function(d) {
+				if (d._value == Infinity || isNaN(d._value)) return false;
 				return <%= chartProperties.filter %>;
 			});
+	
+	
+		
+			//
+			// X Scale
+			//
 			
 			var labels = data.map(function(d) { return d.label; });
-			
-			var data_scale = "<%= chartProperties.scale %>";
-			var y = d3.scale.<%= chartProperties.scale %>()
-					  .domain([<%= "log".equals(chartProperties.scale)
-						  ? "0.9 * d3.min(data, function(d) { "
-						    + "  if (d.label.indexOf('----') == 0) return 1000 * 1000 * 1000;"
-							+ "  return d.time;"
-						  	+ "})"
-						  : "0" %>, 
-					  	      1.1 * d3.max(data, function(d) { return d.time; })])
-					  .range([chart_inner_height, 0])
-					  .nice();
 			
 			var x = d3.scale.ordinal()
 					  .domain(labels);
 			x.rangeBands([0, band_width * x.domain().length]);
+			
+			
+			
+			//
+			// Create the chart
+			//
 			
 			var chart = d3.select(".<%= chartProperties.attach %>").append("svg")
 						  .attr("class", "chart")
@@ -111,9 +141,94 @@
 						  .attr("height", chart_inner_height + padding_top + padding_bottom)
 						  .append("g")
 						  	.attr("transform", "translate(" + padding_left + ", " + padding_top + ")");
+			
+			
+			draw_chart(data, chart, x);
+		});
+			
+		
+		
+		//
+		// Function to draw the data
+		//
+		
+		function draw_chart(data, chart, x) {
+			
+				
+			//
+			// Determine the quantiles for each element in the domain
+			//
+			
+			var boxplots = new Array();
+			
+			<% if (chartProperties.dropTopBottomExtremes) { %>
+							
+				x.domain().forEach(function(domain) {
+					if (domain.indexOf("----") == 0) return;
+				
+					domain_data = data.filter(function(d) {
+						return d.label == domain;
+					});
+					d = domain_data.map(function(d) { return d._value; }).sort(d3.ascending);
+					
+					min = d3.quantile(d, .01);
+					max = d3.quantile(d, .99);
+				
+					data = data.filter(function(d) {
+						return d.label != domain || (d._value >= min && d._value <= max);
+					});
+				});
+				
+			<% } %>
+							
+			x.domain().forEach(function(domain) {
+				if (domain.indexOf("----") == 0) return;
+			
+				domain_data = data.filter(function(d) {
+					return d.label == domain;
+				});
+				d = domain_data.map(function(d) { return d._value; }).sort(d3.ascending);
+				
+				var q = new class_boxplot();
+				
+				q.quantile25 = d3.quantile(d, .25);
+				q.quantile50 = d3.quantile(d, .50);
+				q.quantile75 = d3.quantile(d, .75);
+				
+				w = iqr(d, q, 1.5);
+				q.whisker_low = d[w[0]];
+				q.whisker_high = d[w[1]];
+				
+				for (var i = 0; i < w[0]; i++) q.outliers.push(d[i]);
+				for (var i = w[1] + 1; i < d.length; i++) q.outliers.push(d[i]);
+				
+				q.category = category_label_function(domain_data[0], domain_data[0]._index);
+				boxplots[domain] = q;
+			});
+		
+		
+			
+			//
+			// Y Scale
+			//
+			
+			var data_scale = "<%= chartProperties.scale %>";
+			var y = d3.scale.<%= chartProperties.scale %>()
+					  .domain([<%= "log".equals(chartProperties.scale)
+						  ? "0.9 * d3.min(data, function(d) { "
+						    + "  if (d.label.indexOf('----') == 0) return 1000 * 1000 * 1000;"
+							+ "  return d._value;"
+						  	+ "})"
+						  : "0" %>, 
+					  	      1.1 * d3.max(data, function(d) { return d._value; })])
+					  .range([chart_inner_height, 0])
+					  .nice();
 	
 	
+	
+			//
 			// The vertical ruler (ticks) and the axis
+			//
 			
 			var num_ticks = 10;
 			var ticks = y.ticks(num_ticks);
@@ -171,37 +286,12 @@
 				 	+ (-bands_margin*2 - ylabel_from_chart_margin) + ", "
 				 	+ (chart_inner_height/2)  + "), rotate(-90)")
 				 .text("<%= chartProperties.ylabel %>");
-				 
-				 
-			// Determine the quantiles for each element in the domain
 			
-			var boxplots = new Array();
-							 
-			x.domain().forEach(function(domain) {
-				if (domain.indexOf("----") == 0) return;
 			
-				domain_data = data.filter(function(d) {
-					return d.label == domain;
-				});
-				d = domain_data.map(function(d) { return d.time; }).sort(d3.ascending);
-				
-				var q = new class_boxplot();
-				
-				q.quantile25 = d3.quantile(d, .25);
-				q.quantile50 = d3.quantile(d, .50);
-				q.quantile75 = d3.quantile(d, .75);
-				
-				w = iqr(d, q, 1.5);
-				q.whisker_low = d[w[0]];
-				q.whisker_high = d[w[1]];
-				
-				for (var i = 0; i < w[0]; i++) q.outliers.push(d[i]);
-				for (var i = w[1] + 1; i < d.length; i++) q.outliers.push(d[i]);
-				
-				q.category = category_label_function(domain_data[0], domain_data[0]._index);
-				boxplots[domain] = q;
-			});
 			
+			//
+			// Group labels and legend
+			//
 			
 			<%
 				// Group labels and legend
@@ -305,7 +395,10 @@
 			%>
 			
 			
+			
+			//
 			// Data and labels
+			//
 				 
 			x.domain().forEach(function(d, i) {
 			
@@ -388,7 +481,9 @@
 			});
 	
 	
+			//
 			// Zero axis line
+			//
 			
 			chart.append("line")
 				 .attr("x1", -bands_margin)
@@ -396,11 +491,45 @@
 				 .attr("x2", band_width * x.domain().length + bands_margin)
 				 .attr("y2", chart_inner_height)
 				 .style("stroke", "#000");
-		});
+			
+			
+			
+			// TODO
+	
+			function redraw() {
+			
+				/*data.forEach(function(d, i) {
+					d.time += 0.1;
+					d._value += 0.1;
+				});*/
+		 
+				chart.selectAll("rect")
+					.transition()
+					.duration(100)
+					.remove();
+		 
+				chart.selectAll("line")
+					.transition()
+					.duration(100)
+					.remove();
+		 
+				chart.selectAll("text")
+					.transition()
+					.duration(100)
+					.remove();
+		 
+				chart.selectAll("circle")
+					.transition()
+					.duration(200)
+					.remove();
+					
+				draw_chart(data, chart, x);
+			}
+		}
 	
 	};
 	
-	plot();
+	this_boxplot = new boxplot();
 	
 	//  End -->
 </script>

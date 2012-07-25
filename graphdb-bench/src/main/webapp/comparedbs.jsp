@@ -53,6 +53,28 @@
 			document.getElementById('form').submit();
 			return true;
 		}
+				
+		/*
+		 * Replace the parent of the given element by the contents of the page at the given URL
+		 */
+		function replace_by_page(element, url)
+		{
+			var node = element.parentNode;
+			var http_request = new XMLHttpRequest();
+			http_request.open("GET", url, true);
+			http_request.onreadystatechange = function () {
+				if (http_request.readyState == 1) {
+					node.innerHTML = '<p class="basic_status_running">Loading...</p>';
+				}
+				if (http_request.readyState == 4 && http_request.status == 200) {
+					node.innerHTML = http_request.responseText;
+				}
+				if (http_request.readyState == 4 && http_request.status != 200) {
+					node.innerHTML = '<p class="basic_status_error">Error</p>';
+				}
+			};
+			http_request.send(null);
+		}
 		
 		//  End -->
 	</script>
@@ -284,10 +306,101 @@
 								}
 							}
 						%>
-						<p class="middle"></p>
 						<div class="clear"></div>
 					</div>
 			<%
+				}
+				
+				
+				// Display options
+				
+				boolean barGraphs = WebUtils.getBooleanParameter(request, "bargraphs", false);
+				boolean separateGraphForEachOperation = WebUtils.getBooleanParameter(request, "eachop", false);
+				boolean boxPlots = WebUtils.getBooleanParameter(request, "boxplots", false);
+				boolean logScale = WebUtils.getBooleanParameter(request, "logscale", false);
+				boolean dropExtremes = WebUtils.getBooleanParameter(request, "dropextremes", false);
+				
+				String boxPlotYValue = WebUtils.getStringParameter(request, "boxplotyvalue");
+				if (boxPlotYValue == null) boxPlotYValue = "d.time";
+				// XXX Further sanitize boxPlotYValue!
+				boxPlotYValue = boxPlotYValue.replace(';', ' ');
+				
+				if (!selectedOperations.isEmpty()) {
+					%>
+						<div id="select_job">
+							<p class="middle">4) Select display options:</p>
+							
+							
+							<p class="middle_inner">Bar Graphs</p>
+							
+							<label class="checkbox">
+								<input class="checkbox" type="checkbox"
+										name="bargraphs" id="bargraphs"
+										onchange="form_submit();" <%= barGraphs ? "checked=\"checked\"" : "" %>
+										value="true"/>
+								Display the summary bar graph
+							</label>
+							
+							<label class="checkbox">
+								<input class="checkbox" type="checkbox"
+										name="eachop" id="eachop"
+										onchange="form_submit();" <%= separateGraphForEachOperation ? "checked=\"checked\"" : "" %>
+										value="true"/>
+								Display a bar graph and a data table for each operation 
+							</label>
+							
+							
+							<div style="height:10px"></div>
+							<p class="middle_inner">Box Plots</p>
+							
+							<label class="checkbox">
+								<input class="checkbox" type="checkbox"
+										name="boxplots" id="boxplots"
+										onchange="form_submit();" <%= boxPlots ? "checked=\"checked\"" : "" %>
+										value="true"/>
+								Display the summary box plot
+							</label>
+							
+							<div style="height:10px"></div>
+							
+							<label>
+								Y Value =
+								<span class="small">
+									Use: d.time, d.result[], etc.
+								</span>
+							</label>
+							<input type="text" name="boxplotyvalue" id="boxplotyvalue"
+									onchange="form_submit();"
+									value="<%= StringEscapeUtils.escapeHtml(boxPlotYValue) %>"/>
+							
+							<label class="checkbox">
+								<input class="checkbox" type="checkbox"
+										name="logscale" id="logscale"
+										onchange="form_submit();" <%= logScale ? "checked=\"checked\"" : "" %>
+										value="true"/>
+								Use log scale
+							</label>
+							
+							<label class="checkbox">
+								<input class="checkbox" type="checkbox"
+										name="dropextremes" id="dropextremes"
+										onchange="form_submit();" <%= dropExtremes ? "checked=\"checked\"" : "" %>
+										value="true"/>
+								Drop top and bottom 1% of values
+							</label>
+				
+							<p class="middle"></p>
+							<div class="clear"></div>
+						</div>
+					<%
+				}
+				else {
+					%>
+						<input type="hidden" name="bargraphs" id="bargraphs" value="<%= "" + barGraphs %>" />
+						<input type="hidden" name="boxplots" id="boxplots" value="<%= "" + boxPlots %>" />
+						<input type="hidden" name="logscale" id="logscale" value="<%= "" + logScale %>" />
+						<input type="hidden" name="dropextremes" id="dropextremes" value="<%= "" + dropExtremes %>" />
+					<%
 				}
 			%>
 			
@@ -298,8 +411,8 @@
 	</div>
 		
 	<div class="basic_form">
-		<%
-			if (selectedOperations.size() > 1) {
+		<%		
+			if (selectedOperations.size() > (separateGraphForEachOperation ? 1 : 0)) {
 				
 				TreeMap<String, Collection<Job>> operationsToJobs = new TreeMap<String, Collection<Job>>();
 				for (String operationName : selectedOperations) {
@@ -321,7 +434,7 @@
 				StringWriter writer = new StringWriter();
 				ShowOperationRunTimes.printRunTimes(new PrintWriter(writer), operationsToJobs, "html", null);
 				
-				String link = "/ShowOperationRunTimes?format=csv&group_by=operation";
+				String link = "/ShowOperationRunTimes?group_by=operation";
 				boolean sameDbInstance = true;
 				Job firstJob = null;
 				
@@ -339,37 +452,55 @@
 					}
 				}
 				
-				ChartProperties chartProperties = new ChartProperties();
+				if (barGraphs) {
+					ChartProperties chartProperties = new ChartProperties();
+					
+					chartProperties.source = link + "&format=csv";
+					chartProperties.attach = "chart_all";
+					chartProperties.value = "d.mean";
+					chartProperties.ylabel = "Execution Time (ms)";
+					chartProperties.group_by = "operation";
+					chartProperties.group_label_function = "return d.operation.replace(/^Operation/, '')";
+					chartProperties.category_label_function = "return d.dbengine" + (sameDbInstance ? "" : " + ', ' + d.dbinstance");
+					
+					%>
+						<div class="chart_outer"><div class="chart chart_all">
+						<%@ include file="include/d3barchart.jsp" %>
+						</div></div>
+					<%
+				}
 				
-				chartProperties.source = link;
-				chartProperties.attach = "chart_all";
-				chartProperties.ylabel = "Execution Time (ms)";
-				chartProperties.group_by = "operation";
-				chartProperties.group_label_function = "return d.operation.replace(/^Operation/, '')";
-				chartProperties.category_label_function = "return d.dbengine" + (sameDbInstance ? "" : " + ', ' + d.dbinstance");
-				
-				%>
-					<div class="chart_outer"><div class="chart chart_all">
-					<%@ include file="include/d3barchart.jsp" %>
-					</div></div>
-				<%
-				
-				chartProperties.source = link + "&show=details";
-				chartProperties.attach = "chart_all_details";
-				//chartProperties.scale = "log";
-				chartProperties.ylabel = "Execution Time (ms)";
-				chartProperties.group_by = "operation";
-				chartProperties.group_label_function = "return d.operation.replace(/^Operation/, '')";
-				chartProperties.category_label_function = "return d.dbengine" + (sameDbInstance ? "" : " + ', ' + d.dbinstance");
-				
-				%>
-					<div class="chart_outer"><div class="chart chart_all_details">
-					<%@ include file="include/d3boxplot.jsp" %>
-					</div></div>
-				<%
+				if (boxPlots) {
+					ChartProperties chartProperties = new ChartProperties();
+					
+					chartProperties.source = link + "&show=details&format=csv";
+					chartProperties.attach = "chart_all_details";
+					chartProperties.value = boxPlotYValue;
+					if (logScale) chartProperties.scale = "log";
+					if (dropExtremes) chartProperties.dropTopBottomExtremes = true;
+					chartProperties.ylabel = "d.time".equals(boxPlotYValue) 
+							? "Execution Time (ms)" : StringEscapeUtils.escapeXml(boxPlotYValue);	// TODO Need better escape
+					chartProperties.group_by = "operation";
+					chartProperties.group_label_function = "return d.operation.replace(/^Operation/, '')";
+					chartProperties.category_label_function = "return d.dbengine" + (sameDbInstance ? "" : " + ', ' + d.dbinstance");
+					
+					%>
+						<div class="chart_outer"><div class="chart chart_all_details">
+						<%@ include file="include/d3boxplot.jsp" %>
+						</div></div>
+					<%
+				}
 
 				%>
 					<%= writer.toString() %>
+					
+					<div style="height:10px"></div>
+					
+					<div>
+						<button onclick="replace_by_page(this, '<%= StringEscapeUtils.escapeJavaScript(link + "&show=details&format=html") %>')">
+							Show Details...
+						</button>
+					</div>
 					
 					<div style="height:40px"></div>
 				<%
@@ -377,52 +508,73 @@
 		%>
 		
 		<%
-			for (String operationName : selectedOperations) {
-				
-				String niceOperationName = operationName;
-				if (niceOperationName.startsWith("Operation")) {
-					niceOperationName = niceOperationName.substring(9);
-				}
-				
-				TreeMap<String, Collection<Job>> operationsToJobs = new TreeMap<String, Collection<Job>>();
-				LinkedList<Job> currentJobs = new LinkedList<Job>();
-				for (String s : selectedDatabaseInstances.keySet()) {
-					String inputName = s.replace('|', '-') + "-" + operationName;
-					String s_id = selectedJobIds.get(inputName);
-					if (s_id == null) continue;
-					Job job = JobList.getInstance().getFinishedJob(Integer.parseInt(s_id));
-					currentJobs.add(job);
-				}
-				operationsToJobs.put(operationName, currentJobs);
+			if (separateGraphForEachOperation) {
+				for (String operationName : selectedOperations) {
 					
-				%>
-					<h2><%= niceOperationName %></h2>
-				<%
-				
-				StringWriter writer = new StringWriter();
-				ShowOperationRunTimes.printRunTimes(new PrintWriter(writer), operationsToJobs, "html", null);
-				
-				String eon = StringEscapeUtils.escapeJavaScript(operationName);
-				String link = "/ShowOperationRunTimes?format=csv&operations=" + eon;
-				for (Job j : currentJobs) {
-					link += "&jobs-" + eon + "=" + j.getId();
-				}
-								
-				ChartProperties chartProperties = new ChartProperties();
-				
-				chartProperties.source = link;
-				chartProperties.attach = "chart_" + operationName;
-				chartProperties.ylabel = "Execution Time (ms)";
-				
-				%>
-					<div class="chart_outer"><div class="chart chart_<%= operationName %>">
-					<%@ include file="include/d3barchart.jsp" %>
-					</div></div>
-
-					<%= writer.toString() %>
+					String niceOperationName = operationName;
+					if (niceOperationName.startsWith("Operation")) {
+						niceOperationName = niceOperationName.substring(9);
+					}
 					
-					<div style="height:40px"></div>
-				<%
+					TreeMap<String, Collection<Job>> operationsToJobs = new TreeMap<String, Collection<Job>>();
+					LinkedList<Job> currentJobs = new LinkedList<Job>();
+					boolean sameDbInstance = true;
+					Job firstJob = null;
+					for (String s : selectedDatabaseInstances.keySet()) {
+						String inputName = s.replace('|', '-') + "-" + operationName;
+						String s_id = selectedJobIds.get(inputName);
+						if (s_id == null) continue;
+						Job job = JobList.getInstance().getFinishedJob(Integer.parseInt(s_id));
+						currentJobs.add(job);
+						if (firstJob == null) {
+							firstJob = job;
+						}
+						else if (sameDbInstance) {
+							sameDbInstance = firstJob.getDbInstanceSafe().equals(job.getDbInstanceSafe());
+						}
+					}
+					operationsToJobs.put(operationName, currentJobs);
+						
+					%>
+						<h2><%= niceOperationName %></h2>
+					<%
+					
+					StringWriter writer = new StringWriter();
+					ShowOperationRunTimes.printRunTimes(new PrintWriter(writer), operationsToJobs, "html", null);
+					
+					String eon = StringEscapeUtils.escapeJavaScript(operationName);
+					String link = "/ShowOperationRunTimes?group_by=operation&operations=" + eon;
+					for (Job j : currentJobs) {
+						link += "&jobs-" + eon + "=" + j.getId();
+					}
+									
+					ChartProperties chartProperties = new ChartProperties();
+					
+					chartProperties.source = link + "&format=csv";
+					chartProperties.attach = "chart_" + operationName;
+					chartProperties.ylabel = "Execution Time (ms)";
+					chartProperties.group_by = "operation";
+					chartProperties.group_label_function = "return d.operation.replace(/^Operation/, '')";
+					chartProperties.category_label_function = "return d.dbengine" + (sameDbInstance ? "" : " + ', ' + d.dbinstance");
+					
+					%>
+						<div class="chart_outer"><div class="chart chart_<%= operationName %>">
+						<%@ include file="include/d3barchart.jsp" %>
+						</div></div>
+	
+						<%= writer.toString() %>
+					
+						<div style="height:10px"></div>
+						
+						<div>
+							<button onclick="replace_by_page(this, '<%= StringEscapeUtils.escapeJavaScript(link + "&show=details&format=html") %>')">
+								Show Details...
+							</button>
+						</div>
+						
+						<div style="height:40px"></div>
+					<%
+				}
 			}
 		%>
 	</div>

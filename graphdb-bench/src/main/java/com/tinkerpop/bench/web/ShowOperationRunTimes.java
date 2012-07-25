@@ -2,6 +2,7 @@ package com.tinkerpop.bench.web;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Map;
@@ -354,8 +355,8 @@ public class ShowOperationRunTimes extends HttpServlet {
 		
 		// Get the run time for each job
 		
-		LinkedList<Triple<String, Job, Long>> operationsJobsRunTimes
-			= new LinkedList<Triple<String, Job, Long>>();
+		LinkedList<Triple<String, Job, OperationLogEntry>> operationsJobsRunTimes
+			= new LinkedList<Triple<String, Job, OperationLogEntry>>();
 
 		boolean sameOperation = operationsToJobs.keySet().size() == 1;
 		boolean sameDbEngine = true;
@@ -370,7 +371,7 @@ public class ShowOperationRunTimes extends HttpServlet {
 				OperationLogReader reader = new OperationLogReader(job.getLogFile());
 				for (OperationLogEntry e : reader) {
 					if (e.getName().equals(operationName)) {
-						operationsJobsRunTimes.add(new Triple<String, Job, Long>(operationName, job, e.getTime()));
+						operationsJobsRunTimes.add(new Triple<String, Job, OperationLogEntry>(operationName, job, e));
 					}
 				}
 				
@@ -403,10 +404,13 @@ public class ShowOperationRunTimes extends HttpServlet {
 			if (!sameOperation) writer.println("\t<th>Operation</th>");
 			if (!sameDbEngine) writer.println("\t<th>Database Engine</th>");
 			if (!sameDbInstance) writer.println("\t<th>Database Instance</th>");
+			writer.println("\t<th>Arguments</th>");
+			writer.println("\t<th>Result</th>");
 			writer.println("\t<th class=\"numeric\">Time (ms)</th>");
+			writer.println("\t<th class=\"numeric\">Memory (MB)</th>");
 			writer.println("</tr>");
 
-			for (Triple<String, Job, Long> p : operationsJobsRunTimes) {
+			for (Triple<String, Job, OperationLogEntry> p : operationsJobsRunTimes) {
 				writer.println("<tr>");
 				if (!sameOperation) {
 					writer.println("\t<td>" + p.getFirst() + "</td>");
@@ -418,8 +422,20 @@ public class ShowOperationRunTimes extends HttpServlet {
 					writer.println("\t<td>" + (p.getSecond().getDbInstance() == null
 													? "&lt;default&gt;" : p.getSecond().getDbInstance()) + "</td>");
 				}
-				Long r = p.getThird();
-				writer.println("\t<td class=\"numeric\">" + String.format("%.3f", r / 1000000.0) + "</td>");
+				
+				OperationLogEntry e = p.getThird();
+				
+				String argumentsStr = "";
+				String[] a = e.getArgs();
+				for (int i = 0; i < a.length; i++) {
+					if (i > 0) argumentsStr += ", ";
+					argumentsStr += a[i];
+				}
+				
+				writer.println("\t<td>" + argumentsStr + "</td>");
+				writer.println("\t<td>" + e.getResult() + "</td>");
+				writer.println("\t<td class=\"numeric\">" + String.format("%.3f", e.getTime() / 1000000.0) + "</td>");
+				writer.println("\t<td class=\"numeric\">" + String.format("%.3f", e.getMemory() / 1000000.0) + "</td>");
 				writer.println("</tr>");
 			}
 			writer.println("</table>");
@@ -432,19 +448,22 @@ public class ShowOperationRunTimes extends HttpServlet {
 			}
 	        
 	        CSVWriter w = new CSVWriter(writer);
-	        String[] buffer = new String[5];
+	        String[] buffer = new String[8];
 	        
 	        int index = 0;
 	        buffer[index++] = "label";
 	        buffer[index++] = "operation";
 	        buffer[index++] = "dbengine";
 	        buffer[index++] = "dbinstance";
+	       	buffer[index++] = "args";
 	       	buffer[index++] = "time";
+	       	buffer[index++] = "result";
+	       	buffer[index++] = "memory";
 	        w.writeNext(buffer);
 	        
 	        String lastOperation = null;
 	        
-	        for (Triple<String, Job, Long> p : operationsJobsRunTimes) {
+	        for (Triple<String, Job, OperationLogEntry> p : operationsJobsRunTimes) {
 	        	
 	        	String operation = p.getFirst();
 	        	String dbengine = DatabaseEngine.ENGINES.get(p.getSecond().getDbEngine()).getLongName();
@@ -485,8 +504,11 @@ public class ShowOperationRunTimes extends HttpServlet {
 				buffer[index++] = dbengine;
 				buffer[index++] = dbinstance;
 			
-				Long r = p.getThird();
-				buffer[index++] = Double.toString(r);
+				OperationLogEntry e = p.getThird();
+				buffer[index++] = Arrays.toString(e.getArgs());
+				buffer[index++] = Long.toString(e.getTime());
+				buffer[index++] = e.getResult().toString();
+				buffer[index++] = Long.toString(e.getMemory());
 
 				w.writeNext(buffer);
 				

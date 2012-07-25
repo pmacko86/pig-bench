@@ -13,7 +13,11 @@ public class ChartProperties {
 	 */
 	
 	public String source = null;
+	public String value = "d.time";
+	
 	public String foreach = "";
+	
+	public boolean dropTopBottomExtremes = false;
 	public String filter = "true";
 	
 	

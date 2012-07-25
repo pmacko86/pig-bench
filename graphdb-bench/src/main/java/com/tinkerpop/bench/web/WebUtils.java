@@ -28,6 +28,18 @@ public class WebUtils {
 	
 	
 	/**
+	 * Check whether a parameter is in the parameter list
+	 */
+	public static boolean hasParameter(HttpServletRequest request, String name) {
+		String s = request.getParameter(name);
+		if (s == null) return false;
+		if (s.equals("")) return false;
+		if (s.contains("'")) throw new RuntimeException("Invalid value");
+		return true;
+	}
+	
+	
+	/**
 	 * Get a value from the parameter list
 	 */
 	public static String getStringParameter(HttpServletRequest request, String name) {

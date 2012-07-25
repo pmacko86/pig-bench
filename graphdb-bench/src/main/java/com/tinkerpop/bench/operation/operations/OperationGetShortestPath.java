@@ -16,6 +16,8 @@ public class OperationGetShortestPath extends Operation {
 	private Vertex target;
 	private boolean isSQLGraph;
 	
+	public static boolean useSqlGraphStoredProcedure = true;
+	
 	@Override
 	protected void onInitialize(Object[] args) {
 		source = getGraph().getVertex(args[0]);
@@ -28,7 +30,7 @@ public class OperationGetShortestPath extends Operation {
 		try {
 			ArrayList<Vertex> result = new ArrayList<Vertex>();
 			
-			if (isSQLGraph) {
+			if (isSQLGraph && useSqlGraphStoredProcedure) {
 				for (Vertex u : ((SqlGraph) getGraph()).getShortestPath(source, target)) {
 					result.add(u);
 				}
