@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import csv
 import sys
 import os.path
 import os
@@ -14,8 +15,8 @@ from collections import defaultdict
 def main(filename):
     operations = set()
     
-    for line in open(filename, 'r'):
-        _,name,_,args,time,result,_,_ = line.split(';')
+    for line in csv.reader(open(filename, 'r')):
+        _,name,_,args,time,result,_ = line
         operations.add(name)
 
         if name == 'OperationGetFirstNeighbor':
@@ -24,12 +25,15 @@ def main(filename):
             op_get_random_neighbor(time, result)
         elif name == 'OperationGetAllNeighbors':
             op_get_all_neighbors(time, result)
-        elif name == 'OperationGetKFirstNeighbors':
+        elif name.startswith('OperationGetKFirstNeighbors'):
+	    operations.add('OperationGetKFirstNeighbors')
             op_get_k_first_neighbors(args, time, result)
-        elif name == 'OperationGetKRandomNeighbors':
-            op_get_k_random_neighbors(args, time, result)
-        elif name == 'OperationGetKHopNeighbors':
-            op_get_k_hop_neighbors(args, time, result)
+	elif name.startswith('OperationGetKRandomNeighbors'):
+	    operations.add('OperationGetKRandomNeighbors')
+	    op_get_k_random_neighbors(args, time, result)
+	elif name.startswith('OperationGetKHopNeighbors'):
+	    operations.add('OperationGetKHopNeighbors')
+	    op_get_k_hop_neighbors(args, time, result)
         elif name == 'OperationGetShortestPath':
             op_get_shortest_path(time, result)
         elif name == 'OperationGetShortestPathProperty':

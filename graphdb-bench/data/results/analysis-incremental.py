@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import csv
 import os
 import os.path
 import re
@@ -303,10 +304,10 @@ def load_db_data(dbname):
         data[size] = summary_data
         
         first = True
-        f = open(summary, 'r')
+        f = csv.read(open(summary, 'r'))
         
         for line in f:
-            operation,mean,stdev,min,max,_ = line.split(';')
+            operation,mean,stdev,min,max = line
             if first:
                 first = False
                 continue
