@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.PriorityQueue;
 
+import com.tinkerpop.bench.GlobalConfig;
 import com.tinkerpop.bench.operation.Operation;
 import com.tinkerpop.blueprints.pgm.Edge;
 import com.tinkerpop.blueprints.pgm.Vertex;
@@ -18,7 +19,7 @@ public class OperationGetShortestPathProperty extends Operation {
 	private boolean isRDFGraph;
 	private boolean isSQLGraph;
 	private boolean isHollowGraph;
-	
+
 	@Override
 	protected void onInitialize(Object[] args) {
 		source = getGraph().getVertex(args[0]);
@@ -33,7 +34,7 @@ public class OperationGetShortestPathProperty extends Operation {
 		try {
 			ArrayList<Vertex> result = new ArrayList<Vertex>();
 
-			if (isSQLGraph) {
+			if (isSQLGraph && GlobalConfig.useStoredProcedures) {
 				for (Vertex u : ((SqlGraph) getGraph()).getShortestPath(source, target)) {
 					result.add(u);
 				}

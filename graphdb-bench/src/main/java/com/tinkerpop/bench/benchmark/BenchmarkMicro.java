@@ -108,6 +108,7 @@ public class BenchmarkMicro extends Benchmark {
 		System.err.println("  --k-hops K              Set the number of k-hops");
 		System.err.println("  --k-hops K1:K2          Set a range of k-hops");
 		System.err.println("  --op-count N            Set the number of operations");
+		System.err.println("  --use-stored-procedures Enable the use of stored procedures");
 		System.err.println("  --warmup-ingest FILE    Set a different file for ingest during " +
 										"the warmup");
 		System.err.println("  --warmup-op-count N     Set the number of warmup operations");
@@ -205,6 +206,7 @@ public class BenchmarkMicro extends Benchmark {
 		parser.accepts("ingest-as-undirected");
 		parser.accepts("k-hops").withRequiredArg().ofType(String.class);
 		parser.accepts("op-count").withRequiredArg().ofType(Integer.class);
+		parser.accepts("use-stored-procedures");
 		parser.accepts("warmup-op-count").withRequiredArg().ofType(Integer.class);
 		parser.accepts("warmup-ingest").withRequiredArg().ofType(String.class);
 		
@@ -288,6 +290,10 @@ public class BenchmarkMicro extends Benchmark {
 		boolean provenance = true;
 		if (options.has("no-provenance")) {
 			provenance = false;
+		}
+		
+		if (options.has("use-stored-procedures")) {
+			GlobalConfig.useStoredProcedures = true;
 		}
 		
 		if (options.has("single-db-connection")) {

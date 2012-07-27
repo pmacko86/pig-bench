@@ -10,4 +10,7 @@ public class GlobalConfig {
 	
 	/// Whether to open one database connection per thread
 	public static boolean oneDbConnectionPerThread = true;
+	
+	/// Whether databases should use stored procedures if they are available
+	public static boolean useStoredProcedures = false;
 }

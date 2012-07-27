@@ -131,6 +131,12 @@
 				<span class="small">At least 1</span>
 			</label>
 			<input type="text" name="tx_buffer" id="tx_buffer" value="1" />
+		
+			<label class="checkbox">
+				<input class="checkbox" type="checkbox" name="use_stored_procedures"
+						value="true"/>
+				Enable the use of stored procedures (if they are available for the given database engine)
+			</label>
 			
 			
 			<p class="middle">Workloads (select one or more):</p>

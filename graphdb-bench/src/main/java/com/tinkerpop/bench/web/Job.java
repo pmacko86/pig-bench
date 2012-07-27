@@ -137,6 +137,7 @@ public class Job {
 		String s_opCount = WebUtils.getStringParameter(request, "op_count");
 		String s_warmupOpCount = WebUtils.getStringParameter(request, "warmup_op_count");
 		String s_kHops = WebUtils.getStringParameter(request, "k_hops");
+		boolean useStoredProcedures = WebUtils.getBooleanParameter(request, "use_stored_procedures", false);
 		
 		boolean ingestAsUndirected = WebUtils.getBooleanParameter(request, "ingest_as_undirected", false);
 		String s_ingestFile = WebUtils.getStringParameter(request, "ingest_file");
@@ -181,6 +182,10 @@ public class Job {
 			if (!s_txBuffer.equals("" + BenchmarkMicro.DEFAULT_NUM_THREADS)) {
 				arguments.add("--tx-buffer"); arguments.add(s_txBuffer);
 			}
+		}
+		
+		if (useStoredProcedures) {
+			arguments.add("--use-stored-procedures");
 		}
 		
 		if (usesOpCount) {

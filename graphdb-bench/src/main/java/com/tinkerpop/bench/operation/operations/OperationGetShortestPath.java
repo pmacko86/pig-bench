@@ -5,6 +5,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.PriorityQueue;
 
+import com.tinkerpop.bench.GlobalConfig;
 import com.tinkerpop.bench.operation.Operation;
 import com.tinkerpop.blueprints.pgm.Edge;
 import com.tinkerpop.blueprints.pgm.Vertex;
@@ -15,8 +16,6 @@ public class OperationGetShortestPath extends Operation {
 	private Vertex source;
 	private Vertex target;
 	private boolean isSQLGraph;
-	
-	public static boolean useSqlGraphStoredProcedure = true;
 	
 	@Override
 	protected void onInitialize(Object[] args) {
@@ -30,7 +29,7 @@ public class OperationGetShortestPath extends Operation {
 		try {
 			ArrayList<Vertex> result = new ArrayList<Vertex>();
 			
-			if (isSQLGraph && useSqlGraphStoredProcedure) {
+			if (isSQLGraph && GlobalConfig.useStoredProcedures) {
 				for (Vertex u : ((SqlGraph) getGraph()).getShortestPath(source, target)) {
 					result.add(u);
 				}
