@@ -16,6 +16,13 @@ xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns
 	 </servlet>
 	
 	<servlet>
+		<display-name>DownloadResults</display-name>
+		<servlet-name>DownloadResults</servlet-name>
+		<servlet-class>com.tinkerpop.bench.web.DownloadResults</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	 </servlet>
+	
+	<servlet>
 		<display-name>JobExecutionControl</display-name>
 		<servlet-name>JobExecutionControl</servlet-name>
 		<servlet-class>com.tinkerpop.bench.web.JobExecutionControl</servlet-class>
@@ -67,6 +74,11 @@ xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns
 	<servlet-mapping>
 		<servlet-name>AddJob</servlet-name>
 		<url-pattern>/AddJob</url-pattern>
+	</servlet-mapping>
+
+	<servlet-mapping>
+		<servlet-name>DownloadResults</servlet-name>
+		<url-pattern>/DownloadResults</url-pattern>
 	</servlet-mapping>
 
 	<servlet-mapping>

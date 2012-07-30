@@ -35,6 +35,11 @@
 				<% } else { %>
 					<li><p>View Results</p></li>
 				<% } %>
+				<% if (!jsp_page.equals("downloadresults")) { %>
+					<li><a href="downloadresults.jsp">Download Results</a></li>
+				<% } else { %>
+					<li><p>Download Results</p></li>
+				<% } %>
 				<% if (!jsp_page.equals("comparedbs")) { %>
 					<li><a href="comparedbs.jsp">Compare Databases</a></li>
 				<% } else { %>

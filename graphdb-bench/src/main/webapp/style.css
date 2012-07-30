@@ -339,7 +339,8 @@ button {
 
 .stylized_form button {
 	float:left;
-	margin-top:30px;
+	clear:all;
+	margin-top:20px;
 	margin-left:0px;
 	width:150px;
 	height:31px;
@@ -349,6 +350,11 @@ button {
 	color:#FFFFFF;
 	font-size:11px;
 	font-weight:bold;
+}
+
+.stylized_form button.small_margin {
+	margin-top:10px;
+	margin-left:0px;
 }
 
 .stylized_form div.db_table_div {
