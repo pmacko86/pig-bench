@@ -6,6 +6,7 @@
 <%@ page import="com.tinkerpop.bench.benchmark.BenchmarkMicro"%>
 <%@ page import="com.tinkerpop.bench.log.SummaryLogEntry"%>
 <%@ page import="com.tinkerpop.bench.log.SummaryLogReader"%>
+<%@ page import="com.tinkerpop.bench.util.NaturalStringComparator"%>
 <%@ page import="com.tinkerpop.bench.util.Pair"%>
 <%@ page import="com.tinkerpop.bench.web.*"%>
 <%@ page import="java.io.*"%>
@@ -114,7 +115,8 @@
 				// Get the set of all selected database engine/instance pairs
 				
 				String[] a_selectedDatabaseInstances = WebUtils.getStringParameterValues(request, "database_engine_instance");
-				TreeMap<String, TreeMap<String, Job>> selectedDatabaseInstances = new TreeMap<String, TreeMap<String, Job>>();
+				TreeMap<String, TreeMap<String, Job>> selectedDatabaseInstances
+					= new TreeMap<String, TreeMap<String, Job>>(new NaturalStringComparator());
 				if (a_selectedDatabaseInstances != null) {
 					for (String a : a_selectedDatabaseInstances) {
 						selectedDatabaseInstances.put(a, new TreeMap<String, Job>());

@@ -1,6 +1,7 @@
 <%@ page import="com.tinkerpop.bench.Workload"%>
 <%@ page import="com.tinkerpop.bench.DatabaseEngine"%>
 <%@ page import="com.tinkerpop.bench.benchmark.BenchmarkMicro"%>
+<%@ page import="com.tinkerpop.bench.util.NaturalStringComparator"%>
 <%@ page import="com.tinkerpop.bench.util.Pair"%>
 <%@ page import="com.tinkerpop.bench.web.*"%>
 <%@ page import="java.util.*"%>
@@ -47,7 +48,8 @@ else {
 			%>
 		</tr>
 		<%
-			TreeSet<String> instanceSet = new TreeSet<String>(WebUtils.getAllDatabaseInstanceNames());
+			TreeSet<String> instanceSet = new TreeSet<String>(new NaturalStringComparator());
+			for (String __s : WebUtils.getAllDatabaseInstanceNames()) instanceSet.add(__s);
 			for (Job job : JobList.getInstance().getJobs()) {
 				if (job.getDbInstance() != null) instanceSet.add(job.getDbInstance());
 			}

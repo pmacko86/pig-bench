@@ -3,6 +3,7 @@
 <%@ page import="com.tinkerpop.bench.Workload"%>
 <%@ page import="com.tinkerpop.bench.DatabaseEngine"%>
 <%@ page import="com.tinkerpop.bench.benchmark.BenchmarkMicro"%>
+<%@ page import="com.tinkerpop.bench.util.NaturalStringComparator"%>
 <%@ page import="com.tinkerpop.bench.util.Pair"%>
 <%@ page import="com.tinkerpop.bench.web.*"%>
 <%@ page import="java.util.*"%>
