@@ -214,6 +214,7 @@ button {
 
 #content_inner {
 	padding: 10px;
+	overflow: auto;
 }
 
 

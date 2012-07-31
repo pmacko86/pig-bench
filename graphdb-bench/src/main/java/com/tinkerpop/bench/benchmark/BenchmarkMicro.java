@@ -55,6 +55,8 @@ public class BenchmarkMicro extends Benchmark {
 	public static final int DEFAULT_OP_COUNT = 1000;
 	public static final int DEFAULT_K_HOPS = 2;
 	public static final int DEFAULT_NUM_THREADS = 1;
+	public static final int DEFAULT_BARABASI_N = 1000;
+	public static final int DEFAULT_BARABASI_M = 5;
 	
 	/// The number of threads
 	private static int numThreads = DEFAULT_NUM_THREADS;
@@ -534,8 +536,8 @@ public class BenchmarkMicro extends Benchmark {
 					: "barabasi";
 			
 			if (model.equals("barabasi")) {
-				int n = options.has("barabasi-n") ? (Integer) options.valueOf("barabasi-n") : 1000;
-				int m = options.has("barabasi-m") ? (Integer) options.valueOf("barabasi-m") : 5;
+				int n = options.has("barabasi-n") ? (Integer) options.valueOf("barabasi-n") : DEFAULT_BARABASI_N;
+				int m = options.has("barabasi-m") ? (Integer) options.valueOf("barabasi-m") : DEFAULT_BARABASI_M;
 				graphGenerator = new SimpleBarabasiGenerator(n, m);
 			}
 			

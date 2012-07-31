@@ -92,6 +92,21 @@
 			else {
 				document.getElementById("conf_ingest").style.display = "none";
 			}
+			
+			
+			// Generate
+			
+			b_generate = false;
+			for (i = 0; i < checked.length; i++) {
+				if (["generate"].indexOf(checked[i]) >= 0) b_generate = true;
+			}
+
+			if (b_generate) {
+				document.getElementById("conf_generate").style.display = "block";
+			}
+			else {
+				document.getElementById("conf_generate").style.display = "none";
+			}
 
 
 			// Finalize
@@ -132,11 +147,22 @@
 				<span class="small">At least 1</span>
 			</label>
 			<input type="text" name="tx_buffer" id="tx_buffer" value="1" />
+			
+			<label>Java Heap Size
+				<span class="small">Default: 512M</span>
+			</label>
+			<input type="text" name="java_heap_size" id="java_heap_size" value="512M" />
 		
 			<label class="checkbox">
 				<input class="checkbox" type="checkbox" name="use_stored_procedures"
 						value="true"/>
 				Enable the use of stored procedures (if they are available for the given database engine)
+			</label>
+		
+			<label class="checkbox">
+				<input class="checkbox" type="checkbox" name="no_warmup"
+						value="true"/>
+				Disable the warmup run before the benchmark run
 			</label>
 			
 			
@@ -167,7 +193,9 @@
 				</label>
 				<select name="ingest_file" id="ingest_file">
 				<%
-					for (String name : WebUtils.getDatasets()) {
+					TreeSet<String> datasets = new TreeSet<String>(new NaturalStringComparator());
+					for (String name : WebUtils.getDatasets()) datasets.add(name);
+					for (String name : datasets) {
 						String extra = "";
 						if (BenchmarkMicro.DEFAULT_INGEST_FILE.equals(name)) {
 							extra += " selected=\"selected\"";
@@ -185,7 +213,7 @@
 				<select name="ingest_warmup_file" id="ingest_warmup_file">
 					<option value="">&lt;same as above&gt;</option>
 				<%
-					for (String name : WebUtils.getDatasets()) {
+					for (String name : datasets) {
 						String extra = "";
 						%>
 							<option value="<%= name %>"<%= extra %>><%= name %></option>
@@ -202,7 +230,29 @@
 
 				<div class="clear"></div>
 			</div>
+			
+			
+			<div id="conf_generate">
+				<p class="middle">Configure the graph generator:</p>
 
+				<label>Model
+					<span class="small">Such as "Barabasi"</span>
+				</label>
+				<select name="generate_model" id="generate_model">
+					<option value="barabasi" selected="selected">Barabasi</option>
+				</select>
+				
+				<label>N
+					<span class="small">Number of new vertices</span>
+				</label>
+				<input type="text" name="generate_barabasi_n" id="generate_barabasi_n" value="<%= BenchmarkMicro.DEFAULT_BARABASI_N %>" />
+				
+				<label>M
+					<span class="small">Number of incoming edges per vertex</span>
+				</label>
+				<input type="text" name="generate_barabasi_m" id="generate_barabasi_m" value="<%= BenchmarkMicro.DEFAULT_BARABASI_M %>" />
+			</div>
+			
 
 			<p class="middle" id="conf_workloads">Configure the workloads:</p>
 			

@@ -138,10 +138,16 @@ public class Job {
 		String s_warmupOpCount = WebUtils.getStringParameter(request, "warmup_op_count");
 		String s_kHops = WebUtils.getStringParameter(request, "k_hops");
 		boolean useStoredProcedures = WebUtils.getBooleanParameter(request, "use_stored_procedures", false);
+		boolean noWarmup = WebUtils.getBooleanParameter(request, "no_warmup", false);
+		String s_javaHeapSize = WebUtils.getStringParameter(request, "java_heap_size");
 		
 		boolean ingestAsUndirected = WebUtils.getBooleanParameter(request, "ingest_as_undirected", false);
 		String s_ingestFile = WebUtils.getStringParameter(request, "ingest_file");
 		String s_ingestWarmupFile = WebUtils.getStringParameter(request, "ingest_warmup_file");
+
+		String s_generateModel = WebUtils.getStringParameter(request, "generate_model");
+		String s_generateBarabasiN = WebUtils.getStringParameter(request, "generate_barabasi_n");
+		String s_generateBarabasiM = WebUtils.getStringParameter(request, "generate_barabasi_m");
 
 		
 		// Get the workloads
@@ -163,6 +169,13 @@ public class Job {
 		// Build the list of command-line arguments
 		
 		arguments.add(Bench.graphdbBenchDir + "/runBenchmarkSuite.sh");
+
+		if (s_javaHeapSize   != null) {
+			if (!s_javaHeapSize.equalsIgnoreCase("512m")) {
+				arguments.add("+memory:" + s_javaHeapSize);
+			}
+		}
+
 		arguments.add("--dumb-terminal");
 		
 		if (dbEngine         != null) { arguments.add("--" + dbEngine); }
@@ -175,6 +188,9 @@ public class Job {
 				if ("ingest".equals(s) && s_ingestFile != null) {
 					arguments.add(s_ingestFile);
 				}
+				if ("generate".equals(s) && s_generateModel != null) {
+					arguments.add(s_generateModel);
+				}
 			}
 		}
 		
@@ -182,6 +198,10 @@ public class Job {
 			if (!s_txBuffer.equals("" + BenchmarkMicro.DEFAULT_NUM_THREADS)) {
 				arguments.add("--tx-buffer"); arguments.add(s_txBuffer);
 			}
+		}
+		
+		if (noWarmup) {
+			arguments.add("--no-warmup");
 		}
 		
 		if (useStoredProcedures) {
@@ -216,6 +236,21 @@ public class Job {
 			if (s_ingestWarmupFile != null) {
 				if (!s_ingestWarmupFile.equals(s_ingestFile)) {
 					arguments.add("--warmup-ingest"); arguments.add(s_ingestWarmupFile);
+				}
+			}
+		}
+		
+		if (workloads.containsKey("generate")) {
+			if (s_generateModel == null || "barabasi".equals(s_generateModel)) {
+				if (s_generateBarabasiN != null) {
+					if (!s_generateBarabasiN.equals("" + BenchmarkMicro.DEFAULT_BARABASI_N)) {
+						arguments.add("--barabasi-n"); arguments.add(s_generateBarabasiN);
+					}
+				}
+				if (s_generateBarabasiM != null) {
+					if (!s_generateBarabasiM.equals("" + BenchmarkMicro.DEFAULT_BARABASI_M)) {
+						arguments.add("--barabasi-m"); arguments.add(s_generateBarabasiM);
+					}
 				}
 			}
 		}

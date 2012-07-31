@@ -377,6 +377,21 @@
 						}
 						
 						
+						// Lines separating the variuos groups
+						
+						for (var i = 0; i < group_columns.length; i++) {
+							if (group_columns[i] == "" || group_columns[i].indexOf("----") == 0) continue;
+							var p = group_offsets[i] + 1 * group_lengths[i] + 0.5;
+							
+							chart.append("line")
+								 .attr("x1", x.rangeBand() * p)
+								 .attr("x2", x.rangeBand() * p)
+								 .attr("y1", 0)
+								 .attr("y2", chart_inner_height)
+								 .style("stroke", "#ccc");
+						}
+						
+						
 						// Legend
 						
 						for (var i = 0; i < categories.length; i++) {
