@@ -160,6 +160,12 @@
 			</label>
 		
 			<label class="checkbox">
+				<input class="checkbox" type="checkbox" name="no_cache_pollution"
+						value="true"/>
+				Disable cache pollution before the benchmark run
+			</label>
+		
+			<label class="checkbox">
 				<input class="checkbox" type="checkbox" name="no_warmup"
 						value="true"/>
 				Disable the warmup run before the benchmark run

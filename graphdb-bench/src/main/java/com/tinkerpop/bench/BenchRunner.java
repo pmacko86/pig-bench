@@ -351,7 +351,10 @@ public class BenchRunner {
 						
 						// Pollute cache
 						
-						if ((main || GlobalConfig.oneDbConnectionPerThread) && polluteCache) {
+						if ((main || GlobalConfig.oneDbConnectionPerThread)
+								&& polluteCache
+								&& GlobalConfig.polluteCache) {
+
 							if (main) {
 								if (ConsoleUtils.useEscapeSequences) System.out.print("\r");
 								System.out.printf("[%-" + longestFactoryName + "s %" + longestFactoryStrID + "s] %s",

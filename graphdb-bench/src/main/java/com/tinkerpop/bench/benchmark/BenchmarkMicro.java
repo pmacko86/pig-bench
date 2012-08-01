@@ -75,6 +75,7 @@ public class BenchmarkMicro extends Benchmark {
 		System.err.println("  --dir, -d DIR           Set the database and results directory");
 		System.err.println("  --dumb-terminal         Use the dumb terminal settings");
 		System.err.println("  --help                  Print this help message");
+		System.err.println("  --no-cache-pollution    Disable cache pollution before benchmarks");
 		System.err.println("  --no-color              Disable color output to the terminal");
 		System.err.println("  --no-provenance         Disable provenance collection");
 		System.err.println("  --no-warmup             Disable the initial warmup run");
@@ -163,6 +164,7 @@ public class BenchmarkMicro extends Benchmark {
 		parser.accepts("dir").withRequiredArg().ofType(String.class);
 		parser.accepts("dumb-terminal");
 		parser.accepts("help");
+		parser.accepts("no-cache-pollution");
 		parser.accepts("no-color");
 		parser.accepts("no-provenance");
 		parser.accepts("no-warmup");
@@ -284,14 +286,18 @@ public class BenchmarkMicro extends Benchmark {
 			ingestAsUndirected = true;
 		}
 		
-		boolean warmup = true;
-		if (options.has("no-warmup")) {
-			warmup = false;
+		if (options.has("no-cache-pollution")) {
+			GlobalConfig.polluteCache = false;
 		}
 		
 		boolean provenance = true;
 		if (options.has("no-provenance")) {
 			provenance = false;
+		}
+		
+		boolean warmup = true;
+		if (options.has("no-warmup")) {
+			warmup = false;
 		}
 		
 		if (options.has("use-stored-procedures")) {

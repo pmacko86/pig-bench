@@ -139,6 +139,7 @@ public class Job {
 		String s_kHops = WebUtils.getStringParameter(request, "k_hops");
 		boolean useStoredProcedures = WebUtils.getBooleanParameter(request, "use_stored_procedures", false);
 		boolean noWarmup = WebUtils.getBooleanParameter(request, "no_warmup", false);
+		boolean noCachePollution = WebUtils.getBooleanParameter(request, "no_cache_pollution", false);
 		String s_javaHeapSize = WebUtils.getStringParameter(request, "java_heap_size");
 		
 		boolean ingestAsUndirected = WebUtils.getBooleanParameter(request, "ingest_as_undirected", false);
@@ -182,6 +183,24 @@ public class Job {
 		if (dbInstance       != null) { arguments.add("--database"); arguments.add(dbInstance); }
 		if (s_annotation     != null) { arguments.add("--annotation"); arguments.add(s_annotation); }
 		
+		if (s_txBuffer != null) {
+			if (!s_txBuffer.equals("" + BenchmarkMicro.DEFAULT_NUM_THREADS)) {
+				arguments.add("--tx-buffer"); arguments.add(s_txBuffer);
+			}
+		}
+		
+		if (noCachePollution) {
+			arguments.add("--no-cache-pollution");
+		}
+		
+		if (noWarmup) {
+			arguments.add("--no-warmup");
+		}
+		
+		if (useStoredProcedures) {
+			arguments.add("--use-stored-procedures");
+		}
+		
 		if (a_workloads != null) {
 			for (String s : a_workloads) {
 				arguments.add("--" + s);
@@ -192,20 +211,6 @@ public class Job {
 					arguments.add(s_generateModel);
 				}
 			}
-		}
-		
-		if (s_txBuffer != null) {
-			if (!s_txBuffer.equals("" + BenchmarkMicro.DEFAULT_NUM_THREADS)) {
-				arguments.add("--tx-buffer"); arguments.add(s_txBuffer);
-			}
-		}
-		
-		if (noWarmup) {
-			arguments.add("--no-warmup");
-		}
-		
-		if (useStoredProcedures) {
-			arguments.add("--use-stored-procedures");
 		}
 		
 		if (usesOpCount) {

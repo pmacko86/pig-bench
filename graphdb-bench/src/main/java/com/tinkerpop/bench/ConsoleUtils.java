@@ -170,8 +170,9 @@ public class ConsoleUtils {
 					System.out.print(" [" + extra + "]");
 				}
 				lastProgressExtra = extra;
-				System.out.printf("...%.2f%%", 100 * value / (float) max);
 			}
+
+			System.out.printf("...%.2f%%", 100 * value / (float) max);
 		}
 		
 		lastProgressValue = value;
