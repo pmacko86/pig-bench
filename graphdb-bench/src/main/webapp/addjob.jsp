@@ -162,7 +162,7 @@
 			<label class="checkbox">
 				<input class="checkbox" type="checkbox" name="no_cache_pollution"
 						value="true"/>
-				Disable cache pollution before the benchmark run
+				Disable cache pollution before running the benchmarks
 			</label>
 		
 			<label class="checkbox">
