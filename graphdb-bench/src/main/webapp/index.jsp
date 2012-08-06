@@ -1,6 +1,5 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<%@ page import="com.tinkerpop.bench.web.Job"%>
-<%@ page import="com.tinkerpop.bench.web.JobList"%>
+<%@ page import="com.tinkerpop.bench.web.*"%>
 <%@ page import="java.util.TreeMap"%>
 
 <%
@@ -191,18 +190,29 @@
 		<div id="job_control">
 			<p class="middle_header">Job Execution Control</p>
 			
+			<%
+				boolean jobControlEnabled = WebUtils.isJobControlEnabled(null);
+			%>
+			
 			<form id="form_start" ethod="post" action="/JobExecutionControl">
 				<input type="hidden" name="action" value="start" />
-				<button type="submit"<%= running || numRunnableJobs == 0 ? " disabled=\"disabled\"" : "" %>>Start</button>
+				<button type="submit"<%= !jobControlEnabled || running || numRunnableJobs == 0
+					? " disabled=\"disabled\"" : "" %>>Start</button>
 			</form>
 			
 			<form id="form_pause" method="post" action="/JobExecutionControl">
 				<input type="hidden" name="action" value="pause" />
-				<button type="submit"<%= !running || JobList.getInstance().isPaused() ? " disabled=\"disabled\"" : "" %>>Pause</button>
+				<button type="submit"<%= !jobControlEnabled || !running || JobList.getInstance().isPaused()
+					? " disabled=\"disabled\"" : "" %>>Pause</button>
 			</form>
 			
 			<%
-				if (!running && numRunnableJobs == 0) {
+				if (!jobControlEnabled) {
+			%>
+					<p class="status">The server administrator has disabled starting new jobs.</p>
+			<%
+				}
+				else if (!running) {
 			%>
 					<p class="status">There are no scheduled jobs.</p>
 			<%

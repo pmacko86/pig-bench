@@ -45,6 +45,9 @@ public class Bench {
 
 	// GRAPH FILES
 	public static final String GRAPHML_BARABASI = "bench.graph.barabasi.file";
+	
+	// WEB - The web interface
+	public static final String WEB_JOBCONTROL_ENABLE = "bench.web.jobcontrol.enabled";
 
 	
 	static {
@@ -120,5 +123,23 @@ public class Bench {
 	 */
 	public static String getProperty(String key) {
 		return getProperty(key, null);
+	}
+	
+	
+	/**
+	 * Get the given boolean property
+	 * 
+	 * @param key the property key
+	 * @param defaultValue the default value if the property is not found or malformed
+	 * @return the value
+	 */
+	public static boolean getBooleanProperty(String key, boolean defaultValue) {
+		String s = getProperty(key, null);
+		if (s == null) return defaultValue;
+		if (s.equalsIgnoreCase("true") || s.equalsIgnoreCase("t")
+				|| s.equalsIgnoreCase("yes") || s.equalsIgnoreCase("y")) return true;
+		if (s.equalsIgnoreCase("false") || s.equalsIgnoreCase("f")
+				|| s.equalsIgnoreCase("no") || s.equalsIgnoreCase("n")) return false;
+		return defaultValue;
 	}
 }

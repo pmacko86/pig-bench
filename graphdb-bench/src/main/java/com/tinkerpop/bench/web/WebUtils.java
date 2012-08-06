@@ -1,12 +1,14 @@
 package com.tinkerpop.bench.web;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import com.tinkerpop.bench.Bench;
 import com.tinkerpop.bench.DatabaseEngine;
@@ -321,5 +323,30 @@ public class WebUtils {
 		}
 		
 		return r;
+	}
+	
+	
+	/**
+	 * Check whether job control is enabled
+	 * 
+	 * @param response the response where to write an error message; null if no message should be produced
+	 * @return true if enabled, false if not
+	 * @throws IOException on I/O error
+	 */
+	public static boolean isJobControlEnabled(HttpServletResponse response) throws IOException {
+		
+		boolean enabled = Bench.getBooleanProperty(Bench.WEB_JOBCONTROL_ENABLE, true);
+		
+		if (enabled) {
+			return true;
+		}
+		else {
+			if (response != null) {
+		        response.setContentType("text/plain");
+		        response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
+		        response.getWriter().println("No such file.");
+			}
+			return false;
+		}
 	}
 }
