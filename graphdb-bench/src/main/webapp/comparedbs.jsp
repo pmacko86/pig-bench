@@ -461,7 +461,7 @@
 		
 	<div class="basic_form">
 		<%		
-			if (selectedOperations.size() > (separateGraphForEachOperation ? 1 : 0)) {
+			if (selectedOperations.size() > 0) {
 				
 				TreeMap<String, Collection<Job>> operationsToJobs = new TreeMap<String, Collection<Job>>();
 				for (String operationName : selectedOperations) {
