@@ -3,8 +3,8 @@ package com.tinkerpop.bench.operation.operations;
 import java.util.Iterator;
 
 import com.tinkerpop.bench.operation.Operation;
-import com.tinkerpop.blueprints.pgm.Edge;
-import com.tinkerpop.blueprints.pgm.Vertex;
+import com.tinkerpop.blueprints.Direction;
+import com.tinkerpop.blueprints.Vertex;
 
 public class OperationGetFirstNeighbor extends Operation {
 
@@ -20,14 +20,13 @@ public class OperationGetFirstNeighbor extends Operation {
 		try {
 			Vertex result = null;
 			
-			Iterator<Edge> iter = startVertex.getOutEdges().iterator();
+			Iterator<Vertex> iter = startVertex.getVertices(Direction.OUT).iterator();
 			if (iter.hasNext())
-				result = iter.next().getInVertex();
+				result = iter.next();
 			
 			setResult(result != null ? result.toString() : "DNE");
 		} catch (Exception e) {
 			throw e;
 		}
 	}
-
 }

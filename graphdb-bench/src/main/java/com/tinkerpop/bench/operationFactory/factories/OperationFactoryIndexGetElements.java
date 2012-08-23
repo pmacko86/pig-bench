@@ -7,7 +7,7 @@ import com.tinkerpop.bench.StatisticsHelper;
 import com.tinkerpop.bench.operation.operations.OperationIndexGetElements;
 import com.tinkerpop.bench.operationFactory.OperationArgs;
 import com.tinkerpop.bench.operationFactory.OperationFactoryBase;
-import com.tinkerpop.blueprints.pgm.Vertex;
+import com.tinkerpop.blueprints.Vertex;
 
 /**
  * @author Alex Averbuch (alex.averbuch@gmail.com)

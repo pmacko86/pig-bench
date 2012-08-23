@@ -6,10 +6,11 @@ import java.util.ArrayList;
 import java.util.NoSuchElementException;
 import java.util.Random;
 
-import com.tinkerpop.blueprints.pgm.Edge;
-import com.tinkerpop.blueprints.pgm.Graph;
-import com.tinkerpop.blueprints.pgm.Vertex;
-import com.tinkerpop.blueprints.pgm.impls.hollow.HollowGraph;
+import com.tinkerpop.bench.DatabaseEngine;
+import com.tinkerpop.blueprints.Direction;
+import com.tinkerpop.blueprints.Edge;
+import com.tinkerpop.blueprints.Graph;
+import com.tinkerpop.blueprints.Vertex;
 
 
 /**
@@ -56,7 +57,7 @@ public class Cache {
 		this.nextNodeIndex = 0;
         this.nextEdgeIndex = 0;
 		this.random = new Random();
-		this.hollow = graph instanceof HollowGraph;
+		this.hollow = DatabaseEngine.isHollowGraph(graph);
 	}
 	
 	
@@ -200,7 +201,7 @@ public class Cache {
 	 * @param edge the edge
 	 */
 	public void addEdge(Edge edge) {
-		addEdgeByID(edge.getId(), edge.getInVertex().getId(), edge.getOutVertex().getId());
+		addEdgeByID(edge.getId(), edge.getVertex(Direction.IN).getId(), edge.getVertex(Direction.OUT).getId());
 	}
 	
 	

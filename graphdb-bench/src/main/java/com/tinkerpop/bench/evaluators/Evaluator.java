@@ -1,7 +1,7 @@
 package com.tinkerpop.bench.evaluators;
 
 import com.tinkerpop.bench.cache.Cache;
-import com.tinkerpop.blueprints.pgm.Graph;
+import com.tinkerpop.blueprints.Graph;
 
 /**
  * @author Alex Averbuch (alex.averbuch@gmail.com)

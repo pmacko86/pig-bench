@@ -7,9 +7,9 @@ import com.tinkerpop.bench.ConsoleUtils;
 import com.tinkerpop.bench.GlobalConfig;
 import com.tinkerpop.bench.cache.Cache;
 import com.tinkerpop.bench.operation.Operation;
-import com.tinkerpop.blueprints.pgm.Graph;
-import com.tinkerpop.blueprints.pgm.util.graphml.GraphMLReader;
-import com.tinkerpop.blueprints.pgm.util.graphml.GraphMLReaderProgressListener;
+import com.tinkerpop.blueprints.Graph;
+import com.tinkerpop.blueprints.extensions.graphml.FastGraphMLReader;
+import com.tinkerpop.blueprints.extensions.graphml.FastGraphMLReaderProgressListener;
 
 import edu.harvard.pass.cpl.CPL;
 import edu.harvard.pass.cpl.CPLFile;
@@ -18,7 +18,7 @@ import edu.harvard.pass.cpl.CPLFile;
  * @author Alex Averbuch (alex.averbuch@gmail.com)
  * @author Peter Macko (pmacko@eecs.harvard.edu)
  */
-public class OperationLoadGraphML extends Operation implements GraphMLReaderProgressListener {
+public class OperationLoadGraphML extends Operation implements FastGraphMLReaderProgressListener {
 
 	private String graphmlPath = null;
 	private String lastProgressString = "";
@@ -39,7 +39,7 @@ public class OperationLoadGraphML extends Operation implements GraphMLReaderProg
 		Graph graph = getGraph();
 		try {
 			System.out.print(": ");
-			GraphMLReader.inputGraph(graph, new FileInputStream(
+			FastGraphMLReader.inputGraph(graph, new FileInputStream(
 					graphmlPath), GlobalConfig.transactionBufferSize,
 					null, null, null, this, ingestAsUndirected);
 			Cache.getInstance(getGraph()).invalidate();

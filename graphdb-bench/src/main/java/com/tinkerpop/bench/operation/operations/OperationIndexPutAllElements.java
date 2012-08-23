@@ -1,13 +1,14 @@
 package com.tinkerpop.bench.operation.operations;
 
+import com.tinkerpop.bench.GraphUtils;
 import com.tinkerpop.bench.operation.Operation;
-import com.tinkerpop.blueprints.pgm.Edge;
-import com.tinkerpop.blueprints.pgm.Index;
-import com.tinkerpop.blueprints.pgm.IndexableGraph;
-import com.tinkerpop.blueprints.pgm.TransactionalGraph;
-import com.tinkerpop.blueprints.pgm.Vertex;
-import com.tinkerpop.blueprints.pgm.TransactionalGraph.Conclusion;
-//import com.tinkerpop.blueprints.pgm.TransactionalGraph.Mode;
+import com.tinkerpop.blueprints.Edge;
+import com.tinkerpop.blueprints.Index;
+import com.tinkerpop.blueprints.IndexableGraph;
+import com.tinkerpop.blueprints.TransactionalGraph;
+import com.tinkerpop.blueprints.Vertex;
+import com.tinkerpop.blueprints.TransactionalGraph.Conclusion;
+
 
 /**
  * @author Alex Averbuch (alex.averbuch@gmail.com)
@@ -42,10 +43,10 @@ public class OperationIndexPutAllElements extends Operation {
 	private int indexElements() {
 		IndexableGraph indexableGraph = ((IndexableGraph) getGraph());
 
-		Index<Vertex> vIndex = indexableGraph.getIndex(Index.VERTICES,
+		Index<Vertex> vIndex = indexableGraph.getIndex(GraphUtils.INDEX_VERTICES,
 				Vertex.class);
 
-		Index<Edge> eIndex = indexableGraph.getIndex(Index.EDGES, Edge.class);
+		Index<Edge> eIndex = indexableGraph.getIndex(GraphUtils.INDEX_EDGES, Edge.class);
 
 		int elementCount = 0;
 
@@ -64,18 +65,17 @@ public class OperationIndexPutAllElements extends Operation {
 
 	private int indexElementsTransactional() {
 		Index<Vertex> vIndex = ((IndexableGraph) getGraph()).getIndex(
-				Index.VERTICES, Vertex.class);
+				GraphUtils.INDEX_VERTICES, Vertex.class);
 
 		Index<Edge> eIndex = ((IndexableGraph) getGraph()).getIndex(
-				Index.EDGES, Edge.class);
+				GraphUtils.INDEX_EDGES, Edge.class);
 
 		int elementCount = 0;
 
 		TransactionalGraph transactionalGraph = (TransactionalGraph) getGraph();
-		//Mode transactionMode = transactionalGraph.getTransactionMode();
-
-		//transactionalGraph.setTransactionMode(Mode.MANUAL);
-		transactionalGraph.startTransaction();
+		
+		
+		// The transactions in a TransactionalGraph are started automatically
 
 		for (Vertex v : getGraph().getVertices()) {
 			vIndex.put(propertyKey, v.getProperty(propertyKey), v);
@@ -83,7 +83,6 @@ public class OperationIndexPutAllElements extends Operation {
 
 			if (elementCount % TRANSACTION_BUFFER == 0) {
 				transactionalGraph.stopTransaction(Conclusion.SUCCESS);
-				transactionalGraph.startTransaction();
 			}
 		}
 
@@ -93,7 +92,6 @@ public class OperationIndexPutAllElements extends Operation {
 
 			if (elementCount % TRANSACTION_BUFFER == 0) {
 				transactionalGraph.stopTransaction(Conclusion.SUCCESS);
-				transactionalGraph.startTransaction();
 			}
 		}
 

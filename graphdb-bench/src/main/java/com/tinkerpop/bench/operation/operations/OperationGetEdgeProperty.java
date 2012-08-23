@@ -1,7 +1,7 @@
 package com.tinkerpop.bench.operation.operations;
 
 import com.tinkerpop.bench.operation.Operation;
-import com.tinkerpop.blueprints.pgm.Edge;
+import com.tinkerpop.blueprints.Edge;
 
 public class OperationGetEdgeProperty extends Operation {
 

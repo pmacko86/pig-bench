@@ -20,9 +20,10 @@ import com.tinkerpop.bench.operation.OperationShutdownGraph;
 import com.tinkerpop.bench.operationFactory.OperationFactory;
 import com.tinkerpop.bench.operationFactory.OperationFactoryGeneric;
 import com.tinkerpop.bench.operationFactory.OperationFactoryLog;
-import com.tinkerpop.blueprints.pgm.Edge;
-import com.tinkerpop.blueprints.pgm.Graph;
-import com.tinkerpop.blueprints.pgm.Vertex;
+import com.tinkerpop.blueprints.Edge;
+import com.tinkerpop.blueprints.Graph;
+import com.tinkerpop.blueprints.Vertex;
+import com.tinkerpop.blueprints.extensions.BenchmarkableGraph;
 
 import edu.harvard.pass.cpl.CPL;
 
@@ -365,23 +366,40 @@ public class BenchRunner {
 							}
 							
 							Graph g = graphDescriptor.getGraph();
-							long numVertices = g.countVertices();
-							long numEdges = g.countEdges();
+							long numVertices = -1;
+							long numEdges = -1;
 							long objects = 0;
+							
+							if (g instanceof BenchmarkableGraph) {
+								numVertices = ((BenchmarkableGraph) g).countVertices();
+								numEdges = ((BenchmarkableGraph) g).countEdges();
+							}
 							
 							for (@SuppressWarnings("unused") Vertex v : g.getVertices()) {
 								objects++;
 								if (main) if ((objects & 0xfff) == 0) System.gc();
-								if (main) ConsoleUtils.printProgressIndicator(objects, numVertices + numEdges);
+								if (main) {
+									if (numVertices >= 0 && numEdges >= 0) {
+										ConsoleUtils.printProgressIndicator(objects, numVertices + numEdges);
+									}
+								}
 							}
 							
 							for (@SuppressWarnings("unused") Edge e : g.getEdges()) {
 								objects++;
 								if (main) if ((objects & 0xfff) == 0) System.gc();
-								if (main) ConsoleUtils.printProgressIndicator(objects, numVertices + numEdges);
+								if (main) {
+									if (numVertices >= 0 && numEdges >= 0) {
+										ConsoleUtils.printProgressIndicator(objects, numVertices + numEdges);
+									}
+								}
 							}
 							
-							if (main) ConsoleUtils.printProgressIndicator(numVertices + numEdges, numVertices + numEdges);
+							if (main) {
+								if (numVertices >= 0 && numEdges >= 0) {
+									ConsoleUtils.printProgressIndicator(objects, numVertices + numEdges);
+								}
+							}
 							if (main) System.out.println();
 						}
 					}

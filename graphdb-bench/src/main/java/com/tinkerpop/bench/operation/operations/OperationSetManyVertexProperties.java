@@ -4,7 +4,7 @@ import java.util.UUID;
 
 import com.tinkerpop.bench.StatisticsHelper;
 import com.tinkerpop.bench.operation.Operation;
-import com.tinkerpop.blueprints.pgm.Vertex;
+import com.tinkerpop.blueprints.Vertex;
 
 import edu.harvard.pass.cpl.CPL;
 import edu.harvard.pass.cpl.CPLObject;

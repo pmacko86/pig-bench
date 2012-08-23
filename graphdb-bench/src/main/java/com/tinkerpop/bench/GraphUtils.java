@@ -5,12 +5,25 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import com.tinkerpop.blueprints.pgm.Edge;
-import com.tinkerpop.blueprints.pgm.Graph;
-import com.tinkerpop.blueprints.pgm.Vertex;
-import com.tinkerpop.blueprints.pgm.util.graphml.GraphMLWriter;
+import com.tinkerpop.blueprints.Direction;
+import com.tinkerpop.blueprints.Edge;
+import com.tinkerpop.blueprints.Graph;
+import com.tinkerpop.blueprints.Vertex;
+import com.tinkerpop.blueprints.util.io.graphml.GraphMLWriter;
 
+
+/**
+ * A collection of miscellaneous graph utils
+ * 
+ * @author Peter Macko
+ */
 public class GraphUtils {
+	
+	// Name of a VERTICES index
+	public static final String INDEX_VERTICES = "VERTICES";
+	
+	// Name of a EDGES index
+	public static final String INDEX_EDGES = "EDGES";
 	
 	
 	/**
@@ -28,20 +41,19 @@ public class GraphUtils {
 		
 		HashSet<Vertex> neighbors = new HashSet<Vertex>();
 		
-		stat.num_getOutEdges++;
-		for (Edge e : v.getOutEdges()) {
-			stat.num_getInVertex++;
+		stat.num_getVertices++;
+		for (Vertex w : v.getVertices(Direction.BOTH)) {
+			stat.num_getVerticesNext++;
 			stat.num_uniqueVertices++;
-			Vertex w = e.getInVertex();
 			neighbors.add(w);
 		}
 		
 		int triangles = 0;
 		for (Vertex w : neighbors) {
-			stat.num_getOutEdges++;
-			for (Edge e : w.getOutEdges()) {
-				stat.num_getInVertex++;
-				if (neighbors.contains(e.getInVertex())) {
+			stat.num_getVertices++;
+			for (Vertex z : w.getVertices(Direction.BOTH)) {
+				stat.num_getVerticesNext++;
+				if (neighbors.contains(z)) {
 					triangles++;
 				}
 				else {
@@ -143,7 +155,7 @@ public class GraphUtils {
 		}
 		
 		for (Edge edge : graph.getEdges()) {
-			out.println("    <edge source=\"" + edge.getOutVertex().getId() + "\" "
+			out.println("    <edge source=\"" + edge.getVertex(Direction.OUT).getId() + "\" "
 					+ "target=\"" + edge.getInVertex ().getId() + "\" "
 					+ "label=\"" + edge.getLabel() + "\">");
 			for (String key : edge.getPropertyKeys()) {
@@ -164,12 +176,12 @@ public class GraphUtils {
 	 */
 	public static class OpStat {
 		
-		public int num_getInVertex = 0;
-		public int num_getOutVertex = 0;
-		public int num_getInEdges = 0;
-		public int num_getOutEdges = 0;
 		public int num_getVertices = 0;
-		public int num_getVerticesNext = 0;			/* getting the next vertex from the iterator */
+		public int num_getVerticesNext = 0;
+		public int num_getEdges = 0;
+		public int num_getEdgesNext = 0;
+		public int num_getAllVertices = 0;
+		public int num_getAllVerticesNext = 0;			/* getting the next vertex from the iterator */
 		public int num_uniqueVertices = 0;
 		
 		public boolean has_uniqueVertices = true;	/* set to false if not, never set this back to true */
@@ -181,9 +193,9 @@ public class GraphUtils {
 		 */
 		@Override
 		public String toString() {
-			return   "getInVertex=" + num_getInVertex + ":getOutVertex="     + num_getOutVertex +
-					":getInEdges="  + num_getInEdges  + ":getOutEdges="      + num_getOutEdges  +
-					":getVertices=" + num_getVertices + ":getVerticesNext="  + num_getVerticesNext +
+			return   "getVertices="    + num_getVertices      + ":getVerticesNext="     + num_getVerticesNext    +
+					":getEdges="       + num_getEdges         + ":getEdgesNext="        + num_getEdgesNext       +
+					":getAllVertices=" + num_getAllVertices   + ":getAllVerticesNext="  + num_getAllVerticesNext +
 					 (has_uniqueVertices ? ":uniqueVertices=" + num_uniqueVertices : "");
 		}
 	}

@@ -2,11 +2,12 @@ package com.tinkerpop.bench.operation.operations;
 
 import java.util.ArrayList;
 
+import com.tinkerpop.bench.GraphUtils;
 import com.tinkerpop.bench.operation.Operation;
-import com.tinkerpop.blueprints.pgm.Element;
-import com.tinkerpop.blueprints.pgm.Index;
-import com.tinkerpop.blueprints.pgm.IndexableGraph;
-import com.tinkerpop.blueprints.pgm.Vertex;
+import com.tinkerpop.blueprints.Element;
+import com.tinkerpop.blueprints.Index;
+import com.tinkerpop.blueprints.IndexableGraph;
+import com.tinkerpop.blueprints.Vertex;
 
 /**
  * @author Alex Averbuch (alex.averbuch@gmail.com)
@@ -32,7 +33,7 @@ public class OperationIndexGetElements extends Operation {
 				throw new Exception("Graph is not IndexableGraph");
 
 			Index<Vertex> vIndex = ((IndexableGraph) getGraph()).getIndex(
-					Index.VERTICES, Vertex.class);
+					GraphUtils.INDEX_VERTICES, Vertex.class);
 
 			ArrayList<Element> elements = new ArrayList<Element>();
 

@@ -1,7 +1,7 @@
 package com.tinkerpop.bench.operation.operations;
 
 import com.tinkerpop.bench.operation.Operation;
-import com.tinkerpop.blueprints.pgm.Vertex;
+import com.tinkerpop.blueprints.Vertex;
 
 public class OperationGetVertexProperty extends Operation {
 

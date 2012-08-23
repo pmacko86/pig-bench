@@ -4,9 +4,9 @@ import java.util.HashSet;
 
 import com.tinkerpop.bench.GraphUtils;
 import com.tinkerpop.bench.operation.Operation;
-import com.tinkerpop.blueprints.pgm.Edge;
-import com.tinkerpop.blueprints.pgm.Graph;
-import com.tinkerpop.blueprints.pgm.Vertex;
+import com.tinkerpop.blueprints.Direction;
+import com.tinkerpop.blueprints.Graph;
+import com.tinkerpop.blueprints.Vertex;
 
 public class OperationGlobalClusteringCoefficient extends Operation {
 	
@@ -24,25 +24,17 @@ public class OperationGlobalClusteringCoefficient extends Operation {
 			int totalTriplets = 0;
 			HashSet<Vertex> neighbors = new HashSet<Vertex>();
 			
-			stat.num_getVertices++;
+			stat.num_getAllVertices++;
 			for (Vertex v : graph.getVertices()) {
-				stat.num_getVerticesNext++;
+				stat.num_getAllVerticesNext++;
 				stat.num_uniqueVertices++;
 				neighbors.clear();
 				
 				// Let all edges be undirected
 				
-				stat.num_getOutEdges++;
-				for (Edge e : v.getOutEdges()) {
-					stat.num_getInVertex++;
-					Vertex w = e.getInVertex();
-					neighbors.add(w);
-				}
-				
-				stat.num_getInEdges++;
-				for (Edge e : v.getInEdges()) {
-					stat.num_getOutVertex++;
-					Vertex w = e.getOutVertex();
+				stat.num_getVertices++;
+				for (Vertex w : v.getVertices(Direction.BOTH)) {
+					stat.num_getVerticesNext++;
 					neighbors.add(w);
 				}
 				
@@ -51,10 +43,10 @@ public class OperationGlobalClusteringCoefficient extends Operation {
 				if (k <= 1) continue;
 				
 				for (Vertex w : neighbors) {
-					stat.num_getOutEdges++;
-					for (Edge e : w.getOutEdges()) {
-						stat.num_getInVertex++;
-						if (neighbors.contains(e.getInVertex())) {
+					stat.num_getVertices++;
+					for (Vertex z : w.getVertices(Direction.BOTH)) {
+						stat.num_getVerticesNext++;
+						if (neighbors.contains(z)) {
 							closedTriplets++;
 						}
 					}

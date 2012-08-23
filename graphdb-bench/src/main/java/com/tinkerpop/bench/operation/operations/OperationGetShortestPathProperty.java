@@ -4,18 +4,18 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.PriorityQueue;
 
+import com.tinkerpop.bench.DatabaseEngine;
 import com.tinkerpop.bench.GlobalConfig;
 import com.tinkerpop.bench.operation.Operation;
-import com.tinkerpop.blueprints.pgm.Edge;
-import com.tinkerpop.blueprints.pgm.Vertex;
-import com.tinkerpop.blueprints.pgm.impls.hollow.HollowGraph;
-import com.tinkerpop.blueprints.pgm.impls.rdf.RdfGraph;
-import com.tinkerpop.blueprints.pgm.impls.sql.SqlGraph;
+import com.tinkerpop.blueprints.Direction;
+import com.tinkerpop.blueprints.Vertex;
+import com.tinkerpop.blueprints.extensions.impls.sql.SqlGraph;
 
 public class OperationGetShortestPathProperty extends Operation {
 
 	private Vertex source;
 	private Vertex target;
+	private Direction direction;
 	private boolean isRDFGraph;
 	private boolean isSQLGraph;
 	private boolean isHollowGraph;
@@ -24,9 +24,10 @@ public class OperationGetShortestPathProperty extends Operation {
 	protected void onInitialize(Object[] args) {
 		source = getGraph().getVertex(args[0]);
 		target = getGraph().getVertex(args[1]);
-		isRDFGraph = getGraph() instanceof RdfGraph;
+		direction = Direction.BOTH;		// undirected
+		isRDFGraph = DatabaseEngine.isRDFGraph(getGraph());
 		isSQLGraph = getGraph() instanceof SqlGraph;
-		isHollowGraph = getGraph() instanceof HollowGraph;
+		isHollowGraph = DatabaseEngine.isHollowGraph(getGraph());
 	}
 	
 	@Override
@@ -71,9 +72,8 @@ public class OperationGetShortestPathProperty extends Operation {
 						break;
 					
 					get_nbrs++;
-					for (Edge e : u.getOutEdges()) {
+					for (Vertex v : u.getVertices(direction)) {
 						get_vertex++;
-						Vertex v = e.getInVertex();
 						
 						get_property += 2;
 						Integer alt = (Integer) u.getProperty("dist") + 1;
@@ -87,6 +87,7 @@ public class OperationGetShortestPathProperty extends Operation {
 								v.setProperty("prev", (String) u.getId());
 							else
 								v.setProperty("prev", ((Long) u.getId()).longValue());
+							
 							v.setProperty("dist", alt);
 							queue.remove(v);
 							queue.add(v);

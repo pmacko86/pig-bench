@@ -2,13 +2,16 @@ package com.tinkerpop.bench;
 
 import java.util.Random;
 
+import com.tinkerpop.bench.DatabaseEngine;
 import com.tinkerpop.bench.cache.Cache;
 import com.tinkerpop.bench.evaluators.EdgeEvaluator;
 import com.tinkerpop.bench.evaluators.Evaluator;
-import com.tinkerpop.blueprints.pgm.Edge;
-import com.tinkerpop.blueprints.pgm.Graph;
-import com.tinkerpop.blueprints.pgm.Vertex;
-import com.tinkerpop.blueprints.pgm.impls.hollow.HollowGraph;
+import com.tinkerpop.blueprints.Direction;
+import com.tinkerpop.blueprints.Edge;
+import com.tinkerpop.blueprints.Graph;
+import com.tinkerpop.blueprints.Vertex;
+import com.tinkerpop.blueprints.extensions.BenchmarkableGraph;
+
 
 /**
  * @author Marko A. Rodriguez (http://markorodriguez.com)
@@ -44,12 +47,20 @@ public class StatisticsHelper {
 	 * @param sampleSize the number of samples to return
 	 * @return an array of vertices
 	 */
-	public static Vertex[] getRandomVertices(Graph db, int sampleSize) {	
-		Vertex[] samples = new Vertex[sampleSize];
-		for (int i = 0; i < samples.length; i++) {
-			samples[i] = db.getRandomVertex();
+	public static Vertex[] getRandomVertices(Graph db, int sampleSize) {
+		
+		if (db instanceof BenchmarkableGraph) {
+			BenchmarkableGraph g = (BenchmarkableGraph) db;
+			
+			Vertex[] samples = new Vertex[sampleSize];
+			for (int i = 0; i < samples.length; i++) {
+				samples[i] = g.getRandomVertex();
+			}
+			return samples;
 		}
-		return samples;
+		else {
+			throw new IllegalArgumentException("Not a BenchmarkableGraph");
+		}
 	}
 
 	
@@ -61,11 +72,19 @@ public class StatisticsHelper {
 	 * @return an array of edges
 	 */
 	public static Edge[] getRandomEdges(Graph db, int sampleSize) {	
-		Edge[] samples = new Edge[sampleSize];
-		for (int i = 0; i < samples.length; i++) {
-			samples[i] = db.getRandomEdge();
+		
+		if (db instanceof BenchmarkableGraph) {
+			BenchmarkableGraph g = (BenchmarkableGraph) db;
+				
+			Edge[] samples = new Edge[sampleSize];
+			for (int i = 0; i < samples.length; i++) {
+				samples[i] = g.getRandomEdge();
+			}
+			return samples;
 		}
-		return samples;
+		else {
+			throw new IllegalArgumentException("Not a BenchmarkableGraph");
+		}
 	}
 
 	
@@ -77,11 +96,19 @@ public class StatisticsHelper {
 	 * @return an array of vertex IDs
 	 */
 	public static Object[] getRandomVertexIds(Graph db, int sampleSize) {	
-		Object[] samples = new Object[sampleSize];
-		for (int i = 0; i < samples.length; i++) {
-			samples[i] = db.getRandomVertex().getId();
+		
+		if (db instanceof BenchmarkableGraph) {
+			BenchmarkableGraph g = (BenchmarkableGraph) db;
+				
+			Object[] samples = new Object[sampleSize];
+			for (int i = 0; i < samples.length; i++) {
+				samples[i] = g.getRandomVertex().getId();
+			}
+			return samples;
 		}
-		return samples;
+		else {
+			throw new IllegalArgumentException("Not a BenchmarkableGraph");
+		}
 	}
 
 	
@@ -93,13 +120,22 @@ public class StatisticsHelper {
 	 * @return an array of edge IDs
 	 */
 	public static Object[] getRandomEdgeIds(Graph db, int sampleSize) {	
+		
 		// Slower alternative:
 		//   return getSampleEdgeIds(db, new com.tinkerpop.bench.evaluators.EdgeEvaluatorUniform(), sampleSize);
-		Object[] samples = new Object[sampleSize];
-		for (int i = 0; i < samples.length; i++) {
-			samples[i] = db.getRandomEdge().getId();
+		
+		if (db instanceof BenchmarkableGraph) {
+			BenchmarkableGraph g = (BenchmarkableGraph) db;
+				
+			Object[] samples = new Object[sampleSize];
+			for (int i = 0; i < samples.length; i++) {
+				samples[i] = g.getRandomEdge().getId();
+			}
+			return samples;
 		}
-		return samples;
+		else {
+			throw new IllegalArgumentException("Not a BenchmarkableGraph");
+		}
 	}
 	
 	
@@ -126,7 +162,7 @@ public class StatisticsHelper {
 			edges = getRandomEdges(db, sampleSize);
 			samples = new Vertex[sampleSize];
 			for (int i = 0; i < sampleSize; i++) {
-				samples[i] = edges[i].getInVertex();
+				samples[i] = edges[i].getVertex(Direction.IN);
 			}
 			return samples;
 			
@@ -134,7 +170,7 @@ public class StatisticsHelper {
 			edges = getRandomEdges(db, sampleSize);
 			samples = new Vertex[sampleSize];
 			for (int i = 0; i < sampleSize; i++) {
-				samples[i] = edges[i].getOutVertex();
+				samples[i] = edges[i].getVertex(Direction.OUT);
 			}
 			return samples;
 			
@@ -142,7 +178,7 @@ public class StatisticsHelper {
 			edges = getRandomEdges(db, sampleSize);
 			samples = new Vertex[sampleSize];
 			for (int i = 0; i < sampleSize; i++) {
-				samples[i] = rand.nextBoolean() ? edges[i].getInVertex() : edges[i].getOutVertex();
+				samples[i] = rand.nextBoolean() ? edges[i].getVertex(Direction.IN) : edges[i].getVertex(Direction.OUT);
 			}
 			return samples;
 			
@@ -182,7 +218,7 @@ public class StatisticsHelper {
 			int sampleSize) {
 
 		Object[] samples = new Object[sampleSize];
-		if (db instanceof HollowGraph) {
+		if (DatabaseEngine.isHollowGraph(db)) {
 			for (int i = 0; i < samples.length; i++) {
 				samples[i] = new Long(0);
 			}

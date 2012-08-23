@@ -1,6 +1,6 @@
 package com.tinkerpop.bench.generator;
 
-import com.tinkerpop.blueprints.pgm.Graph;
+import com.tinkerpop.blueprints.Graph;
 
 import edu.harvard.pass.cpl.CPLObject;
 

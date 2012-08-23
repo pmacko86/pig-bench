@@ -3,9 +3,9 @@ package com.tinkerpop.bench;
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
 
-import com.tinkerpop.blueprints.pgm.Graph;
-//import com.tinkerpop.blueprints.pgm.impls.dex.DexGraph;
-import com.tinkerpop.blueprints.pgm.impls.sql.SqlGraph;
+import com.tinkerpop.blueprints.Graph;
+//import com.tinkerpop.blueprints.impls.dex.DexGraph;
+import com.tinkerpop.blueprints.extensions.impls.sql.SqlGraph;
 
 import edu.harvard.pass.cpl.CPL;
 import edu.harvard.pass.cpl.CPLObject;

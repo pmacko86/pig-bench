@@ -2,8 +2,8 @@ package com.tinkerpop.bench.operation.operations;
 
 import com.tinkerpop.bench.cache.Cache;
 import com.tinkerpop.bench.operation.Operation;
-import com.tinkerpop.blueprints.pgm.Graph;
-import com.tinkerpop.blueprints.pgm.Vertex;
+import com.tinkerpop.blueprints.Graph;
+import com.tinkerpop.blueprints.Vertex;
 
 import edu.harvard.pass.cpl.CPL;
 import edu.harvard.pass.cpl.CPLObject;

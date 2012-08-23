@@ -4,14 +4,13 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.TreeMap;
 
-import com.tinkerpop.blueprints.pgm.Graph;
-import com.tinkerpop.blueprints.pgm.impls.bdb.BdbGraph;
-import com.tinkerpop.blueprints.pgm.impls.dex.DexGraph;
-import com.tinkerpop.blueprints.pgm.impls.dup.DupGraph;
-import com.tinkerpop.blueprints.pgm.impls.hollow.HollowGraph;
-import com.tinkerpop.blueprints.pgm.impls.neo4j.Neo4jGraph;
-import com.tinkerpop.blueprints.pgm.impls.rdf.impls.NativeStoreRdfGraph;
-import com.tinkerpop.blueprints.pgm.impls.sql.SqlGraph;
+import com.tinkerpop.blueprints.Graph;
+import com.tinkerpop.blueprints.extensions.impls.dex.ExtendedDexGraph;
+import com.tinkerpop.blueprints.extensions.impls.neo4j.ExtendedNeo4jGraph;
+import com.tinkerpop.blueprints.extensions.impls.sql.SqlGraph;
+//import com.tinkerpop.blueprints.pgm.impls.bdb.BdbGraph;
+//import com.tinkerpop.blueprints.pgm.impls.dup.DupGraph;
+//import com.tinkerpop.blueprints.pgm.impls.hollow.HollowGraph;
 
 
 /**
@@ -28,20 +27,12 @@ public class DatabaseEngine {
 	
 	static {
 		Map<String, DatabaseEngine> engines = new TreeMap<String, DatabaseEngine>();
-		engines.put("bdb", new DatabaseEngine(BdbGraph.class, "bdb", "BerkeleyDB-Basic",
-				"BerkeleyDB, using massive indexing", false));
-		engines.put("dup", new DatabaseEngine(DupGraph.class, "dup", "BerkeleyDB-Duplicates",
-				"BerkeleyDB, duplicates on edge lookups and properties", false));
-		engines.put("dex", new DatabaseEngine(DexGraph.class, "dex", "DEX",
-				"DEX", false));
-		engines.put("hollow", new DatabaseEngine(HollowGraph.class, "hollow", "Hollow",
-				"The hollow implementation with no backing database", false));
-		engines.put("neo", new DatabaseEngine(Neo4jGraph.class, "neo", "Neo4j",
-				"Neo4j", false));
-		engines.put("rdf", new DatabaseEngine(NativeStoreRdfGraph.class, "rdf", "Sesame RDF",
-				"Sesame RDF", false));
-		engines.put("sql", new DatabaseEngine(SqlGraph.class, "sql", "MySQL",
-				"MySQL", true));
+//		engines.put("bdb", new DatabaseEngine(BdbGraph.class, "bdb", "BerkeleyDB-Basic", "BerkeleyDB, using massive indexing", false));
+//		engines.put("dup", new DatabaseEngine(DupGraph.class, "dup", "BerkeleyDB-Duplicates", "BerkeleyDB, duplicates on edge lookups and properties", false));
+		engines.put("dex", new DatabaseEngine(ExtendedDexGraph.class, "dex", "DEX", "DEX", false));
+//		engines.put("hollow", new DatabaseEngine(HollowGraph.class, "hollow", "Hollow", "The hollow implementation with no backing database", false));
+		engines.put("neo", new DatabaseEngine(ExtendedNeo4jGraph.class, "neo", "Neo4j", "Neo4j", false));
+		engines.put("sql", new DatabaseEngine(SqlGraph.class, "sql", "MySQL", "MySQL", true));
 		ENGINES = Collections.unmodifiableMap(engines);
 	}
 	
@@ -130,5 +121,38 @@ public class DatabaseEngine {
 	@Override
 	public String toString() {
 		return longName;
+	}
+	
+	
+	/**
+	 * Determine whether the given class is a RDF graph
+	 * 
+	 * @param g the graph instance
+	 * @return true if it is a RDF graph
+	 */
+	public static boolean isRDFGraph(Graph g) {
+		return false;
+	}
+	
+	
+	/**
+	 * Determine whether the given class is the SQL graph
+	 * 
+	 * @param g the graph instance
+	 * @return true if it is the SQL graph
+	 */
+	public static boolean isSQLGraph(Graph g) {
+		return g instanceof SqlGraph;
+	}
+	
+	
+	/**
+	 * Determine whether the given class is the Hollow graph
+	 * 
+	 * @param g the graph instance
+	 * @return true if it is the Hollow graph
+	 */
+	public static boolean isHollowGraph(Graph g) {
+		return false;
 	}
 }

@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.tinkerpop.bench.GraphDescriptor;
 import com.tinkerpop.bench.operation.Operation;
-import com.tinkerpop.blueprints.pgm.Graph;
+import com.tinkerpop.blueprints.Graph;
 
 import edu.harvard.pass.cpl.CPLObject;
 

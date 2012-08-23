@@ -4,9 +4,11 @@ import com.tinkerpop.bench.Bench;
 import com.tinkerpop.bench.ConsoleUtils;
 import com.tinkerpop.bench.cache.Cache;
 import com.tinkerpop.bench.util.Pair;
-import com.tinkerpop.blueprints.pgm.Edge;
-import com.tinkerpop.blueprints.pgm.Graph;
-import com.tinkerpop.blueprints.pgm.Vertex;
+import com.tinkerpop.blueprints.Direction;
+import com.tinkerpop.blueprints.Edge;
+import com.tinkerpop.blueprints.Graph;
+import com.tinkerpop.blueprints.Vertex;
+import com.tinkerpop.blueprints.extensions.BenchmarkableGraph;
 
 import edu.harvard.pass.cpl.CPL;
 import edu.harvard.pass.cpl.CPLObject;
@@ -46,11 +48,20 @@ public class SimpleBarabasiGenerator extends GraphGenerator {
 	/**
 	 * Generate the graph
 	 *
-	 * @param graph the graph
+	 * @param inputGraph the graph
 	 * @see com.tinkerpop.bench.generator.GraphGenerator#generate()
 	 */
 	@Override
-	public void generate(Graph graph) {
+	public void generate(Graph inputGraph) {
+		
+		if (!(inputGraph instanceof BenchmarkableGraph)) {
+			throw new IllegalArgumentException("Not a BenchmarkableGraph");
+		}
+		
+		BenchmarkableGraph graph = (BenchmarkableGraph) inputGraph;
+		
+		
+		// Initialize
 		
 		int n = N;
 		int m = M;
@@ -123,7 +134,7 @@ public class SimpleBarabasiGenerator extends GraphGenerator {
 					}
 					else {
 						Edge e = graph.getRandomEdge();
-						otherVertices[j] = ((r & 1) == 0 ? e.getInVertex() : e.getOutVertex()).getId();
+						otherVertices[j] = ((r & 1) == 0 ? e.getVertex(Direction.IN) : e.getVertex(Direction.OUT)).getId();
 					}
 				}
 			}

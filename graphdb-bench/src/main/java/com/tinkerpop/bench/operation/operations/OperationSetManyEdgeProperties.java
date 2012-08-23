@@ -4,7 +4,7 @@ import java.util.UUID;
 
 import com.tinkerpop.bench.StatisticsHelper;
 import com.tinkerpop.bench.operation.Operation;
-import com.tinkerpop.blueprints.pgm.Edge;
+import com.tinkerpop.blueprints.Edge;
 
 import edu.harvard.pass.cpl.CPL;
 import edu.harvard.pass.cpl.CPLObject;

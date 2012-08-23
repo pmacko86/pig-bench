@@ -29,9 +29,8 @@ import com.tinkerpop.bench.operationFactory.OperationFactory;
 import com.tinkerpop.bench.operationFactory.OperationFactoryGeneric;
 import com.tinkerpop.bench.operationFactory.factories.OperationFactoryRandomVertex;
 import com.tinkerpop.bench.operationFactory.factories.OperationFactoryRandomVertexPair;
-import com.tinkerpop.blueprints.pgm.Graph;
-import com.tinkerpop.blueprints.pgm.impls.hollow.HollowGraph;
-import com.tinkerpop.blueprints.pgm.impls.sql.SqlGraph;
+import com.tinkerpop.blueprints.Graph;
+import com.tinkerpop.blueprints.extensions.impls.sql.SqlGraph;
 
 import edu.harvard.pass.cpl.CPL;
 import edu.harvard.pass.cpl.CPLException;
@@ -416,7 +415,7 @@ public class BenchmarkMicro extends Benchmark {
 		 */
 		
 		String dbShortName = null;
-		Class<?> dbClass = null;
+		Class<? extends Graph> dbClass = null;
 		DatabaseEngine dbEngine = null;
 		for (DatabaseEngine e : DatabaseEngine.ENGINES.values()) {
 			if (options.has(e.getShortName())) {
@@ -437,7 +436,7 @@ public class BenchmarkMicro extends Benchmark {
 		}
 		
 		boolean withGraphPath = true;
-		if (dbClass == HollowGraph.class) withGraphPath = false;
+		if (options.has("hollow") /*dbClass == HollowGraph.class*/) withGraphPath = false;
 		
 		
 		// SQL

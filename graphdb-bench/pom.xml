@@ -13,7 +13,18 @@
 		Benchmarks are composed of a sequence of operations that can be evaluated over any Blueprints-enabled graph database.
 		Statistics and visualization tools are provided to support the analysis and representation of benchmark results.
 	</description>
+	
 	<developers>
+        <developer>
+            <name>Daniel Margo</name>
+            <email>dmargo@eecs.harvard.edu</email>
+			<url>http://www.eecs.harvard.edu/~dmargo/</url>
+        </developer>
+        <developer>
+            <name>Peter Macko</name>
+            <email>pmacko@eecs.harvard.edu</email>
+			<url>http://www.eecs.harvard.edu/~pmacko/</url>
+        </developer>
 		<developer> 
 			<name>Marko A. Rodriguez</name>
 			<email>marko@markorodriguez.com</email>
@@ -26,6 +37,7 @@
 		</developer>
 	</developers>
 	<inceptionYear>2010</inceptionYear>
+
 	<dependencies>
 		<dependency>
 			<groupId>net.sf.jopt-simple</groupId>
@@ -47,100 +59,73 @@
 		   <artifactId>commons-lang</artifactId>
 		   <version>2.4</version>
 		</dependency>
+
 		<!-- TINKERPOP GENERAL -->
 		<dependency>
-			<groupId>com.tinkerpop.blueprints</groupId>
-			<artifactId>blueprints-core</artifactId>
-			<version>1.1-SNAPSHOT</version>
+			<groupId>com.tinkerpop.gremlin</groupId>
+			<artifactId>gremlin-groovy</artifactId>
+			<version>2.1.0</version>
 		</dependency>
 		<dependency>
-			<groupId>com.tinkerpop</groupId>
-			<artifactId>gremlin</artifactId>
-			<version>1.1-SNAPSHOT</version>
+			<groupId>com.tinkerpop.gremlin</groupId>
+			<artifactId>gremlin-java</artifactId>
+			<version>2.1.0</version>
 		</dependency>
 		<dependency>
 			<groupId>com.tinkerpop</groupId>
 			<artifactId>pipes</artifactId>
-			<version>0.4-SNAPSHOT</version>
+			<version>2.1.0</version>
 		</dependency>
 
-		<!-- TINKERPOP - DEX SUPPORT -->
+        <!-- BLUEPRINTS -->
 		<dependency>
 			<groupId>com.tinkerpop.blueprints</groupId>
-			<artifactId>blueprints-dex-graph</artifactId>
-			<version>1.1-SNAPSHOT</version>
+			<artifactId>blueprints-core</artifactId>
+			<version>2.1.0</version>
 		</dependency>
 
-		<!-- TINKERPOP - NEO4J SUPPORT -->
+        <!-- BLUEPRINTS EXTENSIONS -->
 		<dependency>
-			<groupId>com.tinkerpop.blueprints</groupId>
-			<artifactId>blueprints-neo4j-graph</artifactId>
-			<version>1.1-SNAPSHOT</version>
+		   <groupId>com.tinkerpop.blueprints.extensions</groupId>
+		   <artifactId>blueprints-extensions-core</artifactId>
+		   <version>1.0-SNAPSHOT</version>
 		</dependency>
-
-		<!-- TINKERPOP - ORIENTDB SUPPORT -->
 		<dependency>
-			<groupId>com.tinkerpop.blueprints</groupId>
-			<artifactId>blueprints-orient-graph</artifactId>
-			<version>1.1-SNAPSHOT</version>
+		   <groupId>com.tinkerpop.blueprints.extensions</groupId>
+		   <artifactId>blueprints-extensions-impl</artifactId>
+		   <version>1.0-SNAPSHOT</version>
 		</dependency>
-
-		<!-- TINKERPOP - SAIL SUPPORT -->
 		<dependency>
-		   <groupId>com.tinkerpop.blueprints</groupId>
-		   <artifactId>blueprints-sail-graph</artifactId>
-		   <version>1.1-SNAPSHOT</version>
+		   <groupId>com.tinkerpop.blueprints.extensions</groupId>
+		   <artifactId>blueprints-sql-graph</artifactId>
+		   <version>1.0-SNAPSHOT</version>
 		</dependency>
-
-        <!-- DMARGO - JOPT-SIMPLE -->
-        <dependency>
-          <groupId>net.sf.jopt-simple</groupId>
-          <artifactId>jopt-simple</artifactId>
-          <version>4.3</version>
-        </dependency>
-
-
-        <!-- DMARGO - BDBGRAPH -->
-		<dependency>
+		<!--<dependency>
 		   <groupId>com.tinkerpop.blueprints</groupId>
 		   <artifactId>blueprints-bdb-graph</artifactId>
 		   <version>1.1-SNAPSHOT</version>
 		</dependency>
-
-        <!-- DMARGO - DUPGRAPH -->
         <dependency>
           <groupId>com.tinkerpop.blueprints</groupId>
           <artifactId>blueprints-dup-graph</artifactId>
           <version>1.1-SNAPSHOT</version>
         </dependency>
-
-        <!-- DMARGO - HOLLOWGRAPH -->
         <dependency>
           <groupId>com.tinkerpop.blueprints</groupId>
           <artifactId>blueprints-hollow-graph</artifactId>
           <version>1.1-SNAPSHOT</version>
         </dependency>
-
-        <!-- DMARGO - RDFGRAPH -->
-		<dependency>
-		   <groupId>com.tinkerpop.blueprints</groupId>
-		   <artifactId>blueprints-rdf-graph</artifactId>
-		   <version>1.1-SNAPSHOT</version>
-		</dependency>
-
-        <!-- DMARGO - SQLGRAPH -->
 		<dependency>
 		   <groupId>com.tinkerpop.blueprints</groupId>
 		   <artifactId>blueprints-sql-graph</artifactId>
 		   <version>1.1-SNAPSHOT</version>
-		</dependency>
+		   </dependency>-->
 
 		<!-- TESTING -->
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<version>4.5</version>
-			<!--<scope>test</scope>-->
 		</dependency>
 
 		<!-- LOGGING -->

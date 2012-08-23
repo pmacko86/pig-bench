@@ -1,7 +1,7 @@
 package com.tinkerpop.bench.operation.operations;
 
 import com.tinkerpop.bench.operation.Operation;
-import com.tinkerpop.gremlin.Gremlin;
+import com.tinkerpop.gremlin.groovy.Gremlin;
 import com.tinkerpop.pipes.Pipe;
 
 /**

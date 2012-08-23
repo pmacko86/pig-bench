@@ -7,21 +7,23 @@ import java.util.PriorityQueue;
 
 import com.tinkerpop.bench.GlobalConfig;
 import com.tinkerpop.bench.operation.Operation;
-import com.tinkerpop.blueprints.pgm.Edge;
-import com.tinkerpop.blueprints.pgm.Vertex;
-import com.tinkerpop.blueprints.pgm.impls.sql.SqlGraph;
+import com.tinkerpop.blueprints.Direction;
+import com.tinkerpop.blueprints.Vertex;
+import com.tinkerpop.blueprints.extensions.impls.sql.SqlGraph;
 
 public class OperationGetShortestPath extends Operation {
 
 	private Vertex source;
 	private Vertex target;
 	private boolean isSQLGraph;
+	private Direction direction;
 	
 	@Override
 	protected void onInitialize(Object[] args) {
 		source = getGraph().getVertex(args[0]);
 		target = getGraph().getVertex(args[1]);
-		isSQLGraph = getGraph().getClass() == SqlGraph.class;
+		isSQLGraph = getGraph() instanceof SqlGraph;
+		direction = Direction.BOTH;		// undirected
 	}
 	
 	@Override
@@ -63,9 +65,8 @@ public class OperationGetShortestPath extends Operation {
 						break;
 					
 					get_nbrs++;
-					for (Edge e : u.getOutEdges()) {
+					for (Vertex v : u.getVertices(direction)) {
 						get_vertex++;
-						Vertex v = e.getInVertex();
 						
 						int alt = dist.get(u) + 1;
 						int cur = dist.containsKey(v) ? dist.get(v) : Integer.MAX_VALUE;
