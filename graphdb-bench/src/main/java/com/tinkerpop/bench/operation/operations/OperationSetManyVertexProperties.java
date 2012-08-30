@@ -2,8 +2,8 @@ package com.tinkerpop.bench.operation.operations;
 
 import java.util.UUID;
 
-import com.tinkerpop.bench.StatisticsHelper;
 import com.tinkerpop.bench.operation.Operation;
+import com.tinkerpop.bench.util.StatisticsHelper;
 import com.tinkerpop.blueprints.Vertex;
 
 import edu.harvard.pass.cpl.CPL;

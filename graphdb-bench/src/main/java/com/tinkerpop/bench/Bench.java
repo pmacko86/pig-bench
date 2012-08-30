@@ -4,6 +4,7 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
 import com.tinkerpop.bench.benchmark.BenchmarkMicro;
+import com.tinkerpop.bench.util.ConsoleUtils;
 
 import java.io.File;
 import java.io.IOException;

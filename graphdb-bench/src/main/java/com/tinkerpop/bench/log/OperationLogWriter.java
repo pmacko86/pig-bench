@@ -7,8 +7,8 @@ import java.util.Arrays;
 
 import au.com.bytecode.opencsv.CSVWriter;
 
-import com.tinkerpop.bench.LogUtils;
 import com.tinkerpop.bench.operation.Operation;
+import com.tinkerpop.bench.util.LogUtils;
 
 import edu.harvard.pass.cpl.CPL;
 import edu.harvard.pass.cpl.CPLFile;
@@ -26,18 +26,22 @@ public class OperationLogWriter {
 
 	
 	public OperationLogWriter(File logFile) throws IOException {
-		(new File(logFile.getParent())).mkdirs();
-		writer = new CSVWriter(new FileWriter(logFile), logDelim);
-		writeHeaders();
 		
-		if (CPL.isAttached()) {
-			cplObject = CPLFile.create(logFile);
+		if (logFile != null) {
+			
+			(new File(logFile.getParent())).mkdirs();
+			writer = new CSVWriter(new FileWriter(logFile), logDelim);
+			writeHeaders();
+			
+			if (CPL.isAttached()) {
+				cplObject = CPLFile.create(logFile);
+			}
 		}
 	}
 
 	// Write .csv log column headers
 	private synchronized void writeHeaders() throws IOException {
-		writer.writeNext(HEADERS);
+		if (writer != null) writer.writeNext(HEADERS);
 	}
 
 	// Write a .csv log data row
@@ -51,11 +55,11 @@ public class OperationLogWriter {
 		buffer[5] = op.getResult().toString();
 		buffer[6] = Long.toString(op.getMemory());
 		
-		writer.writeNext(buffer);
+		if (writer != null) writer.writeNext(buffer);
 	}
 
 	public synchronized void close() throws IOException {
-		writer.close();
+		if (writer != null) writer.close();
 	}
 	
 	public CPLObject getCPLObject() {

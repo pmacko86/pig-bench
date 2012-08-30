@@ -1,9 +1,10 @@
-package com.tinkerpop.bench;
+package com.tinkerpop.bench.util;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
+import com.tinkerpop.bench.Bench;
 import com.tinkerpop.bench.log.OperationLogReader;
 import com.tinkerpop.bench.log.OperationLogWriter;
 import com.tinkerpop.bench.log.SummaryLogWriter;

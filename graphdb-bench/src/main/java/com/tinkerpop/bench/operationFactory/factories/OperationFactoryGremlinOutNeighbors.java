@@ -3,10 +3,10 @@ package com.tinkerpop.bench.operationFactory.factories;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import com.tinkerpop.bench.StatisticsHelper;
 import com.tinkerpop.bench.operation.operations.OperationGremlin;
 import com.tinkerpop.bench.operationFactory.OperationArgs;
 import com.tinkerpop.bench.operationFactory.OperationFactoryBase;
+import com.tinkerpop.bench.util.StatisticsHelper;
 import com.tinkerpop.blueprints.Vertex;
 
 /**

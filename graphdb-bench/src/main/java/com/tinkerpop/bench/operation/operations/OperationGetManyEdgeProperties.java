@@ -1,7 +1,7 @@
 package com.tinkerpop.bench.operation.operations;
 
-import com.tinkerpop.bench.StatisticsHelper;
 import com.tinkerpop.bench.operation.Operation;
+import com.tinkerpop.bench.util.StatisticsHelper;
 import com.tinkerpop.blueprints.Edge;
 
 public class OperationGetManyEdgeProperties extends Operation {

@@ -1,7 +1,7 @@
 package com.tinkerpop.bench.operation.operations;
 
-import com.tinkerpop.bench.GraphUtils;
 import com.tinkerpop.bench.operation.Operation;
+import com.tinkerpop.bench.util.GraphUtils;
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.Vertex;
 

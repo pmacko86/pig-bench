@@ -12,8 +12,8 @@ import java.util.Map.Entry;
 
 import au.com.bytecode.opencsv.CSVWriter;
 
-import com.tinkerpop.bench.ConsoleUtils;
-import com.tinkerpop.bench.LogUtils;
+import com.tinkerpop.bench.util.ConsoleUtils;
+import com.tinkerpop.bench.util.LogUtils;
 
 import edu.harvard.pass.cpl.CPL;
 import edu.harvard.pass.cpl.CPLFile;

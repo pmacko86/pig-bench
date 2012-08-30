@@ -3,9 +3,9 @@ package com.tinkerpop.bench.operationFactory;
 import java.io.File;
 import java.util.Iterator;
 
-import com.tinkerpop.bench.LogUtils;
 import com.tinkerpop.bench.log.OperationLogEntry;
 import com.tinkerpop.bench.operation.Operation;
+import com.tinkerpop.bench.util.LogUtils;
 
 /**
  * @author Alex Averbuch (alex.averbuch@gmail.com)

@@ -1,4 +1,4 @@
-package com.tinkerpop.bench;
+package com.tinkerpop.bench.util;
 
 import java.util.Random;
 

@@ -3,10 +3,10 @@ package com.tinkerpop.bench.operation.operations;
 import java.io.File;
 import java.io.FileInputStream;
 
-import com.tinkerpop.bench.ConsoleUtils;
 import com.tinkerpop.bench.GlobalConfig;
 import com.tinkerpop.bench.cache.Cache;
 import com.tinkerpop.bench.operation.Operation;
+import com.tinkerpop.bench.util.ConsoleUtils;
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.extensions.graphml.FastGraphMLReader;
 import com.tinkerpop.blueprints.extensions.graphml.FastGraphMLReaderProgressListener;

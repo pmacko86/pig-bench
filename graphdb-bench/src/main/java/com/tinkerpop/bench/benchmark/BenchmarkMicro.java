@@ -6,18 +6,16 @@ import java.io.PrintStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
 
 import com.tinkerpop.bench.Bench;
-import com.tinkerpop.bench.ConsoleUtils;
 import com.tinkerpop.bench.DatabaseEngine;
 import com.tinkerpop.bench.GlobalConfig;
 import com.tinkerpop.bench.GraphDescriptor;
-import com.tinkerpop.bench.GraphUtils;
-import com.tinkerpop.bench.LogUtils;
 import com.tinkerpop.bench.Workload;
 import com.tinkerpop.bench.cache.Cache;
 import com.tinkerpop.bench.generator.GraphGenerator;
@@ -29,6 +27,9 @@ import com.tinkerpop.bench.operationFactory.OperationFactory;
 import com.tinkerpop.bench.operationFactory.OperationFactoryGeneric;
 import com.tinkerpop.bench.operationFactory.factories.OperationFactoryRandomVertex;
 import com.tinkerpop.bench.operationFactory.factories.OperationFactoryRandomVertexPair;
+import com.tinkerpop.bench.util.ConsoleUtils;
+import com.tinkerpop.bench.util.GraphUtils;
+import com.tinkerpop.bench.util.LogUtils;
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.extensions.impls.sql.SqlGraph;
 
@@ -41,9 +42,11 @@ import joptsimple.OptionSet;
 
 
 /**
- * @author Alex Averbuch (alex.averbuch@gmail.com)
- * @author Daniel Margo (dmargo@eecs.harvard.edu)
+ * The benchmark suite
+ * 
  * @author Peter Macko (pmacko@eecs.harvard.edu)
+ * @author Daniel Margo (dmargo@eecs.harvard.edu)
+ * @author Alex Averbuch (alex.averbuch@gmail.com)
  */
 public class BenchmarkMicro extends Benchmark {
 	
@@ -76,6 +79,7 @@ public class BenchmarkMicro extends Benchmark {
 		System.err.println("  --help                  Print this help message");
 		System.err.println("  --no-cache-pollution    Disable cache pollution before benchmarks");
 		System.err.println("  --no-color              Disable color output to the terminal");
+		System.err.println("  --no-logs               Disable logs");
 		System.err.println("  --no-provenance         Disable provenance collection");
 		System.err.println("  --no-warmup             Disable the initial warmup run");
 		System.err.println("  --single-db-connection  Use one shared database connection " +
@@ -93,8 +97,9 @@ public class BenchmarkMicro extends Benchmark {
 		System.err.println("");
 		System.err.println("Database engine options:");
 		System.err.println("  --database, -D NAME     Select a specific graph or a database instance");
-		System.err.println("  --sql-addr [ADDR]       Specify the SQL connection string (w/o DB name)");
-		System.err.println("  --warmup-sql [DB_NAME]  Specify the SQL database name for warmup");
+		System.err.println("  --db-config K=VAL,...   Specify one or more database configuration properties");
+		System.err.println("  --sql-addr ADDR         Specify the SQL connection string (w/o DB name)");
+		System.err.println("  --warmup-sql DB_NAME    Specify the SQL database name for warmup");
 		System.err.println("");
 		System.err.println("Options to select a workload (select multiple):");
 		for (String k : Workload.WORKLOADS.keySet()) {
@@ -130,9 +135,10 @@ public class BenchmarkMicro extends Benchmark {
 	 * Run the benchmarking program
 	 * 
 	 * @param args the command-line arguments
+	 * @return 0 on success, otherwise an error code
 	 * @throws Exception on error
 	 */
-	public static void run(String[] args) throws Exception {
+	public static int run(String[] args) throws Exception {
 		
 		/*
 		 * Initialize
@@ -157,14 +163,16 @@ public class BenchmarkMicro extends Benchmark {
 		
 		parser.accepts("annotation").withRequiredArg().ofType(String.class);
 		
+		parser.accepts("d").withRequiredArg().ofType(String.class);
 		parser.accepts("D").withRequiredArg().ofType(String.class);
 		parser.accepts("database").withRequiredArg().ofType(String.class);
-		parser.accepts("d").withRequiredArg().ofType(String.class);
+		parser.accepts("db-config").withRequiredArg().ofType(String.class).withValuesSeparatedBy(',');
 		parser.accepts("dir").withRequiredArg().ofType(String.class);
 		parser.accepts("dumb-terminal");
 		parser.accepts("help");
 		parser.accepts("no-cache-pollution");
 		parser.accepts("no-color");
+		parser.accepts("no-logs");
 		parser.accepts("no-provenance");
 		parser.accepts("no-warmup");
 		parser.accepts("single-db-connection");
@@ -235,15 +243,13 @@ public class BenchmarkMicro extends Benchmark {
 		}
 		catch (Exception e) {
 			ConsoleUtils.error("Invalid options (please use --help for a list): " + e.getMessage());
-			System.exit(1);
-			return;
+			return 1;
 		}
 		
 		List<String> nonOptionArguments = options.nonOptionArguments();
 		if (!nonOptionArguments.isEmpty()) {
 			ConsoleUtils.error("Invalid options (please use --help for a list): " + nonOptionArguments);
-			System.exit(1);
-			return;
+			return 1;
 		}
 		
 		
@@ -262,7 +268,7 @@ public class BenchmarkMicro extends Benchmark {
 		
 		if (options.has("help") || !options.hasOptions()) {
 			help();
-			return;
+			return 0;
 		}
 		
 		String ingestFile = DEFAULT_INGEST_FILE;
@@ -289,6 +295,11 @@ public class BenchmarkMicro extends Benchmark {
 			GlobalConfig.polluteCache = false;
 		}
 		
+		boolean logs = true;
+		if (options.has("no-logs")) {
+			logs = false;
+		}
+		
 		boolean provenance = true;
 		if (options.has("no-provenance")) {
 			provenance = false;
@@ -311,8 +322,7 @@ public class BenchmarkMicro extends Benchmark {
 			numThreads = (Integer) options.valueOf("threads");
 			if (numThreads < 1) {
 				ConsoleUtils.error("Invalid number of threads -- must be at least 1");
-				System.exit(1);
-				return;
+				return 1;
 			}
 		}
 		
@@ -320,8 +330,7 @@ public class BenchmarkMicro extends Benchmark {
 			GlobalConfig.transactionBufferSize = (Integer) options.valueOf("tx-buffer");
 			if (GlobalConfig.transactionBufferSize < 1) {
 				ConsoleUtils.error("Invalid size of the transaction buffer -- must be at least 1");
-				System.exit(1);
-				return;
+				return 1;
 			}
 		}
 		
@@ -343,13 +352,11 @@ public class BenchmarkMicro extends Benchmark {
 				}
 				catch (NumberFormatException e) {
 					ConsoleUtils.error("Invalid range of k hops (not a number).");
-					System.exit(1);
-					return;
+					return 1;
 				}
 				if (k1 <= 0 || k1 > k2) {
 					ConsoleUtils.error("Invalid range of k hops.");
-					System.exit(1);
-					return;
+					return 1;
 				}
 				kHops = new int[k2-k1+1];
 				for (int k = k1; k <= k2; k++) kHops[k-k1] = k;
@@ -361,13 +368,11 @@ public class BenchmarkMicro extends Benchmark {
 				}
 				catch (NumberFormatException e) {
 					ConsoleUtils.error("Invalid number of k hops (not a number).");
-					System.exit(1);
-					return;
+					return 1;
 				}
 				if (kHops[0] <= 0) {
 					ConsoleUtils.error("Invalid number of k hops (must be positive).");
-					System.exit(1);
-					return;
+					return 1;
 				}
 			}
 		}
@@ -379,18 +384,16 @@ public class BenchmarkMicro extends Benchmark {
 		if (provenance) {
 			if (!CPL.isInstalled()) {
 				ConsoleUtils.error("CPL is not installed. Use --no-provenance to disable provenance collection.");
-				System.exit(1);
-				return;
+				return 1;
 			}
-			else {
+			else if (!CPL.isAttached()) {
 				try {
 					CPL.attachODBC(Bench.getProperty(Bench.CPL_ODBC_DSN, "DSN=CPL"));
 				}
 				catch (CPLException e) {
 					ConsoleUtils.error("Could not initialize provenance collection:");
 					ConsoleUtils.error("  " + e.getMessage());
-					System.exit(1);
-					return;
+					return 1;
 				}
 			}
 		}
@@ -415,28 +418,24 @@ public class BenchmarkMicro extends Benchmark {
 		 */
 		
 		String dbShortName = null;
-		Class<? extends Graph> dbClass = null;
 		DatabaseEngine dbEngine = null;
+		HashMap<String, String> warmupDbConfig = new HashMap<String, String>();
+		HashMap<String, String> dbConfig = new HashMap<String, String>();
+		
 		for (DatabaseEngine e : DatabaseEngine.ENGINES.values()) {
 			if (options.has(e.getShortName())) {
 				if (dbEngine != null) {
 					ConsoleUtils.error("Multiple databases are selected, but only one is allowed.");
-					System.exit(1);
-					return;
+					return 1;
 				}
 				dbEngine = e;
 				dbShortName = dbEngine.getShortName();
-				dbClass = dbEngine.getBlueprintsClass();
 			}
 		}
 		if (dbShortName == null) {
 			ConsoleUtils.error("No database is selected (please use --help for a list of options).");
-			System.exit(1);
-			return;
+			return 1;
 		}
-		
-		boolean withGraphPath = true;
-		if (options.has("hollow") /*dbClass == HollowGraph.class*/) withGraphPath = false;
 		
 		
 		// SQL
@@ -461,11 +460,10 @@ public class BenchmarkMicro extends Benchmark {
 				}
 				if (sqlDbAddr == null) {
 					ConsoleUtils.error("The SQL database address is not specified.");
-					System.exit(1);
-					return;
+					return 1;
 				}
 			}
-					
+			
 			
 			// Get the table name prefixes
 			
@@ -479,8 +477,7 @@ public class BenchmarkMicro extends Benchmark {
 				}
 				else {
 					ConsoleUtils.error("The SQL database name is not specified.");
-					System.exit(1);
-					return;
+					return 1;
 				}
 			}
 			
@@ -494,8 +491,7 @@ public class BenchmarkMicro extends Benchmark {
 				}
 				else {
 					ConsoleUtils.error("The SQL warmup database name is not specified.");
-					System.exit(1);
-					return;
+					return 1;
 				}
 			}
 			
@@ -515,6 +511,41 @@ public class BenchmarkMicro extends Benchmark {
 			
 			SqlGraph.createDatabase(sqlDbAddr, sqlDbName);
 			if (warmup) SqlGraph.createDatabase(sqlDbAddr, sqlDbNameWarmup);
+			
+			
+			// Set the database paths
+			
+			warmupDbConfig.put("path", sqlDbAddr + "|" + sqlDbNameWarmup);
+			dbConfig.put("path", sqlDbAddr + "|" + sqlDbName);
+		}
+		
+		
+		// Database properties
+		
+		if (options.has("db-config")) {
+			for (Object obj : options.valuesOf("db-config")) {
+				String property = obj.toString();
+				
+				int sep = property.indexOf('=');
+				if (sep <= 0) {
+					ConsoleUtils.error("Each database configuration property must be a key-value pair separated by '='");
+					return 1;
+				}
+				
+				String key = property.substring(0, sep);
+				String value = property.substring(sep + 1);
+				
+				if (key.startsWith("+")) {
+					dbConfig.put(key.substring(1), value);
+				}
+				else if (key.startsWith("^")) {
+					warmupDbConfig.put(key.substring(1), value);
+				}
+				else {				
+					dbConfig.put(key, value);
+					warmupDbConfig.put(key, value);
+				}
+			}
 		}
 		
 		
@@ -548,8 +579,7 @@ public class BenchmarkMicro extends Benchmark {
 			
 			if (graphGenerator == null) {
 				ConsoleUtils.error("Unrecognized graph generation model");
-				System.exit(1);
-				return;
+				return 1;
 			}
 		}
 		
@@ -567,8 +597,7 @@ public class BenchmarkMicro extends Benchmark {
 			String propDirResults = Bench.getProperty(Bench.RESULTS_DIRECTORY);
 			if (propDirResults == null) {
 				ConsoleUtils.error("Property \"" + Bench.RESULTS_DIRECTORY + "\" is not set and --dir is not specified.");
-				System.exit(1);
-				return;
+				return 1;
 			}
 			if (!propDirResults.endsWith("/")) propDirResults += "/";
 			dirResults = propDirResults + "Micro/";
@@ -585,14 +614,12 @@ public class BenchmarkMicro extends Benchmark {
 				if (dirGraphML == null) {
 					ConsoleUtils.warn("Property \"" + Bench.DATASETS_DIRECTORY + "\" is not set.");
 					ConsoleUtils.error("File \"" + ingestFile + "\" does not exist.");
-					System.exit(1);
-					return;
+					return 1;
 				}
 				if (!dirGraphML.endsWith("/")) dirGraphML += "/";
 				if (!(new File(dirGraphML + ingestFile)).exists()) {
 					ConsoleUtils.error("File \"" + ingestFile + "\" does not exist.");
-					System.exit(1);
-					return;
+					return 1;
 				}
 				else {
 					ingestFile = dirGraphML + ingestFile;
@@ -603,14 +630,12 @@ public class BenchmarkMicro extends Benchmark {
 				if (dirGraphML == null) {
 					ConsoleUtils.warn("Property \"" + Bench.DATASETS_DIRECTORY + "\" is not set.");
 					ConsoleUtils.error("File \"" + warmupIngestFile + "\" does not exist.");
-					System.exit(1);
-					return;
+					return 1;
 				}
 				if (!dirGraphML.endsWith("/")) dirGraphML += "/";
 				if (!(new File(dirGraphML + warmupIngestFile)).exists()) {
 					ConsoleUtils.error("File \"" + warmupIngestFile + "\" does not exist.");
-					System.exit(1);
-					return;
+					return 1;
 				}
 				else {
 					warmupIngestFile = dirGraphML + warmupIngestFile;
@@ -671,25 +696,8 @@ public class BenchmarkMicro extends Benchmark {
 		if (dbInstanceName != null && !dbInstanceName.equals("")) dbPrefix += "_" + dbInstanceName;
 		dbPrefix += "/";
 		
-		String warmupDbDir = null;
-		String dbDir = null;
-		if (!options.has("sql")) {
-			warmupDbDir = dbPrefix + "warmup";
-			dbDir = dbPrefix + "db";
-		}
-		
-		String warmupDbPath = null;
-		String dbPath = null;
-		if (withGraphPath) {
-			if (options.has("sql")) {
-				warmupDbPath = sqlDbAddr + "|" + sqlDbNameWarmup;
-				dbPath = sqlDbAddr + "|" + sqlDbName;
-			}
-			else {
-				warmupDbPath = warmupDbDir + (options.has("dex") ? "/graph.dex" : "");
-				dbPath = dbDir + (options.has("dex") ? "/graph.dex" : "");
-			}
-		}
+		String warmupDbDir = dbPrefix + "warmup";
+		String dbDir = dbPrefix + "db";
 		
 		String logPrefix = dbPrefix + dbShortName;
 		if (dbInstanceName != null && !dbInstanceName.equals("")) logPrefix += "_" + dbInstanceName;
@@ -719,13 +727,12 @@ public class BenchmarkMicro extends Benchmark {
 				}
 				catch (IOException e) {
 					ConsoleUtils.error("Cannot write to the specified file: " + file);
-					System.exit(1);
-					return;
+					return 1;
 				}
 			}
 			
 			try {
-				graphDescriptor = new GraphDescriptor(dbClass, dbDir, dbPath);
+				graphDescriptor = new GraphDescriptor(dbEngine, dbDir, dbConfig);
 				Graph g = graphDescriptor.openGraph();
 				GraphUtils.printGraphML(out, g, false);
 				graphDescriptor.shutdownGraph();
@@ -734,7 +741,7 @@ public class BenchmarkMicro extends Benchmark {
 				if (file != null) out.close();
 			}
 			
-			return;
+			return 0;
 		}
 		
 		
@@ -744,8 +751,7 @@ public class BenchmarkMicro extends Benchmark {
 		
 		if (workloads.isEmpty()) {
 			ConsoleUtils.error("There are no workloads specified (please use --help for a list)");
-			System.exit(1);
-			return;
+			return 1;
 		}
 
 		
@@ -758,9 +764,12 @@ public class BenchmarkMicro extends Benchmark {
 		System.out.println("Database    : " + dbShortName);
 		System.out.println("Instance    : " + (dbInstanceName != null && !dbInstanceName.equals("") ? dbInstanceName : "<default>"));
 		System.out.println("Directory   : " + dirResults);
-		System.out.println("Log File    : " + logFile);
-		System.out.println("Summary Log : " + summaryLogFile);
-		System.out.println("Summary File: " + summaryLogFileText);
+		
+		if (logs) {
+			System.out.println("Log File    : " + logFile);
+			System.out.println("Summary Log : " + summaryLogFile);
+			System.out.println("Summary File: " + summaryLogFileText);
+		}
 		
 		
 		/*
@@ -771,16 +780,16 @@ public class BenchmarkMicro extends Benchmark {
 		
 		if (warmup) {
 			ConsoleUtils.sectionHeader("Warmup Run");
-			graphDescriptor = new GraphDescriptor(dbClass, warmupDbDir, warmupDbPath);
+			graphDescriptor = new GraphDescriptor(dbEngine, warmupDbDir, warmupDbConfig);
 			try {
-				warmupBenchmark.runBenchmark(graphDescriptor, warmupLogFile, numThreads);
+				warmupBenchmark.runBenchmark(graphDescriptor, logs ? warmupLogFile : null, numThreads);
 			}
 			catch (Throwable t) {
 				ConsoleUtils.error(t.getMessage());
 				t.printStackTrace(System.err);
-				System.exit(1);
+				return 1;
 			}
-			if (CPL.isAttached() && options.has("annotation")) {
+			if (CPL.isAttached() && options.has("annotation") && logs) {
 				CPLFile.lookup(new File(warmupLogFile)).addProperty("ANNOTATION",
 						options.valueOf("annotation").toString());
 			}
@@ -788,17 +797,17 @@ public class BenchmarkMicro extends Benchmark {
 		}
 		
 		ConsoleUtils.sectionHeader("Benchmark Run");
-		graphDescriptor = new GraphDescriptor(dbClass, dbDir, dbPath);
+		graphDescriptor = new GraphDescriptor(dbEngine, dbDir, dbConfig);
 		try {
-			benchmark.runBenchmark(graphDescriptor, logFile, numThreads);
+			benchmark.runBenchmark(graphDescriptor, logs ? logFile : null, numThreads);
 		}
 		catch (Throwable t) {
 			ConsoleUtils.error(t.getMessage());
 			t.printStackTrace(System.err);
-			System.exit(1);
+			return 1;
 		}
-		resultFiles.put(dbShortName, logFile);
-		if (CPL.isAttached() && options.has("annotation")) {
+		if (logs) resultFiles.put(dbShortName, logFile);
+		if (CPL.isAttached() && options.has("annotation") && logs) {
 			CPLFile.lookup(new File(logFile)).addProperty("ANNOTATION",
 					options.valueOf("annotation").toString());
 		}
@@ -808,18 +817,23 @@ public class BenchmarkMicro extends Benchmark {
 		 * Create file with summarized results from all databases and operations
 		 */
 		
-		ConsoleUtils.sectionHeader("Summary");
-		
-		SummaryLogWriter summaryLogWriter = new SummaryLogWriter(resultFiles);
-		summaryLogWriter.writeSummary(summaryLogFile);
-		summaryLogWriter.writeSummaryText(summaryLogFileText);
-		summaryLogWriter.writeSummaryText(null);
-		if (CPL.isAttached() && options.has("annotation")) {
-			CPLFile.lookup(new File(summaryLogFile)).addProperty("ANNOTATION",
-					options.valueOf("annotation").toString());
-			CPLFile.lookup(new File(summaryLogFileText)).addProperty("ANNOTATION",
-					options.valueOf("annotation").toString());
+		if (logs) {
+				
+			ConsoleUtils.sectionHeader("Summary");
+			
+			SummaryLogWriter summaryLogWriter = new SummaryLogWriter(resultFiles);
+			summaryLogWriter.writeSummary(summaryLogFile);
+			summaryLogWriter.writeSummaryText(summaryLogFileText);
+			summaryLogWriter.writeSummaryText(null);
+			if (CPL.isAttached() && options.has("annotation")) {
+				CPLFile.lookup(new File(summaryLogFile)).addProperty("ANNOTATION",
+						options.valueOf("annotation").toString());
+				CPLFile.lookup(new File(summaryLogFileText)).addProperty("ANNOTATION",
+						options.valueOf("annotation").toString());
+			}
 		}
+		
+		return 0;
 	}
 
 	

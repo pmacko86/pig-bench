@@ -4,6 +4,8 @@ set -e
 PROGRAM="`basename $0`"
 MAVEN_OPTS=-server
 
+MAIN_CLASS="com.tinkerpop.bench.BenchmarkSuite"
+
 OPT_MEMORY_SIZE=512M
 OPT_GC_MAIN="-XX:+UseConcMarkSweepGC -XX:+UseParNewGC"
 
@@ -27,6 +29,7 @@ usage() {
 	echo "  +debug:gc      Debug the memory usage and the garbage collector" >&2
 	echo "  +help          Print this help information" >&2
 	echo "  +memory:SIZE   Set the Java memory (heap) size" >&2
+	echo "  +ocsf          Run the optimal cache settings finder" >&2
 	echo "  +profile:jrat  Profile the benchmark using JRat" >&2
 }
 
@@ -73,6 +76,16 @@ while [ "x${1:0:1}" = "x+" ]; do
 	
 	
 	#
+	# Option: the optimal cache settings finder
+	#
+
+	if [ $ARG = "+ocsf" ]; then
+		MAIN_CLASS="com.tinkerpop.bench.benchmark.OptimalCacheSettingsFinder"
+		continue
+	fi
+	
+	
+	#
 	# Option: profile the benchmark suite using JRat
 	#
 	
@@ -99,5 +112,5 @@ MAVEN_OPTS="$MAVEN_OPTS -Xms$OPT_MEMORY_SIZE -Xmx$OPT_MEMORY_SIZE"
 MAVEN_OPTS="$MAVEN_OPTS $OPT_GC_MAIN"
 
 MAVEN_OPTS="$MAVEN_OPTS" \
-	mvn -e exec:java -Dexec.mainClass="com.tinkerpop.bench.BenchmarkSuite" -Dexec.args="$*"
+	mvn -e exec:java -Dexec.mainClass=$MAIN_CLASS -Dexec.args="$*"
 

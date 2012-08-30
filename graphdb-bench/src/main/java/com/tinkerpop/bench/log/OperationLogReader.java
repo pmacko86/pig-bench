@@ -9,7 +9,7 @@ import java.util.Vector;
 
 import au.com.bytecode.opencsv.CSVReader;
 
-import com.tinkerpop.bench.LogUtils;
+import com.tinkerpop.bench.util.LogUtils;
 
 /**
  * @author Alex Averbuch (alex.averbuch@gmail.com)

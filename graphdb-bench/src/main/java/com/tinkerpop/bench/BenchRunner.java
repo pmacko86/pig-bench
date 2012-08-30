@@ -20,6 +20,8 @@ import com.tinkerpop.bench.operation.OperationShutdownGraph;
 import com.tinkerpop.bench.operationFactory.OperationFactory;
 import com.tinkerpop.bench.operationFactory.OperationFactoryGeneric;
 import com.tinkerpop.bench.operationFactory.OperationFactoryLog;
+import com.tinkerpop.bench.util.ConsoleUtils;
+import com.tinkerpop.bench.util.LogUtils;
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.Vertex;
@@ -465,7 +467,9 @@ public class BenchRunner {
 
 						logWriter.logOperation(operation);
 						if (CPL.isAttached()) {
-							logWriter.getCPLObject().dataFlowFrom(operation.getCPLObject());
+							if (logWriter.getCPLObject() != null) {
+								logWriter.getCPLObject().dataFlowFrom(operation.getCPLObject());
+							}
 						}
 						
 						if (main && operations.size() > 1) {

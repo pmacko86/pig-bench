@@ -2,8 +2,8 @@ package com.tinkerpop.bench.operation.operations;
 
 import java.util.ArrayList;
 
-import com.tinkerpop.bench.GraphUtils;
 import com.tinkerpop.bench.operation.Operation;
+import com.tinkerpop.bench.util.GraphUtils;
 import com.tinkerpop.blueprints.Element;
 import com.tinkerpop.blueprints.Index;
 import com.tinkerpop.blueprints.IndexableGraph;

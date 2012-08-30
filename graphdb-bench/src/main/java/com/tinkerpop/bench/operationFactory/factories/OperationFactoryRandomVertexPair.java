@@ -3,9 +3,9 @@ package com.tinkerpop.bench.operationFactory.factories;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import com.tinkerpop.bench.StatisticsHelper;
 import com.tinkerpop.bench.operationFactory.OperationArgs;
 import com.tinkerpop.bench.operationFactory.OperationFactoryBase;
+import com.tinkerpop.bench.util.StatisticsHelper;
 
 public class OperationFactoryRandomVertexPair extends OperationFactoryBase implements WithOpCount {
 	

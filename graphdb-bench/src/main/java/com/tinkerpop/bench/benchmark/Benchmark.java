@@ -23,7 +23,7 @@ public abstract class Benchmark {
 	}
 	
 	public final void runBenchmark(GraphDescriptor graphDescriptor, String logOut, int threads) throws Exception {
-		BenchRunner benchRunner = new BenchRunner(graphDescriptor, new File(logOut), this, threads);
+		BenchRunner benchRunner = new BenchRunner(graphDescriptor, logOut == null ? null : new File(logOut), this, threads);
 		benchRunner.runBenchmark();
 	}
 }

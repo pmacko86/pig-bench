@@ -1,8 +1,8 @@
 package com.tinkerpop.bench.generator;
 
 import com.tinkerpop.bench.Bench;
-import com.tinkerpop.bench.ConsoleUtils;
 import com.tinkerpop.bench.cache.Cache;
+import com.tinkerpop.bench.util.ConsoleUtils;
 import com.tinkerpop.bench.util.Pair;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;

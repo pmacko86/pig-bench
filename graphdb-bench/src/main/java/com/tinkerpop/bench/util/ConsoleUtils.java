@@ -1,4 +1,4 @@
-package com.tinkerpop.bench;
+package com.tinkerpop.bench.util;
 
 /**
  * Utilities for text output to the console

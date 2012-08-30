@@ -3,10 +3,10 @@ package com.tinkerpop.bench.operation;
 import com.tinkerpop.bench.Bench;
 import com.tinkerpop.bench.GlobalConfig;
 import com.tinkerpop.bench.GraphDescriptor;
-import com.tinkerpop.bench.StatisticsHelper;
 import com.tinkerpop.bench.log.OperationLogWriter;
 import com.tinkerpop.bench.operationFactory.OperationFactory;
 import com.tinkerpop.bench.operationFactory.factories.WithOpCount;
+import com.tinkerpop.bench.util.StatisticsHelper;
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.TransactionalGraph;
 

@@ -9,7 +9,7 @@ import java.util.NoSuchElementException;
 
 import au.com.bytecode.opencsv.CSVReader;
 
-import com.tinkerpop.bench.LogUtils;
+import com.tinkerpop.bench.util.LogUtils;
 
 
 public class SummaryLogReader implements Iterable<SummaryLogEntry> {
