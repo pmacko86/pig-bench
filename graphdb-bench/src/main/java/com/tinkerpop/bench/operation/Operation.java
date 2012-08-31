@@ -30,9 +30,17 @@ public abstract class Operation {
 	private OperationFactory factory = null;
 	private CPLObject cplObject = null;
 	
+	
+	/**
+	 * Create an instance of class Operation
+	 */
 	public Operation() {
+		// Nothing to do - the fields are already initialized by now
 	}
 
+	
+	
+	
 	/*
 	 * Setter Methods
 	 */
@@ -61,54 +69,128 @@ public abstract class Operation {
 		this.factory = factory;
 	}
 
+	
+	
+	
 	/*
 	 * Getter Methods
 	 */
-
+	
+	/**
+	 * Return the operation ID
+	 * 
+	 * @return the operation ID
+	 */
 	public final int getId() {
 		return opId;
 	}
 
+	
+	/**
+	 * Return the arguments passed in to the operation
+	 * 
+	 * @return the operation arguments
+	 */
 	public final Object[] getArgs() {
 		return args;
 	}
 
+	
+	/**
+	 * Return the elapsed time (unit: us)
+	 * 
+	 * @return the elapsed time as the number of nanoseconds
+	 */
 	public final long getTime() {
 		return time;
 	}
 
+	
+	/**
+	 * Get the result of the operation
+	 * 
+	 * @return the result of the operation
+	 */
 	public final Object getResult() {
 		return result;
 	}
 
+	
+	/**
+	 * Get the graph descriptor
+	 * 
+	 * @return the graph descriptor
+	 */
 	protected final GraphDescriptor getGraphDescriptor() {
 		return graphDescriptor;
 	}
 
+	
+	/**
+	 * Return the graph
+	 * 
+	 * @return the graph
+	 */
 	protected final Graph getGraph() {
 		return graphDescriptor.getGraph();
 	}
 
+	
+	/**
+	 * Return the operation name
+	 * 
+	 * @return the operation name
+	 */
 	public final String getName() {
 		return name;
 	}
 
+	
+	/**
+	 * Return the operation type
+	 * 
+	 * @return the operation type -- the name of the operation class
+	 */
 	public final String getType() {
 		return getClass().getName();
 	}
 	
+	
+	/**
+	 * Return the difference of JVM memory usage before and after the operation execution
+	 * 
+	 * @return the memory usage in bytes
+	 */
 	public final long getMemory() {
 		return memory;
 	}
 	
+	
+	/**
+	 * Return the log writer
+	 * 
+	 * @return the log writer
+	 */
 	public final OperationLogWriter getLogWriter() {
 		return logWriter;
 	}
 	
+	
+	/**
+	 * Return the operation factory responsible for creating this operation
+	 * 
+	 * @return the operation factory
+	 */
 	public final OperationFactory getFactory() {
 		return factory;
 	}
 	
+	
+	/**
+	 * Get or create the CPL  object associated with this operation
+	 * 
+	 * @return the CPL object, or null if not collecting provenance
+	 */
 	public CPLObject getCPLObject() {
 		if (!CPL.isAttached()) return null;
 		if (cplObject != null) return cplObject;
@@ -135,15 +217,29 @@ public abstract class Operation {
 		return cplObject;
 	}
 	
+	
+	
+	
 	/*
 	 * Event Methods
 	 */
 
+	/**
+	 * Initialize the operation
+	 *  
+	 * @param graphDescriptor the graph descriptor
+	 */
 	public final void initialize(GraphDescriptor graphDescriptor) {
 		this.graphDescriptor = graphDescriptor;
 		onInitialize(args);
 	}
 
+	
+	/**
+	 * Execute the operation
+	 * 
+	 * @throws Exception on error
+	 */
 	public final void execute() throws Exception {
         
 		int previousMaxBufferSize = 0;
@@ -183,6 +279,12 @@ public abstract class Operation {
 		memory = StatisticsHelper.stopMemory();
 		onFinalize();
 	}
+	
+	
+	
+	/*
+	 * Abstract methods and methods that return properties of this operation
+	 */
 
 	protected abstract void onInitialize(Object[] args);
 

@@ -17,6 +17,7 @@ import com.tinkerpop.bench.operation.OperationDeleteGraph;
 import com.tinkerpop.bench.operation.OperationDoGC;
 import com.tinkerpop.bench.operation.OperationOpenGraph;
 import com.tinkerpop.bench.operation.OperationShutdownGraph;
+import com.tinkerpop.bench.operation.operations.OperationLoadGraphML;
 import com.tinkerpop.bench.operationFactory.OperationFactory;
 import com.tinkerpop.bench.operationFactory.OperationFactoryGeneric;
 import com.tinkerpop.bench.operationFactory.OperationFactoryLog;
@@ -41,6 +42,9 @@ public class BenchRunner {
 	
 	/// The bench runner identification string
 	public static final String ID_STRING = "BenchRunner";
+	
+	/// Log file
+	private File logFile = null;
 	
 	/// Log writer
 	private OperationLogWriter logWriter = null;
@@ -90,8 +94,9 @@ public class BenchRunner {
 		this.graphDescriptor = graphDescriptor;
 		this.benchmark = benchmark;
 		this.numThreads = numThreads;
+		this.logFile = logFile;
 
-		logWriter = LogUtils.getOperationLogWriter(logFile);
+		logWriter = LogUtils.getOperationLogWriter(this.logFile);
 
 		openFactory = new OperationFactoryGeneric(OperationOpenGraph.class);
 		shutdownFactory = new OperationFactoryGeneric(OperationShutdownGraph.class);
@@ -141,9 +146,10 @@ public class BenchRunner {
 	/**
 	 * Run the benchmark
 	 * 
+	 * @return some benchmark results
 	 * @throws Exception
 	 */
-	public void runBenchmark() throws Exception {
+	public BenchResults runBenchmark() throws Exception {
 		
 		if (!benchmarkSemaphore.tryAcquire()) {
 			throw new IllegalStateException("Cannot execute the same benchmark "
@@ -212,6 +218,14 @@ public class BenchRunner {
 		}
 		
 		if (lastException != null) throw lastException;
+		
+		
+		// Compose and return the results
+		
+		BenchResults r = new BenchResults();
+		r.cumulativeBenchmarkTime = logWriter.getCumulativeBenchmarkTime();
+		
+		return r;
 	}
 
 	
@@ -336,8 +350,8 @@ public class BenchRunner {
 							f.initialize();
 							
 							for (Operation op : f.getOperations()) {
-								if (!op.getClass().equals(com.tinkerpop.bench.operation.OperationDeleteGraph.class)
-										&& !op.getClass().equals(com.tinkerpop.bench.operation.operations.OperationLoadGraphML.class)) {
+								if (!op.getClass().equals(OperationDeleteGraph.class)
+										&& !op.getClass().equals(OperationLoadGraphML.class)) {
 									polluteCache = true;
 								}
 							}

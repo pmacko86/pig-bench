@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
 
+import com.tinkerpop.bench.BenchResults;
 import com.tinkerpop.bench.DatabaseEngine;
 import com.tinkerpop.bench.util.ConsoleUtils;
 
@@ -18,15 +19,19 @@ import com.tinkerpop.bench.util.ConsoleUtils;
  */
 public abstract class OptimalCacheSettingsFinder {
 	
+	public static final int DEFAULT_POPULATION_SIZE = 10;
+	public static final int DEFAULT_CACHE_SIZE_GRANULARITY_MB = 4;
+	
+	private int populationSize;
+	private int cacheSizeGranularityMB;
+	
 	private DatabaseEngine dbEngine;
 	private int cacheSizeMB;
-	private int cacheSizeGranularityMB;
 	private String[] args;
 	
 	private HashMap<CacheConfiguration, Long> scores;
 	private CacheConfiguration bestConfiguration;
 	private long bestTime;
-	private int populationSize;
 	
 
 	/**
@@ -34,15 +39,15 @@ public abstract class OptimalCacheSettingsFinder {
 	 * 
 	 * @param dbEngine the database engine
 	 * @param cacheSizeMB the total cache size
-	 * @param cacheSizeGranularityMB the cache size granularity (in MB)
 	 * @param args the command-line arguments
 	 */
-	public OptimalCacheSettingsFinder(DatabaseEngine dbEngine, int cacheSizeMB,
-			int cacheSizeGranularityMB, String[] args) {
+	public OptimalCacheSettingsFinder(DatabaseEngine dbEngine, int cacheSizeMB, String[] args) {
+		
+		populationSize = DEFAULT_POPULATION_SIZE;
+		cacheSizeGranularityMB = DEFAULT_CACHE_SIZE_GRANULARITY_MB;
 		
 		this.dbEngine = dbEngine;
 		this.cacheSizeMB = cacheSizeMB;
-		this.cacheSizeGranularityMB = cacheSizeGranularityMB;
 		this.args = args;
 		
 		if (cacheSizeMB < cacheSizeGranularityMB || cacheSizeGranularityMB <= 0
@@ -53,7 +58,6 @@ public abstract class OptimalCacheSettingsFinder {
 		scores = new HashMap<OptimalCacheSettingsFinder.CacheConfiguration, Long>();
 		bestConfiguration = null;
 		bestTime = -1;
-		populationSize = 10;
 	}
 	
 	
@@ -107,7 +111,7 @@ public abstract class OptimalCacheSettingsFinder {
 			OptimalCacheSettingsFinder p = null;
 			
 			if (dbEngine.getShortName().equals("neo")) {
-				p = new Neo4j(dbEngine, 256, 1, args);
+				p = new Neo4j(dbEngine, 256, args);
 			}
 			else {
 				throw new IllegalArgumentException("The selected database engine is not supported");
@@ -185,15 +189,17 @@ public abstract class OptimalCacheSettingsFinder {
 			}
 		}
 		
-		long start = System.currentTimeMillis();
-		int r = BenchmarkMicro.run(newArgs);
-		long end = System.currentTimeMillis();
-		
+		int r = BenchmarkMicro.run(newArgs);	
 		if (r != 0) {
 			throw new Exception("The benchmark terminated with error code " + r);
 		}
 		
-		return end - start;
+		BenchResults results = BenchmarkMicro.lastBenchmarkResults;
+		if (results == null) {
+			throw new Exception("The benchmark terminated without returning any results");
+		}
+		
+		return results.getCumulativeBenchmarkTime();
 	}
 	
 	
@@ -229,6 +235,25 @@ public abstract class OptimalCacheSettingsFinder {
 			}
 			population.add(new CacheConfiguration(a));
 		}
+		
+		
+		// Random initial run
+		
+		ConsoleUtils.sectionHeader("Optimal Cache Settings Finder -- Cache Warming Run");
+		
+		try {
+			int[] a = new int[population.get(0).getCacheSizes().length];
+			for (int i = 0; i < a.length; i++) {
+				a[i] = (int) (1000 * Math.random());
+			}
+			CacheConfiguration p = new CacheConfiguration(a);
+			runBenchmark(configureDatabaseEngine(p));
+		}
+		catch (Throwable t) {
+			ConsoleUtils.error(t.getMessage());
+			t.printStackTrace(System.err);
+		}
+
 		
 		
 		// Main loop
@@ -593,12 +618,10 @@ public abstract class OptimalCacheSettingsFinder {
 		 * 
 		 * @param dbEngine the database engine
 		 * @param cacheSizeMB the total cache size
-		 * @param cacheSizeGranularityMB the cache size granularity (in MB)
 		 * @param args the command-line arguments
 		 */
-		public Neo4j(DatabaseEngine dbEngine, int cacheSizeMB,
-				int cacheSizeGranularityMB, String[] args) {
-			super(dbEngine, cacheSizeMB, cacheSizeGranularityMB, args);
+		public Neo4j(DatabaseEngine dbEngine, int cacheSizeMB, String[] args) {
+			super(dbEngine, cacheSizeMB, args);
 		}
 		
 		

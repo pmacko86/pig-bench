@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import com.tinkerpop.bench.Bench;
+import com.tinkerpop.bench.BenchResults;
 import com.tinkerpop.bench.DatabaseEngine;
 import com.tinkerpop.bench.GlobalConfig;
 import com.tinkerpop.bench.GraphDescriptor;
@@ -62,6 +63,10 @@ public class BenchmarkMicro extends Benchmark {
 	
 	/// The number of threads
 	private static int numThreads = DEFAULT_NUM_THREADS;
+	
+	/// The results of last successful benchmark
+	// TODO Do this properly
+	public static BenchResults lastBenchmarkResults = null;
 	
 	
 	/**
@@ -144,7 +149,13 @@ public class BenchmarkMicro extends Benchmark {
 		 * Initialize
 		 */
 		
-		// Pre-parse the command-line arguments
+		
+		// Initialize the static non-final variables 
+		
+		lastBenchmarkResults = null;
+		
+		
+		// Do a quick initial pass over the command-line arguments
 		
 		for (String a : args) {
 			if (a.equals("--no-color")) ConsoleUtils.useColor = false;
@@ -798,8 +809,9 @@ public class BenchmarkMicro extends Benchmark {
 		
 		ConsoleUtils.sectionHeader("Benchmark Run");
 		graphDescriptor = new GraphDescriptor(dbEngine, dbDir, dbConfig);
+		BenchResults results = null;
 		try {
-			benchmark.runBenchmark(graphDescriptor, logs ? logFile : null, numThreads);
+			results = benchmark.runBenchmark(graphDescriptor, logs ? logFile : null, numThreads);
 		}
 		catch (Throwable t) {
 			ConsoleUtils.error(t.getMessage());
@@ -832,6 +844,13 @@ public class BenchmarkMicro extends Benchmark {
 						options.valueOf("annotation").toString());
 			}
 		}
+		
+		
+		/*
+		 * Finish
+		 */
+		
+		lastBenchmarkResults = results;
 		
 		return 0;
 	}
