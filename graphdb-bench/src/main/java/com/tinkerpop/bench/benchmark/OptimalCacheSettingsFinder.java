@@ -338,6 +338,8 @@ public abstract class OptimalCacheSettingsFinder {
 				
 				try {
 					score = runBenchmark(configureDatabaseEngine(p));
+					// Uncomment for debugging the genetic algorithm:
+					// int m = 1; for (int x : p.getCacheSizes()) m *= x; score = new Long(1000000000L - m);
 				}
 				catch (Throwable t) {
 					ConsoleUtils.error(t.getMessage());
@@ -347,10 +349,14 @@ public abstract class OptimalCacheSettingsFinder {
 				
 				scores.put(p, score);
 				
-				if (score.longValue() < bestTime || bestTime < 0) {
+				boolean bestSoFar = false;
+				if (score.longValue() > 0 && (score.longValue() < bestTime || bestTime < 0)) {
 					bestTime = score.longValue();
 					bestConfiguration = p;
+					bestSoFar = true;
 				}
+				ConsoleUtils.header("Result: " + p + "  -->  " + score
+						+ (bestSoFar ? " [best so far]" : ""));
 			}
 			
 			
@@ -381,18 +387,18 @@ public abstract class OptimalCacheSettingsFinder {
 				CacheConfiguration c2 = next.get(i+1);
 				
 				if (c1.distance(p1) + c2.distance(p2) <= c2.distance(p1) + c1.distance(p2)) { 
-					if (scores.get(c1) > scores.get(p1) - 0.001f) {
+					if (scores.get(c1).longValue() > scores.get(p1).longValue()) {
 						next.set(i  , p1.clone());
 					}
-					if (scores.get(c2) > scores.get(p2) - 0.001f) {
+					if (scores.get(c2).longValue() > scores.get(p2).longValue()) {
 						next.set(i+1, p2.clone());
 					}
 				}
 				else {
-					if (scores.get(c1) > scores.get(p2) - 0.001f) {
+					if (scores.get(c1).longValue() > scores.get(p2).longValue()) {
 						next.set(i  , p2.clone());
 					}
-					if (scores.get(c2) > scores.get(p1) - 0.001f) {
+					if (scores.get(c2).longValue() > scores.get(p1).longValue()) {
 						next.set(i+1, p1.clone());
 					}
 				}
