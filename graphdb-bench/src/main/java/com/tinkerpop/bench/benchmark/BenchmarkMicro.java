@@ -103,6 +103,7 @@ public class BenchmarkMicro extends Benchmark {
 		System.err.println("Database engine options:");
 		System.err.println("  --database, -D NAME     Select a specific graph or a database instance");
 		System.err.println("  --db-config K=VAL,...   Specify one or more database configuration properties");
+		System.err.println("  --neo-db-config A:B:..  Specify neo4j database cache configuration");
 		System.err.println("  --sql-addr ADDR         Specify the SQL connection string (w/o DB name)");
 		System.err.println("  --warmup-sql DB_NAME    Specify the SQL database name for warmup");
 		System.err.println("");
@@ -181,6 +182,7 @@ public class BenchmarkMicro extends Benchmark {
 		parser.accepts("dir").withRequiredArg().ofType(String.class);
 		parser.accepts("dumb-terminal");
 		parser.accepts("help");
+		parser.accepts("neo-db-config");
 		parser.accepts("no-cache-pollution");
 		parser.accepts("no-color");
 		parser.accepts("no-logs");
@@ -446,6 +448,37 @@ public class BenchmarkMicro extends Benchmark {
 		if (dbShortName == null) {
 			ConsoleUtils.error("No database is selected (please use --help for a list of options).");
 			return 1;
+		}
+
+
+		// Neo4j
+
+		if (options.has("neo")) {
+
+			if (options.has("neo-db-config")) {
+
+				String s = options.valueOf("neo-db-config").toString();
+				String[] c = s.split(":");
+
+				if (c.length != 5) {
+					ConsoleUtils.error("Invalid neo-db-config. The format must be A:B:C:D:E, where:");
+					System.err.println("           A = neostore.nodestore.db.mapped_memory (in MB)");
+					System.err.println("           B = neostore.relationshipstore.db.mapped_memory (in MB)");
+					System.err.println("           C = neostore.propertystore.db.mapped_memory (in MB)");
+					System.err.println("           D = neostore.propertystore.db.strings.mapped_memory (in MB)");
+					System.err.println("           E = neostore.propertystore.db.arrays.mapped_memory (in MB)");
+					return 1;
+				}
+
+				HashMap<String, String> m = new HashMap<String, String>();
+				m.put("neostore.nodestore.db.mapped_memory"            , "" + c[0] + "M");
+				m.put("neostore.relationshipstore.db.mapped_memory"    , "" + c[1] + "M");
+				m.put("neostore.propertystore.db.mapped_memory"        , "" + c[2] + "M");
+				m.put("neostore.propertystore.db.strings.mapped_memory", "" + c[3] + "M");
+				m.put("neostore.propertystore.db.arrays.mapped_memory" , "" + c[4] + "M");
+				warmupDbConfig.putAll(m);
+				dbConfig.putAll(m);
+			}
 		}
 		
 		
