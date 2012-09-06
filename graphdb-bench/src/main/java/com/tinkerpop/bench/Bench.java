@@ -30,6 +30,10 @@ public class Bench {
 	public static final String DB_SQL_ADDR = "bench.db.sql.addr";
 	public static final String DB_SQL_DB_NAME_PREFIX = "bench.db.sql.database_prefix";
 	public static final String DB_SQL_DB_NAME_PREFIX_WARMUP = "bench.db.sql.warmup_database_prefix";
+	
+	// DATABASE ENGINE CACHES
+	public static final String DB_NEO_CACHES = "bench.db.neo.caches";
+	public static final String DB_NEO_GCR = "bench.db.neo.gcr";
 
 	// LOGS - Operation Logs & Provenance
 	public static final String LOGS_DELIMITER = "bench.logs.delimiter";
