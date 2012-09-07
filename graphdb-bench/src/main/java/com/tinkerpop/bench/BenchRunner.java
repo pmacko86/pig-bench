@@ -27,6 +27,7 @@ import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.blueprints.extensions.BenchmarkableGraph;
+import com.tinkerpop.blueprints.extensions.util.ClosingIterator;
 
 import edu.harvard.pass.cpl.CPL;
 
@@ -391,7 +392,7 @@ public class BenchRunner {
 								numEdges = ((BenchmarkableGraph) g).countEdges();
 							}
 							
-							for (@SuppressWarnings("unused") Vertex v : g.getVertices()) {
+							for (@SuppressWarnings("unused") Vertex v : new ClosingIterator<Vertex>(g.getVertices())) {
 								objects++;
 								if (main) if ((objects & 0xfff) == 0) System.gc();
 								if (main) {
@@ -401,7 +402,7 @@ public class BenchRunner {
 								}
 							}
 							
-							for (@SuppressWarnings("unused") Edge e : g.getEdges()) {
+							for (@SuppressWarnings("unused") Edge e : new ClosingIterator<Edge>(g.getEdges())) {
 								objects++;
 								if (main) if ((objects & 0xfff) == 0) System.gc();
 								if (main) {

@@ -3,6 +3,7 @@ package com.tinkerpop.bench.generator;
 import com.tinkerpop.bench.Bench;
 import com.tinkerpop.bench.cache.Cache;
 import com.tinkerpop.bench.util.ConsoleUtils;
+import com.tinkerpop.bench.util.GraphUtils;
 import com.tinkerpop.bench.util.Pair;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
@@ -82,10 +83,12 @@ public class SimpleBarabasiGenerator extends GraphGenerator {
 		// Schedule an initial vertex to be created if the graph is empty
 		
 		boolean empty = true;
-		for (@SuppressWarnings("unused") Vertex v : graph.getVertices()) {
+		Iterable<Vertex> vi = graph.getVertices();
+		for (@SuppressWarnings("unused") Vertex v : vi) {
 			empty = false;
 			break;
 		}
+		GraphUtils.close(vi);
 		
 		Cache c = Cache.getInstance(graph);
 		

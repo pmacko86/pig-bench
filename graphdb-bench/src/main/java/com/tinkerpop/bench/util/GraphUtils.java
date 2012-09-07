@@ -5,10 +5,12 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import com.tinkerpop.blueprints.CloseableIterable;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.Vertex;
+import com.tinkerpop.blueprints.extensions.util.ClosingIterator;
 import com.tinkerpop.blueprints.util.io.graphml.GraphMLWriter;
 
 
@@ -27,6 +29,18 @@ public class GraphUtils {
 	
 	
 	/**
+	 * Close an Iterable if it is CloseableIterable
+	 * 
+	 * @param iterable the Iterable object
+	 */
+	public static void close(Iterable<?> iterable) {
+		if (iterable instanceof CloseableIterable<?>) {
+			((CloseableIterable<?>) iterable).close();
+		}
+	}
+	
+	
+	/**
 	 * Calculate local clustering coefficient.
 	 * 
 	 *     C_i = |{e_jk}| / |N_i|(|N_i| - 1)
@@ -42,16 +56,19 @@ public class GraphUtils {
 		HashSet<Vertex> neighbors = new HashSet<Vertex>();
 		
 		stat.num_getVertices++;
-		for (Vertex w : v.getVertices(Direction.BOTH)) {
+		Iterable<Vertex> wi = v.getVertices(Direction.BOTH);
+		for (Vertex w : wi) {
 			stat.num_getVerticesNext++;
 			stat.num_uniqueVertices++;
 			neighbors.add(w);
 		}
+		close(wi);
 		
 		int triangles = 0;
 		for (Vertex w : neighbors) {
 			stat.num_getVertices++;
-			for (Vertex z : w.getVertices(Direction.BOTH)) {
+			Iterable<Vertex> zi = w.getVertices(Direction.BOTH);
+			for (Vertex z : zi) {
 				stat.num_getVerticesNext++;
 				if (neighbors.contains(z)) {
 					triangles++;
@@ -60,6 +77,7 @@ public class GraphUtils {
 					stat.num_uniqueVertices++;
 				}
 			}
+			close(zi);
 		}
 		
 		int K = neighbors.size();
@@ -78,8 +96,8 @@ public class GraphUtils {
 		
 		ArrayList<Comparable> v = new ArrayList<Comparable>();
 		ArrayList<Comparable> e = new ArrayList<Comparable>();
-		for (Vertex vertex : graph.getVertices()) v.add((Comparable) vertex.getId());
-		for (Edge edge : graph.getEdges()) e.add((Comparable) edge.getId());
+		for (Vertex vertex : new ClosingIterator<Vertex>(graph.getVertices())) v.add((Comparable) vertex.getId());
+		for (Edge edge : new ClosingIterator<Edge>(graph.getEdges())) e.add((Comparable) edge.getId());
 		java.util.Collections.sort(v);
 		java.util.Collections.sort(e);
 		

@@ -31,6 +31,7 @@ import com.tinkerpop.bench.operationFactory.factories.OperationFactoryRandomVert
 import com.tinkerpop.bench.util.ConsoleUtils;
 import com.tinkerpop.bench.util.GraphUtils;
 import com.tinkerpop.bench.util.LogUtils;
+import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.extensions.impls.sql.SqlGraph;
 
@@ -1038,6 +1039,20 @@ public class BenchmarkMicro extends Benchmark {
 				for (int k : kHops) {
 					operationFactories.add(new OperationFactoryRandomVertex(
 							OperationGetKHopNeighbors.class, opCount, new Integer[] { k }, "" + k));
+				}
+				for (int k : kHops) {
+					operationFactories.add(new OperationFactoryRandomVertex(
+							OperationGetKFirstNeighbors.class, opCount, new Object[] { k, Direction.BOTH }, "" + k + "-undirected"));
+				}
+				
+				for (int k : kHops) {				
+					operationFactories.add(new OperationFactoryRandomVertex(
+							OperationGetKRandomNeighbors.class, opCount, new Object[] { k, Direction.BOTH }, "" + k + "-undirected"));
+				}
+				
+				for (int k : kHops) {
+					operationFactories.add(new OperationFactoryRandomVertex(
+							OperationGetKHopNeighbors.class, opCount, new Object[] { k, Direction.BOTH }, "" + k + "-undirected"));
 				}
 			}
 			

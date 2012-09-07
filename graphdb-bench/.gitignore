@@ -1,6 +1,7 @@
 *.log
 *.edgelist
 #*.graphml
+*.hprof
 *.pyc
 *.swp
 *~

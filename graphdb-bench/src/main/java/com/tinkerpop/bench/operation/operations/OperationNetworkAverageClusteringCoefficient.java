@@ -4,6 +4,7 @@ import com.tinkerpop.bench.operation.Operation;
 import com.tinkerpop.bench.util.GraphUtils;
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.Vertex;
+import com.tinkerpop.blueprints.extensions.util.ClosingIterator;
 
 public class OperationNetworkAverageClusteringCoefficient extends Operation {
 	
@@ -21,7 +22,7 @@ public class OperationNetworkAverageClusteringCoefficient extends Operation {
 			int N = 0;
 			
 			stat.num_getAllVertices++;
-			for (Vertex v : graph.getVertices()) {
+			for (Vertex v : new ClosingIterator<Vertex>(graph.getVertices())) {
 				C += GraphUtils.localClusteringCoefficient(v, stat);
 				stat.num_getAllVerticesNext++;
 				N++;

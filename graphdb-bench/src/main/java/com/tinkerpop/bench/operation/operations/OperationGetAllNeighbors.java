@@ -3,6 +3,7 @@ package com.tinkerpop.bench.operation.operations;
 import java.util.ArrayList;
 
 import com.tinkerpop.bench.operation.Operation;
+import com.tinkerpop.bench.util.GraphUtils;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Vertex;
 
@@ -22,8 +23,9 @@ public class OperationGetAllNeighbors extends Operation {
 		try {
 			if (!neighbors.isEmpty()) neighbors.clear();
 			
-			for (Vertex v : startVertex.getVertices(Direction.OUT))
-				neighbors.add(v);
+			Iterable<Vertex> vi = startVertex.getVertices(Direction.OUT);
+			for (Vertex v : vi) neighbors.add(v);
+			GraphUtils.close(vi);
 			
 			setResult(neighbors.size());
 		} catch (Exception e) {

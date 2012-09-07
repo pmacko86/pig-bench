@@ -7,6 +7,7 @@ import com.tinkerpop.bench.util.GraphUtils;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.Vertex;
+import com.tinkerpop.blueprints.extensions.util.ClosingIterator;
 
 public class OperationGlobalClusteringCoefficient extends Operation {
 	
@@ -25,7 +26,7 @@ public class OperationGlobalClusteringCoefficient extends Operation {
 			HashSet<Vertex> neighbors = new HashSet<Vertex>();
 			
 			stat.num_getAllVertices++;
-			for (Vertex v : graph.getVertices()) {
+			for (Vertex v : new ClosingIterator<Vertex>(graph.getVertices())) {
 				stat.num_getAllVerticesNext++;
 				stat.num_uniqueVertices++;
 				neighbors.clear();
@@ -33,10 +34,12 @@ public class OperationGlobalClusteringCoefficient extends Operation {
 				// Let all edges be undirected
 				
 				stat.num_getVertices++;
-				for (Vertex w : v.getVertices(Direction.BOTH)) {
+				Iterable<Vertex> wi = v.getVertices(Direction.BOTH);
+				for (Vertex w : wi) {
 					stat.num_getVerticesNext++;
 					neighbors.add(w);
 				}
+				GraphUtils.close(wi);
 				
 				int k = neighbors.size();
 				totalTriplets += k * (k - 1);
@@ -44,12 +47,14 @@ public class OperationGlobalClusteringCoefficient extends Operation {
 				
 				for (Vertex w : neighbors) {
 					stat.num_getVertices++;
+					Iterable<Vertex> zi = w.getVertices(Direction.BOTH);
 					for (Vertex z : w.getVertices(Direction.BOTH)) {
 						stat.num_getVerticesNext++;
 						if (neighbors.contains(z)) {
 							closedTriplets++;
 						}
 					}
+					GraphUtils.close(zi);
 				}
 			}
 			

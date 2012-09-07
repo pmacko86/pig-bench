@@ -8,6 +8,7 @@ import com.tinkerpop.blueprints.IndexableGraph;
 import com.tinkerpop.blueprints.TransactionalGraph;
 import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.blueprints.TransactionalGraph.Conclusion;
+import com.tinkerpop.blueprints.extensions.util.ClosingIterator;
 
 
 /**
@@ -77,7 +78,7 @@ public class OperationIndexPutAllElements extends Operation {
 		
 		// The transactions in a TransactionalGraph are started automatically
 
-		for (Vertex v : getGraph().getVertices()) {
+		for (Vertex v : new ClosingIterator<Vertex>(getGraph().getVertices())) {
 			vIndex.put(propertyKey, v.getProperty(propertyKey), v);
 			elementCount++;
 
@@ -86,7 +87,7 @@ public class OperationIndexPutAllElements extends Operation {
 			}
 		}
 
-		for (Edge e : getGraph().getEdges()) {
+		for (Edge e : new ClosingIterator<Edge>(getGraph().getEdges())) {
 			eIndex.put(propertyKey, e.getProperty(propertyKey), e);
 			elementCount++;
 

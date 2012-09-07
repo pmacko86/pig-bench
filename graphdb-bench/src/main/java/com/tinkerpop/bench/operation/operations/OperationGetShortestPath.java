@@ -7,6 +7,7 @@ import java.util.PriorityQueue;
 
 import com.tinkerpop.bench.GlobalConfig;
 import com.tinkerpop.bench.operation.Operation;
+import com.tinkerpop.bench.util.GraphUtils;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.blueprints.extensions.impls.sql.SqlGraph;
@@ -32,9 +33,11 @@ public class OperationGetShortestPath extends Operation {
 			ArrayList<Vertex> result = new ArrayList<Vertex>();
 			
 			if (isSQLGraph && GlobalConfig.useStoredProcedures) {
-				for (Vertex u : ((SqlGraph) getGraph()).getShortestPath(source, target)) {
+				Iterable<Vertex> ui = ((SqlGraph) getGraph()).getShortestPath(source, target); 
+				for (Vertex u : ui) {
 					result.add(u);
 				}
+				GraphUtils.close(ui);
 				setResult(result.size());
 			} else {
 				int get_nbrs = 0;
@@ -65,7 +68,8 @@ public class OperationGetShortestPath extends Operation {
 						break;
 					
 					get_nbrs++;
-					for (Vertex v : u.getVertices(direction)) {
+					Iterable<Vertex> vi = u.getVertices(direction);
+					for (Vertex v : vi) {
 						get_vertex++;
 						
 						int alt = dist.get(u) + 1;
@@ -78,6 +82,7 @@ public class OperationGetShortestPath extends Operation {
 							queue.add(v);
 						}
 					}
+					GraphUtils.close(vi);
 				}
 								
 				Vertex u = target;

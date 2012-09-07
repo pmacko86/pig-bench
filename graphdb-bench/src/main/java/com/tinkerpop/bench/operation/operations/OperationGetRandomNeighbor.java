@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Random;
 
 import com.tinkerpop.bench.operation.Operation;
+import com.tinkerpop.bench.util.GraphUtils;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Vertex;
 
@@ -24,8 +25,9 @@ public class OperationGetRandomNeighbor extends Operation {
 			Vertex result = null;
 			
 			final ArrayList<Vertex> vertices = new ArrayList<Vertex>();
-			for (Vertex v : startVertex.getVertices(Direction.OUT))
-				vertices.add(v);
+			Iterable<Vertex> vi = startVertex.getVertices(Direction.OUT);
+			for (Vertex v : vi) vertices.add(v);
+			GraphUtils.close(vi);
 			if (vertices.size() > 0)
 				result = vertices.get(random.nextInt(vertices.size()));
 			
