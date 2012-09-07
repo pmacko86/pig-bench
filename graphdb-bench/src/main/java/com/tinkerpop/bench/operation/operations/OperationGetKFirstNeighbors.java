@@ -49,4 +49,8 @@ public class OperationGetKFirstNeighbors extends Operation {
 		}
 	}
 
+	@Override
+	protected void onFinalize() {
+		result = null;
+	}
 }

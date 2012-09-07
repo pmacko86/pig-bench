@@ -54,4 +54,9 @@ public class OperationGetKRandomNeighbors extends Operation {
 			throw e;
 		}
 	}
+
+	@Override
+	protected void onFinalize() {
+		result = null;
+	}
 }

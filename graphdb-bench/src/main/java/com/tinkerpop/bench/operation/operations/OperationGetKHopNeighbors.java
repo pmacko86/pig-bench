@@ -12,8 +12,8 @@ public class OperationGetKHopNeighbors extends Operation {
 
 	private Vertex startVertex;
 	private int k;
-	private HashSet<Vertex> result;
 	private Direction direction;
+	private HashSet<Vertex> result;
 	
 	@Override
 	protected void onInitialize(Object[] args) {
@@ -27,7 +27,6 @@ public class OperationGetKHopNeighbors extends Operation {
 	protected void onExecute() throws Exception {
 		try {
 			int real_hops, get_ops = 0, get_vertex = 0;
-			if (!result.isEmpty()) result.clear();
 			
 			ArrayList<Vertex> curr = new ArrayList<Vertex>();
 			ArrayList<Vertex> next = new ArrayList<Vertex>();
@@ -62,9 +61,14 @@ public class OperationGetKHopNeighbors extends Operation {
 			}
 			
 			setResult(result.size() + ":" + real_hops + ":" + get_ops + ":" + get_vertex);
+			
 		} catch (Exception e) {
 			throw e;
 		}
 	}
 
+	@Override
+	protected void onFinalize() {
+		result = null;
+	}
 }

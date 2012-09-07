@@ -33,4 +33,8 @@ public class OperationGetAllNeighbors extends Operation {
 		}
 	}
 
+	@Override
+	protected void onFinalize() {
+		neighbors = null;
+	}
 }
