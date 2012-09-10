@@ -48,7 +48,7 @@ public class OperationGlobalClusteringCoefficient extends Operation {
 				for (Vertex w : neighbors) {
 					stat.num_getVertices++;
 					Iterable<Vertex> zi = w.getVertices(Direction.BOTH);
-					for (Vertex z : w.getVertices(Direction.BOTH)) {
+					for (Vertex z : zi) {
 						stat.num_getVerticesNext++;
 						if (neighbors.contains(z)) {
 							closedTriplets++;
