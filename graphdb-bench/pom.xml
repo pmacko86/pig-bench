@@ -52,7 +52,7 @@
 		<dependency>
 			<groupId>edu.harvard.pass</groupId>
 			<artifactId>cpl</artifactId>
-			<version>1.0</version>
+			<version>1.01</version>
 		</dependency>
 		<dependency>
 		   <groupId>commons-lang</groupId>
