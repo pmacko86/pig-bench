@@ -324,6 +324,11 @@
 				boolean plotTimeVsRetrievedNodes = WebUtils.getBooleanParameter(request, "plotTimeVsRetrievedNodes", false);
 				boolean additionalKHopNeighborsPlots = WebUtils.getBooleanParameter(request, "additionalKHopNeighborsPlots", false);
 				
+				String boxPlotFilter = WebUtils.getStringParameter(request, "boxplotfilter");
+				if (boxPlotFilter == null) boxPlotFilter = "true";
+				// XXX Further sanitize boxPlotFilter!
+				boxPlotFilter = boxPlotFilter.replace(';', ' ');
+				
 				String boxPlotYValue = WebUtils.getStringParameter(request, "boxplotyvalue");
 				if (boxPlotYValue == null) boxPlotYValue = "d.time";
 				// XXX Further sanitize boxPlotYValue!
@@ -405,7 +410,17 @@
 							<div style="height:10px"></div>
 							
 							<label>
-								Y Value =
+								Filter (all box plots) =
+								<span class="small">
+									Use: d.time, d.result[], etc.
+								</span>
+							</label>
+							<input type="text" name="boxplotfilter" id="boxplotfilter"
+									onchange="form_submit();"
+									value="<%= StringEscapeUtils.escapeHtml(boxPlotFilter) %>"/>
+							
+							<label>
+								Y Value (summary box plot) =
 								<span class="small">
 									Use: d.time, d.result[], etc.
 								</span>
@@ -524,6 +539,7 @@
 					
 					chartProperties.source = link + "&show=details&format=csv";
 					chartProperties.attach = "chart_all_details";
+					chartProperties.filter = boxPlotFilter;
 					chartProperties.yvalue = boxPlotYValue;
 					if (logScale) chartProperties.yscale = "log";
 					if (dropExtremes) chartProperties.dropTopBottomExtremes = true;
@@ -545,6 +561,7 @@
 					
 					chartProperties.source = link + "&show=details&format=csv";
 					chartProperties.attach = "chart_all_plotTimeVsRetrievedNodes";
+					chartProperties.filter = boxPlotFilter;
 					chartProperties.xvalue = "d.result[0]";
 					chartProperties.yvalue = "d.time";
 					if (logScale) chartProperties.yscale = "log";
@@ -566,6 +583,7 @@
 					
 					chartProperties.source = link + "&show=details&format=csv";
 					chartProperties.attach = "chart_all_additionalKHopNeighborsPlots_1";
+					chartProperties.filter = boxPlotFilter;
 					chartProperties.xvalue = "d.result[2]";
 					chartProperties.yvalue = "d.time";
 					if (logScale) chartProperties.yscale = "log";
