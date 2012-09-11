@@ -2,12 +2,12 @@ package com.tinkerpop.bench.operation.operations;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.PriorityQueue;
 
 import com.tinkerpop.bench.DatabaseEngine;
 import com.tinkerpop.bench.GlobalConfig;
 import com.tinkerpop.bench.operation.Operation;
 import com.tinkerpop.bench.util.GraphUtils;
+import com.tinkerpop.bench.util.PriorityHashQueue;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.blueprints.extensions.impls.sql.SqlGraph;
@@ -53,17 +53,19 @@ public class OperationGetShortestPathProperty extends Operation {
 				
 				final Comparator<Vertex> minDist = new Comparator<Vertex>()
 				{
+					@SuppressWarnings({ "unchecked", "rawtypes" })
 					public int compare(Vertex left, Vertex right) {
 						Integer leftDist = (Integer) left.getProperty("dist");
 						Integer rightDist = (Integer) right.getProperty("dist");
-						if (leftDist == null) leftDist = Integer.MAX_VALUE;
-						if (rightDist == null) rightDist = Integer.MAX_VALUE;
-						return leftDist.compareTo(rightDist);
+						int l = leftDist  != null ?  leftDist.intValue() : Integer.MAX_VALUE;
+						int r = rightDist != null ? rightDist.intValue() : Integer.MAX_VALUE;
+						return l > r ? 1 : l < r ? -1 : ((Comparable) left.getId()).compareTo(right.getId());
+
 					}
 				};
 				
 				//dmargo: 11 is the Java default initial capacity...don't ask me why.
-				final PriorityQueue<Vertex> queue = new PriorityQueue<Vertex>(11, minDist);
+				final PriorityHashQueue<Vertex> queue = new PriorityHashQueue<Vertex>(11, minDist);
 				
 				set_property++;
 				source.setProperty("dist", 0);

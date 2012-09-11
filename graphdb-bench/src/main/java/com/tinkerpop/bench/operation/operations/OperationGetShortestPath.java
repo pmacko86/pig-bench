@@ -3,11 +3,11 @@ package com.tinkerpop.bench.operation.operations;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.PriorityQueue;
 
 import com.tinkerpop.bench.GlobalConfig;
 import com.tinkerpop.bench.operation.Operation;
 import com.tinkerpop.bench.util.GraphUtils;
+import com.tinkerpop.bench.util.PriorityHashQueue;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.blueprints.extensions.impls.sql.SqlGraph;
@@ -48,15 +48,18 @@ public class OperationGetShortestPath extends Operation {
 				
 				final Comparator<Vertex> minDist = new Comparator<Vertex>()
 				{
+					@SuppressWarnings({ "unchecked", "rawtypes" })
 					public int compare(Vertex left, Vertex right) {
-						int leftDist = dist.containsKey(left) ? dist.get(left) : Integer.MAX_VALUE;
-						int rightDist = dist.containsKey(right) ? dist.get(right) : Integer.MAX_VALUE;
-						return leftDist > rightDist ? 1 : leftDist < rightDist ? -1 : 0;
+						Integer  leftDist = dist.get( left);
+						Integer rightDist = dist.get(right);
+						int l = leftDist  != null ?  leftDist.intValue() : Integer.MAX_VALUE;
+						int r = rightDist != null ? rightDist.intValue() : Integer.MAX_VALUE;
+						return l > r ? 1 : l < r ? -1 : ((Comparable) left.getId()).compareTo(right.getId());
 					}
 				};
 				
 				//dmargo: 11 is the Java default initial capacity...don't ask me why.
-				final PriorityQueue<Vertex> queue = new PriorityQueue<Vertex>(11, minDist);
+				final PriorityHashQueue<Vertex> queue = new PriorityHashQueue<Vertex>(11, minDist);
 				
 				dist.put(source, 0);
 				queue.add(source);
@@ -67,15 +70,17 @@ public class OperationGetShortestPath extends Operation {
 					if (u.equals(target))
 						break;
 					
+					int dist_u = dist.get(u);
+					
 					get_nbrs++;
 					Iterable<Vertex> vi = u.getVertices(direction);
 					for (Vertex v : vi) {
 						get_vertex++;
 						
-						int alt = dist.get(u) + 1;
-						int cur = dist.containsKey(v) ? dist.get(v) : Integer.MAX_VALUE;
+						Integer dist_v = dist.get(v);						
+						int alt = dist_u + 1;
 						
-						if (alt < cur) {
+						if (dist_v == null || alt < dist.get(v).intValue()) {
 							prev.put(v, u);
 							dist.put(v, alt);
 							queue.remove(v);
