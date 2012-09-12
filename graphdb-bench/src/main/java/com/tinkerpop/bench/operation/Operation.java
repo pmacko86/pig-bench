@@ -9,6 +9,7 @@ import com.tinkerpop.bench.operationFactory.factories.WithOpCount;
 import com.tinkerpop.bench.util.StatisticsHelper;
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.TransactionalGraph;
+import com.tinkerpop.blueprints.extensions.BulkloadableGraph;
 
 import edu.harvard.pass.cpl.CPL;
 import edu.harvard.pass.cpl.CPLObject;
@@ -254,25 +255,25 @@ public abstract class Operation {
 		StatisticsHelper.stopMemory();	//XXX multi-threaded???
 		long start = System.nanoTime();
 		
-		/* XXX Transactional graphs / batch graphs?
+		// XXX Transactional graphs / batch graphs?
 		if (isUpdate() && !isUsingCustomTransactions()) {
 		 
-	        if (graph instanceof TransactionalGraph) {
-	            previousMaxBufferSize = ((TransactionalGraph) graph).getMaxBufferSize();
-	            ((TransactionalGraph) graph).setMaxBufferSize(GlobalConfig.transactionBufferSize);
+	        if (graph instanceof BulkloadableGraph) {
+	            previousMaxBufferSize = ((BulkloadableGraph) graph).getMaxBufferSize();
+	            ((BulkloadableGraph) graph).setMaxBufferSize(GlobalConfig.transactionBufferSize);
 	        }
-		}*/
+		}
 		
 		try {
 			onExecute();
 		}
 		finally {
-			/* XXX Transactional graphs / batch graphs?
+			// XXX Transactional graphs / batch graphs?
 			if (isUpdate() && !isUsingCustomTransactions()) {
-		        if (graph instanceof TransactionalGraph) {
-		        	((TransactionalGraph) graph).setMaxBufferSize(previousMaxBufferSize);
+		        if (graph instanceof BulkloadableGraph) {
+		        	((BulkloadableGraph) graph).setMaxBufferSize(previousMaxBufferSize);
 		        }
-			}*/
+			}
 		}
 		
 		time = System.nanoTime() - start;
