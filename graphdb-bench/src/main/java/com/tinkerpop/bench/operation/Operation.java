@@ -9,7 +9,8 @@ import com.tinkerpop.bench.operationFactory.factories.WithOpCount;
 import com.tinkerpop.bench.util.StatisticsHelper;
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.TransactionalGraph;
-import com.tinkerpop.blueprints.extensions.BulkloadableGraph;
+import com.tinkerpop.blueprints.TransactionalGraph.Conclusion;
+import com.tinkerpop.blueprints.extensions.AutoTransactionalGraph;
 
 import edu.harvard.pass.cpl.CPL;
 import edu.harvard.pass.cpl.CPLObject;
@@ -255,12 +256,18 @@ public abstract class Operation {
 		StatisticsHelper.stopMemory();	//XXX multi-threaded???
 		long start = System.nanoTime();
 		
-		// XXX Transactional graphs / batch graphs?
-		if (isUpdate() && !isUsingCustomTransactions()) {
-		 
-	        if (graph instanceof BulkloadableGraph) {
-	            previousMaxBufferSize = ((BulkloadableGraph) graph).getMaxBufferSize();
-	            ((BulkloadableGraph) graph).setMaxBufferSize(GlobalConfig.transactionBufferSize);
+		if (isUpdate()) {
+	        if (graph instanceof AutoTransactionalGraph) {
+	        	AutoTransactionalGraph g = (AutoTransactionalGraph) graph;
+	        	
+	        	if (isUsingCustomTransactions()) {
+	        		g.setAutoTransactionControl(false);
+	        	}
+	        	else {
+	        		g.setAutoTransactionControl(true);
+		            previousMaxBufferSize = g.getMaxBufferSize();
+		            g.setMaxBufferSize(GlobalConfig.transactionBufferSize);
+	        	}
 	        }
 		}
 		
@@ -268,10 +275,18 @@ public abstract class Operation {
 			onExecute();
 		}
 		finally {
-			// XXX Transactional graphs / batch graphs?
-			if (isUpdate() && !isUsingCustomTransactions()) {
-		        if (graph instanceof BulkloadableGraph) {
-		        	((BulkloadableGraph) graph).setMaxBufferSize(previousMaxBufferSize);
+
+			if (isUpdate()) {
+		        if (graph instanceof AutoTransactionalGraph) {
+		        	AutoTransactionalGraph g = (AutoTransactionalGraph) graph;
+		        	
+		        	if (!isUsingCustomTransactions()) {
+		        		g.setMaxBufferSize(previousMaxBufferSize);
+		        	}
+		        }
+		        if (graph instanceof TransactionalGraph) {
+		        	TransactionalGraph g = (TransactionalGraph) graph;
+		        	g.stopTransaction(Conclusion.SUCCESS);
 		        }
 			}
 		}
