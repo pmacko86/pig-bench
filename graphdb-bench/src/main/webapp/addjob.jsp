@@ -149,9 +149,9 @@
 			<input type="text" name="tx_buffer" id="tx_buffer" value="1" />
 			
 			<label>Java Heap Size
-				<span class="small">Default: 512M</span>
+				<span class="small">Default: 1G</span>
 			</label>
-			<input type="text" name="java_heap_size" id="java_heap_size" value="512M" />
+			<input type="text" name="java_heap_size" id="java_heap_size" value="1G" />
 		
 			<label class="checkbox">
 				<input class="checkbox" type="checkbox" name="use_stored_procedures"

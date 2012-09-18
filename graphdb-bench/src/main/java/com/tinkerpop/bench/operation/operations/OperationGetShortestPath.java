@@ -80,7 +80,7 @@ public class OperationGetShortestPath extends Operation {
 						Integer dist_v = dist.get(v);						
 						int alt = dist_u + 1;
 						
-						if (dist_v == null || alt < dist.get(v).intValue()) {
+						if (dist_v == null || alt < dist_v.intValue()) {
 							prev.put(v, u);
 							dist.put(v, alt);
 							queue.remove(v);

@@ -251,7 +251,7 @@ public class SimpleBarabasiGenerator extends GraphGenerator {
 		if (cplObject != null) return cplObject;
 		if (!CPL.isAttached()) return null;
 		
-		cplObject = new CPLObject(Bench.ORIGINATOR,
+		cplObject = CPLObject.create(Bench.ORIGINATOR,
 				getClass().getCanonicalName() + " N=" + N + " M=" + M,
 				Bench.TYPE_OPERATION);
 		cplObject.addProperty("N", "" + N);

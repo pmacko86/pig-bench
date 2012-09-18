@@ -21,14 +21,18 @@ public class Workload {
 		Map<String, Workload> m = new TreeMap<String, Workload>();
 		m.put("add", new Workload("add", "Add nodes and edges",
 				"Adding nodes and edges to the database", null, true));
-		m.put("clustering-coeff", new Workload("clustering-coeff", "Clustering coefficients",
-				"Compute the clustering coefficients", null, false));
+		m.put("clustering-coeff", new Workload("clustering-coeff", "Global and network average clustering coefficients",
+				"Compute the global and network average clustering coefficients", null, false));
+		m.put("clustering-local", new Workload("clustering-local", "Local clustering coefficients",
+				"Compute the local clustering coefficients", null, false));
 		m.put("delete-graph", new Workload("delete-graph", "Delete graph",
 				"Delete the entire graph", null, false));
 		m.put("shortest-path", new Workload("shortest-path", "Shortest path",
 				"Shortest path algorithm", null, true));
 		m.put("shortest-path-prop", new Workload("shortest-path-prop", "Shortest path with properties",
 				"Shortest paths with in-DB marking", null, true));
+		m.put("sssp", new Workload("sssp", "Single source shortest path",
+				"Single source shortest path algorithm", null, true));
 		m.put("generate", new Workload("generate", "Generate",
 				"Generate (or grow) the graph based on the given model", "MODEL", false));
 		m.put("get", new Workload("get", "Get",

@@ -6,7 +6,7 @@ MAVEN_OPTS=-server
 
 MAIN_CLASS="com.tinkerpop.bench.BenchmarkSuite"
 
-OPT_MEMORY_SIZE=512M
+OPT_MEMORY_SIZE=1G
 OPT_GC_MAIN="-XX:+UseConcMarkSweepGC -XX:+UseParNewGC"
 
 

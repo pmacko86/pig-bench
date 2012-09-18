@@ -172,7 +172,7 @@ public class Job {
 		arguments.add(Bench.graphdbBenchDir + "/runBenchmarkSuite.sh");
 
 		if (s_javaHeapSize   != null) {
-			if (!s_javaHeapSize.equalsIgnoreCase("512m")) {
+			if (!s_javaHeapSize.equalsIgnoreCase("1G")) {
 				arguments.add("+memory:" + s_javaHeapSize);
 			}
 		}

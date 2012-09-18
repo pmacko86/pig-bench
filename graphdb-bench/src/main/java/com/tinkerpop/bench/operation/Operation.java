@@ -204,7 +204,7 @@ public abstract class Operation {
 			}
 		}
 		
-		cplObject = new CPLObject(Bench.ORIGINATOR,
+		cplObject = CPLObject.create(Bench.ORIGINATOR,
 				name, Bench.TYPE_OPERATION);
 		cplObject.addProperty("CLASS", getClass().getCanonicalName());
 

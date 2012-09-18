@@ -2,18 +2,15 @@ package com.tinkerpop.bench.operation.operations;
 
 import com.tinkerpop.bench.operation.Operation;
 import com.tinkerpop.bench.util.GraphUtils;
-import com.tinkerpop.bench.util.StatisticsHelper;
 import com.tinkerpop.blueprints.Vertex;
 
 public class OperationLocalClusteringCoefficient extends Operation {
 
-	private int opCount;
-	private Vertex[] vertices;
+	private Vertex vertex;
 	
 	@Override
 	protected void onInitialize(Object[] args) {
-		opCount = args.length > 0 ? (Integer) args[0] : 1000;
-		vertices = StatisticsHelper.getRandomVertices(getGraph(), opCount);
+		vertex = getGraph().getVertex(args[0]);
 	}
 	
 	@Override
@@ -21,11 +18,9 @@ public class OperationLocalClusteringCoefficient extends Operation {
 		try {
 			GraphUtils.OpStat stat = new GraphUtils.OpStat();
 			
-			for (int i = 0; i < opCount; i++) {
-				GraphUtils.localClusteringCoefficient(vertices[i], stat);
-			}
+			double r = GraphUtils.localClusteringCoefficient(vertex, stat);
 			
-			setResult(opCount + ":" + stat);
+			setResult(r + ":" + stat);
 		} catch (Exception e) {
 			throw e;
 		}

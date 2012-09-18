@@ -1071,6 +1071,11 @@ public class BenchmarkMicro extends Benchmark {
 						OperationGetShortestPathProperty.class, opCount / 2));
 			}
 			
+			if (options.has("sssp")) {
+				operationFactories.add(new OperationFactoryRandomVertex(
+						OperationGetSingleSourceShortestPath.class, opCount));
+            }
+			
 			// CLUSTERING COEFFICIENT benchmarks
 			if (options.has("clustering-coef") || options.has("clustering-coeff")) {
 				//operationFactories.add(new OperationFactoryRandomVertex(
@@ -1082,6 +1087,11 @@ public class BenchmarkMicro extends Benchmark {
 				operationFactories.add(new OperationFactoryGeneric(
 						OperationNetworkAverageClusteringCoefficient.class, 1));
 			}
+			
+			if (options.has("clustering-local")) {
+				operationFactories.add(new OperationFactoryRandomVertex(
+						OperationLocalClusteringCoefficient.class, opCount));
+            }
 			
 			// ADD/SET microbenchmarks
 			if (options.has("add")) {

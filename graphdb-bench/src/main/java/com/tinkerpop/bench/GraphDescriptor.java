@@ -111,7 +111,7 @@ public class GraphDescriptor {
 
 	public synchronized void deleteGraph() {
 		
-		// XXX Must be single-threaded!!!
+		// Must be single-threaded!!!
 		
 		if (graphType == SqlGraph.class) {
 			((SqlGraph) graph).delete();
@@ -147,7 +147,7 @@ public class GraphDescriptor {
 
 	public void recreateCPLObject() {
 		if (CPL.isAttached()) {
-			cplObject = new CPLObject(Bench.ORIGINATOR, getCPLObjectName(), Bench.TYPE_DB);
+			cplObject = CPLObject.create(Bench.ORIGINATOR, getCPLObjectName(), Bench.TYPE_DB);
 			initializeCPLObject();
 		}
 	}
