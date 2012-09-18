@@ -290,7 +290,7 @@
 				 .attr("text-anchor", "middle")
 				 .attr("transform", "translate("
 				 	+ (-bands_margin*2 - ylabel_from_chart_margin) + ", "
-				 	+ (chart_inner_height/2)  + "), rotate(-90)")
+				 	+ (chart_inner_height/2)  + ") rotate(-90)")
 				 .text("<%= chartProperties.ylabel %>");
 			
 			
@@ -372,7 +372,7 @@
 							 .attr("dy", ".35em") // vertical-align: middle
 							 .attr("transform", "translate("
 							 	+ (x.rangeBand() * p + x.rangeBand() / 2) + ", "
-							 	+ (chart_inner_height + chart_margin)  + "), rotate(45)")
+							 	+ (chart_inner_height + chart_margin)  + ") rotate(45)")
 							.text(group_labels[i]);
 						}
 						
@@ -494,7 +494,7 @@
 							 .attr("dy", ".35em") // vertical-align: middle
 							 .attr("transform", "translate("
 							 	+ (x.rangeBand() * i + x.rangeBand() / 2) + ", "
-							 	+ (chart_inner_height + chart_margin)  + "), rotate(45)")
+							 	+ (chart_inner_height + chart_margin)  + ") rotate(45)")
 							 .text(d);
 						<%
 					}

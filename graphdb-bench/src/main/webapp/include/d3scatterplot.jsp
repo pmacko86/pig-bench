@@ -251,7 +251,7 @@
 				 .attr("text-anchor", "middle")
 				 .attr("transform", "translate("
 				 	+ (-bands_margin*2 - ylabel_from_chart_margin) + ", "
-				 	+ (chart_inner_height/2)  + "), rotate(-90)")
+				 	+ (chart_inner_height/2)  + ") rotate(-90)")
 				 .text("<%= chartProperties.ylabel %>");
 	
 	

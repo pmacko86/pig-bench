@@ -56,9 +56,9 @@ public class BenchmarkMicro extends Benchmark {
 	public static final String DEFAULT_INGEST_FILE = "barabasi_1000_5000.graphml";
 	
 	/// The defaults
-	public static final int DEFAULT_OP_COUNT = 1000;
-	public static final int DEFAULT_K_HOPS = 2;
 	public static final int DEFAULT_NUM_THREADS = 1;
+	public static final int DEFAULT_OP_COUNT = 1000;
+	public static final String DEFAULT_K_HOPS = "1:5";
 	public static final int DEFAULT_BARABASI_N = 1000;
 	public static final int DEFAULT_BARABASI_M = 5;
 	
@@ -357,44 +357,45 @@ public class BenchmarkMicro extends Benchmark {
 		if (options.has("warmup-op-count")) warmupOpCount = (Integer) options.valueOf("warmup-op-count");
 		
 		int[] kHops;
+		String kHopsStr;
 		if (options.has("k-hops")) {
-			String kHopsStr = (String) options.valueOf("k-hops");
-			int kc = kHopsStr.indexOf(':');
-			if (kc >= 0) {
-				int k1, k2;
-				try {
-					k1 = Integer.parseInt(kHopsStr.substring(0, kc));
-					k2 = Integer.parseInt(kHopsStr.substring(kc + 1));
-				}
-				catch (NumberFormatException e) {
-					ConsoleUtils.error("Invalid range of k hops (not a number).");
-					return 1;
-				}
-				if (k1 <= 0 || k1 > k2) {
-					ConsoleUtils.error("Invalid range of k hops.");
-					return 1;
-				}
-				kHops = new int[k2-k1+1];
-				for (int k = k1; k <= k2; k++) kHops[k-k1] = k;
+			kHopsStr = (String) options.valueOf("k-hops");
+		}
+		else {
+			kHopsStr = DEFAULT_K_HOPS;
+		}
+	
+		int kc = kHopsStr.indexOf(':');
+		if (kc >= 0) {
+			int k1, k2;
+			try {
+				k1 = Integer.parseInt(kHopsStr.substring(0, kc));
+				k2 = Integer.parseInt(kHopsStr.substring(kc + 1));
 			}
-			else {
-				kHops = new int[1];
-				try {
-					kHops[0] = Integer.parseInt(kHopsStr);
-				}
-				catch (NumberFormatException e) {
-					ConsoleUtils.error("Invalid number of k hops (not a number).");
-					return 1;
-				}
-				if (kHops[0] <= 0) {
-					ConsoleUtils.error("Invalid number of k hops (must be positive).");
-					return 1;
-				}
+			catch (NumberFormatException e) {
+				ConsoleUtils.error("Invalid range of k hops (not a number).");
+				return 1;
 			}
+			if (k1 <= 0 || k1 > k2) {
+				ConsoleUtils.error("Invalid range of k hops.");
+				return 1;
+			}
+			kHops = new int[k2-k1+1];
+			for (int k = k1; k <= k2; k++) kHops[k-k1] = k;
 		}
 		else {
 			kHops = new int[1];
-			kHops[0] = DEFAULT_K_HOPS;
+			try {
+				kHops[0] = Integer.parseInt(kHopsStr);
+			}
+			catch (NumberFormatException e) {
+				ConsoleUtils.error("Invalid number of k hops (not a number).");
+				return 1;
+			}
+			if (kHops[0] <= 0) {
+				ConsoleUtils.error("Invalid number of k hops (must be positive).");
+				return 1;
+			}
 		}
 		
 		if (provenance) {

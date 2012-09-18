@@ -13,6 +13,30 @@ import java.util.TreeMap;
 public class Workload {
 	
 	/**
+	 * Update type
+	 */
+	public enum UpdateCategory {
+		
+		/**
+		 * Read only workloads.
+		 */
+		READ_ONLY,
+		
+		/**
+		 * Workloads that perform some updates but then revert all changes
+		 * before finishing. Note that a failed workload might leave the
+		 * database in a different state than when it started.
+		 */
+		TEMPORARY_UPDATE,
+		
+		/**
+		 * Workloads that make permanent changes to the database. 
+		 */
+		PERMANENT_UPDATE,
+	}
+	
+	
+	/**
 	 * The set of supported workloads
 	 */
 	public static final Map<String, Workload> WORKLOADS;
@@ -20,29 +44,29 @@ public class Workload {
 	static {
 		Map<String, Workload> m = new TreeMap<String, Workload>();
 		m.put("add", new Workload("add", "Add nodes and edges",
-				"Adding nodes and edges to the database", null, true));
+				"Adding nodes and edges to the database", null, true, UpdateCategory.PERMANENT_UPDATE));
 		m.put("clustering-coeff", new Workload("clustering-coeff", "Global and network average clustering coefficients",
-				"Compute the global and network average clustering coefficients", null, false));
+				"Compute the global and network average clustering coefficients", null, false, UpdateCategory.READ_ONLY));
 		m.put("clustering-local", new Workload("clustering-local", "Local clustering coefficients",
-				"Compute the local clustering coefficients", null, false));
+				"Compute the local clustering coefficients", null, false, UpdateCategory.READ_ONLY));
 		m.put("delete-graph", new Workload("delete-graph", "Delete graph",
-				"Delete the entire graph", null, false));
+				"Delete the entire graph", null, false, UpdateCategory.PERMANENT_UPDATE));
 		m.put("shortest-path", new Workload("shortest-path", "Shortest path",
-				"Shortest path algorithm", null, true));
+				"Shortest path algorithm", null, true, UpdateCategory.READ_ONLY));
 		m.put("shortest-path-prop", new Workload("shortest-path-prop", "Shortest path with properties",
-				"Shortest paths with in-DB marking", null, true));
+				"Shortest paths with in-DB marking", null, true, UpdateCategory.TEMPORARY_UPDATE));
 		m.put("sssp", new Workload("sssp", "Single source shortest path",
-				"Single source shortest path algorithm", null, true));
+				"Single source shortest path algorithm", null, true, UpdateCategory.READ_ONLY));
 		m.put("generate", new Workload("generate", "Generate",
-				"Generate (or grow) the graph based on the given model", "MODEL", false));
+				"Generate (or grow) the graph based on the given model", "MODEL", false, UpdateCategory.PERMANENT_UPDATE));
 		m.put("get", new Workload("get", "Get",
-				"\"Get\" microbenchmarks", null, true));
+				"\"Get\" microbenchmarks", null, true, UpdateCategory.READ_ONLY));
 		m.put("get-k", new Workload("get-k", "Get k-hop",
-				"\"Get\" k-hops microbenchmarks", null, true));
+				"\"Get\" k-hops microbenchmarks", null, true, UpdateCategory.READ_ONLY));
 		m.put("get-property", new Workload("get-property", "Get properties",
-				"\"Get\" Object store microbenchmarks", null, true));
+				"\"Get\" Object store microbenchmarks", null, true, UpdateCategory.READ_ONLY));
 		m.put("ingest", new Workload("ingest", "Ingest",
-				"Ingest a file to the database (also delete the graph)", "FILE", false));
+				"Ingest a file to the database (also delete the graph)", "FILE", false, UpdateCategory.PERMANENT_UPDATE));
 		WORKLOADS = Collections.unmodifiableMap(m);
 	}
 	
@@ -52,6 +76,7 @@ public class Workload {
 	private String description;
 	private String optionalArgument;
 	private boolean usesOpCount;
+	private UpdateCategory updateCategory;
 
 	
 	/**
@@ -62,13 +87,16 @@ public class Workload {
 	 * @param description the description
 	 * @param optionalArgument the name of the optional argument; null otherwise
 	 * @param usesOpCount true if the workload uses the --op-count parameter
+	 * @param updateCategory the category of updates the workload performs
 	 */
-	public Workload(String shortName, String longName, String description, String optionalArgument, boolean usesOpCount) {
+	public Workload(String shortName, String longName, String description, String optionalArgument,
+			boolean usesOpCount, UpdateCategory updateCategory) {
 		this.shortName = shortName;
 		this.longName = longName;
 		this.description = description;
 		this.optionalArgument = optionalArgument;
 		this.usesOpCount = usesOpCount;
+		this.updateCategory = updateCategory;
 	}
 
 
@@ -119,6 +147,26 @@ public class Workload {
 	 */
 	public boolean isUsingOpCount() {
 		return usesOpCount;
+	}
+	
+	
+	/**
+	 * Get the category of updates the workload performs
+	 * 
+	 * @return the category of updates the workload performs
+	 */
+	public UpdateCategory getUpdateCategory() {
+		return updateCategory;
+	}
+	
+	
+	/**
+	 * Determine whether this workload performs any updates
+	 * 
+	 * @return true if the workload performs updates
+	 */
+	public boolean isUpdate() {
+		return updateCategory != UpdateCategory.READ_ONLY;
 	}
 	
 	

@@ -373,7 +373,9 @@ public class BenchRunner {
 								&& polluteCache
 								&& GlobalConfig.polluteCache) {
 
+							long pollutionStart = 0;
 							if (main) {
+								pollutionStart = System.currentTimeMillis();
 								if (ConsoleUtils.useEscapeSequences) System.out.print("\r");
 								System.out.printf("[%-" + longestFactoryName + "s %" + longestFactoryStrID + "s] %s",
 										ID_STRING,
@@ -417,7 +419,13 @@ public class BenchRunner {
 									ConsoleUtils.printProgressIndicator(objects, numVertices + numEdges);
 								}
 							}
-							if (main) System.out.println();
+							if (main) {
+								long t = System.currentTimeMillis() - pollutionStart;
+								double s = t / 1000.0;
+								int m = (int) (s / 60); s -= m * 60;
+								System.out.printf(" [%d minute%s %.3f seconds]", m, m == 1 ? "" : "s", s);
+								System.out.println();
+							}
 						}
 					}
 					
@@ -432,6 +440,8 @@ public class BenchRunner {
 
 					List<Operation> operations = operationFactory.getOperations();
 					String lastOperationName = "";
+					long operationsStart = System.currentTimeMillis();
+					
 					for (int operation_i = 0; operation_i < operations.size(); operation_i++) {
 						Operation operation = operations.get(operation_i);
 						
@@ -442,6 +452,14 @@ public class BenchRunner {
 
 						if (main) {
 							if (!operation.getName().equals(lastOperationName)) {
+								
+								if (operation_i != 0) {
+									long t = System.currentTimeMillis() - operationsStart;
+									double s = t / 1000.0;
+									int m = (int) (s / 60); s -= m * 60;
+									System.out.printf(" [%d minute%s %.3f seconds]", m, m == 1 ? "" : "s", s);
+								}
+								
 								lastOperationName = operation.getName();
 								if (operation_i == 0) {
 									if (ConsoleUtils.useEscapeSequences) System.out.print("\r");
@@ -453,6 +471,7 @@ public class BenchRunner {
 											operation.isUpdate() ? " (update)" : "");
 								}
 								else {
+									System.out.println();
 									if (ConsoleUtils.useEscapeSequences) System.out.print("\r");
 									System.out.printf(" %-" + longestFactoryName + "s %" + longestFactoryStrID + "s  " +
 											"Running %s%s",
@@ -462,6 +481,8 @@ public class BenchRunner {
 											operation.isUpdate() ? " (update)" : "");									
 								}
 								System.out.flush();
+								
+								operationsStart = System.currentTimeMillis();
 							}
 						}
 						
@@ -495,7 +516,13 @@ public class BenchRunner {
 					
 					// Finalize the operation factory
 					
-					if (main) System.out.println();
+					if (main) {
+						long t = System.currentTimeMillis() - operationsStart;
+						double s = t / 1000.0;
+						int m = (int) (s / 60); s -= m * 60;
+						System.out.printf(" [%d minute%s %.3f seconds]", m, m == 1 ? "" : "s", s);
+						System.out.println();
+					}
 				}
 				
 				

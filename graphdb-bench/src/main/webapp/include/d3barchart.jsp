@@ -93,7 +93,7 @@
 			 .attr("text-anchor", "middle")
 			 .attr("transform", "translate("
 			 	+ (-bars_margin*2 - ylabel_from_chart_margin) + ", "
-			 	+ (chart_inner_height/2)  + "), rotate(-90)")
+			 	+ (chart_inner_height/2)  + ") rotate(-90)")
 			 .text("<%= chartProperties.ylabel %>");
 		
 		
@@ -171,7 +171,7 @@
 						 .attr("dy", ".35em") // vertical-align: middle
 						 .attr("transform", "translate("
 						 	+ (x.rangeBand() * p + x.rangeBand() / 2) + ", "
-						 	+ (chart_inner_height + chart_margin)  + "), rotate(45)")
+						 	+ (chart_inner_height + chart_margin)  + ") rotate(45)")
 						 .text(group_label_function(data[group_offsets[i]], group_offsets[i]));
 					}
 					
@@ -259,7 +259,7 @@
 						 .attr("dy", ".35em") // vertical-align: middle
 						 .attr("transform", "translate("
 						 	+ (x.rangeBand() * i + x.rangeBand() / 2) + ", "
-						 	+ (chart_inner_height + chart_margin)  + "), rotate(45)")
+						 	+ (chart_inner_height + chart_margin)  + ") rotate(45)")
 						 .text(d.label);
 					<%
 				}
@@ -277,7 +277,7 @@
 			 .attr("dy", ".35em") // vertical-align: middle
 			 .attr("transform", "translate("
 			 	+ (x.rangeBand() * i + x.rangeBand() / 2) + ", "
-			 	+ (y(d.mean + d.stdev) - 10)  + "), rotate(-90)")
+			 	+ (y(d.mean + d.stdev) - 10)  + ") rotate(-90)")
 			 .text("" + d.mean.toFixed(fixed_length) + " ms");
 		});
 

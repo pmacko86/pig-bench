@@ -1,5 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <%@ page import="com.tinkerpop.bench.Bench"%>
+<%@ page import="com.tinkerpop.bench.Workload.UpdateCategory"%>
 <%@ page import="com.tinkerpop.bench.Workload"%>
 <%@ page import="com.tinkerpop.bench.DatabaseEngine"%>
 <%@ page import="com.tinkerpop.bench.benchmark.BenchmarkMicro"%>
@@ -178,7 +179,41 @@
 				for (Workload w : Workload.WORKLOADS.values()) {
 					workloads.put(w.getLongName().toLowerCase(), w);
 				}
+				%>
+					<p class="middle_inner">Read-Only Workloads</p>
+				<%
 				for (Workload w : workloads.values()) {
+					if (w.getUpdateCategory() != UpdateCategory.READ_ONLY) continue;
+					%>
+						<label class="checkbox">
+							<input class="checkbox" type="checkbox" name="workloads"
+									onchange="set_div_visibility()"
+									value="<%= w.getShortName() %>"/>
+							<%= w.getLongName() %>
+						</label>
+					<%
+				}
+				%>
+				<div style="height:10px"></div>
+				<p class="middle_inner">Workloads with Temporary Updates</p>
+				<%
+				for (Workload w : workloads.values()) {
+					if (w.getUpdateCategory() != UpdateCategory.TEMPORARY_UPDATE) continue;
+					%>
+						<label class="checkbox">
+							<input class="checkbox" type="checkbox" name="workloads"
+									onchange="set_div_visibility()"
+									value="<%= w.getShortName() %>"/>
+							<%= w.getLongName() %>
+						</label>
+					<%
+				}
+				%>
+					<div style="height:10px"></div>
+					<p class="middle_inner">Workloads with Permanent Updates</p>
+				<%
+				for (Workload w : workloads.values()) {
+					if (w.getUpdateCategory() != UpdateCategory.PERMANENT_UPDATE) continue;
 					%>
 						<label class="checkbox">
 							<input class="checkbox" type="checkbox" name="workloads"
@@ -280,7 +315,7 @@
 				<label>Number of K Hops
 					<span class="small">A number or a range (e.g. 1:5)</span>
 				</label>
-				<input type="text" name="k_hops" id="k_hops" value="2" />
+				<input type="text" name="k_hops" id="k_hops" value="<%= BenchmarkMicro.DEFAULT_K_HOPS %>" />
 
 				<div class="clear"></div>
 			</div>

@@ -97,29 +97,19 @@
 		</dependency>
 		<dependency>
 		   <groupId>com.tinkerpop.blueprints.extensions</groupId>
+		   <artifactId>blueprints-bdb-graph</artifactId>
+		   <version>1.0-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+		   <groupId>com.tinkerpop.blueprints.extensions</groupId>
 		   <artifactId>blueprints-sql-graph</artifactId>
 		   <version>1.0-SNAPSHOT</version>
 		</dependency>
-		<!--<dependency>
-		   <groupId>com.tinkerpop.blueprints</groupId>
-		   <artifactId>blueprints-bdb-graph</artifactId>
-		   <version>1.1-SNAPSHOT</version>
-		</dependency>
-        <dependency>
-          <groupId>com.tinkerpop.blueprints</groupId>
-          <artifactId>blueprints-dup-graph</artifactId>
-          <version>1.1-SNAPSHOT</version>
-        </dependency>
-        <dependency>
+        <!--<dependency>
           <groupId>com.tinkerpop.blueprints</groupId>
           <artifactId>blueprints-hollow-graph</artifactId>
-          <version>1.1-SNAPSHOT</version>
-        </dependency>
-		<dependency>
-		   <groupId>com.tinkerpop.blueprints</groupId>
-		   <artifactId>blueprints-sql-graph</artifactId>
-		   <version>1.1-SNAPSHOT</version>
-		   </dependency>-->
+          <version>1.0-SNAPSHOT</version>
+        </dependency>-->
 
 		<!-- TESTING -->
 		<dependency>
