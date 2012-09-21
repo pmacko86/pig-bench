@@ -1139,7 +1139,7 @@ public class BenchmarkMicro extends Benchmark {
 			// SHORTEST PATH
 			if (options.has("shortest-path")) {
 				operationFactories.add(new OperationFactoryRandomVertexPair(
-						OperationGetShortestPath.class, opCount / 2));
+						OperationGetShortestPath.class, opCount));
             }
 
 			if (options.has("shortest-path-property") || options.has("shortest-path-prop")) {	
@@ -1148,7 +1148,7 @@ public class BenchmarkMicro extends Benchmark {
 							+"is not supported in the multi-threaded mode");
 				}
 				operationFactories.add(new OperationFactoryRandomVertexPair(
-						OperationGetShortestPathProperty.class, opCount / 2));
+						OperationGetShortestPathProperty.class, opCount));
 			}
 			
 			if (options.has("sssp")) {
