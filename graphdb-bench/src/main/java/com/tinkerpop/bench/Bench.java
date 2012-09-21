@@ -32,7 +32,9 @@ public class Bench {
 	public static final String DB_SQL_DB_NAME_PREFIX_WARMUP = "bench.db.sql.warmup_database_prefix";
 	
 	// DATABASE ENGINE CACHES
+	public static final String DB_NEO_CACHES_TOTAL = "bench.db.neo.caches.total";
 	public static final String DB_NEO_CACHES = "bench.db.neo.caches";
+	public static final String DB_NEO_GCR_TOTAL = "bench.db.neo.gcr.total";
 	public static final String DB_NEO_GCR = "bench.db.neo.gcr";
 
 	// LOGS - Operation Logs & Provenance

@@ -3,6 +3,8 @@ package com.tinkerpop.bench.util;
 
 /**
  * A collection of miscellaneous utilities for (file) output
+ * 
+ * @author Peter Macko
  */
 public class OutputUtils {
 	

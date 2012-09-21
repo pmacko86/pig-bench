@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 import com.tinkerpop.bench.Bench;
@@ -29,8 +30,10 @@ import com.tinkerpop.bench.operationFactory.OperationFactoryGeneric;
 import com.tinkerpop.bench.operationFactory.factories.OperationFactoryRandomVertex;
 import com.tinkerpop.bench.operationFactory.factories.OperationFactoryRandomVertexPair;
 import com.tinkerpop.bench.util.ConsoleUtils;
+import com.tinkerpop.bench.util.FileUtils;
 import com.tinkerpop.bench.util.GraphUtils;
 import com.tinkerpop.bench.util.LogUtils;
+import com.tinkerpop.bench.util.MathUtils;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.extensions.impls.sql.SqlGraph;
@@ -428,10 +431,10 @@ public class BenchmarkMicro extends Benchmark {
 	    				+ "numbers, and _, and has to start with a letter)");
 	    	}
 		}
-		
+
 		
 		/*
-		 * Arguments specific to the various database engines
+		 * Get the database engine
 		 */
 		
 		String dbShortName = null;
@@ -453,7 +456,43 @@ public class BenchmarkMicro extends Benchmark {
 			ConsoleUtils.error("No database is selected (please use --help for a list of options).");
 			return 1;
 		}
+		
+		
+		/*
+		 * Get the name of the results directory
+		 */
+		
+		String dirResults;
+		if (options.has("d") || options.has("dir")) {
+			dirResults = options.valueOf(options.has("d") ? "d" : "dir").toString();
+			if (!dirResults.endsWith("/")) dirResults += "/";
+		}
+		else {
+			String propDirResults = Bench.getProperty(Bench.RESULTS_DIRECTORY);
+			if (propDirResults == null) {
+				ConsoleUtils.error("Property \"" + Bench.RESULTS_DIRECTORY + "\" is not set and --dir is not specified.");
+				return 1;
+			}
+			if (!propDirResults.endsWith("/")) propDirResults += "/";
+			dirResults = propDirResults + "Micro/";
+		}
+		
+		
+		/*
+		 * Set the file, directory, and database names
+		 */
+		
+		String dbPrefix = dirResults + dbShortName;
+		if (dbInstanceName != null && !dbInstanceName.equals("")) dbPrefix += "_" + dbInstanceName;
+		dbPrefix += "/";
+		
+		String warmupDbDir = dbPrefix + "warmup";
+		String dbDir = dbPrefix + "db";
 
+		
+		/*
+		 * Arguments specific to the various database engines
+		 */
 
 		// Neo4j
 
@@ -471,9 +510,35 @@ public class BenchmarkMicro extends Benchmark {
 				config = s.split(":");
 			}
 			else {
-				String s = Bench.getProperty(Bench.DB_NEO_CACHES);
-				config = s.split(":");
+				
+				// Default behavior: Scale the database cache sizes according
+				// to the file sizes, or scale the defaults if the database
+				// does not yet exist
+				
+				File dir = new File(dbDir);
+				if (dir.exists() && dir.isDirectory()) {
+					
+					String s = Bench.getProperty(Bench.DB_NEO_CACHES_TOTAL);
+					long persistentCacheSize = Long.valueOf(s);
+					if (!s.equals("" + persistentCacheSize)) {
+						ConsoleUtils.error("Invalid number format of property: " + Bench.DB_NEO_CACHES_TOTAL);
+						return 1;
+					}
+					
+					long[] adjustedSizes = FileUtils.getScaledFileSizesMB(dir, persistentCacheSize,
+							"neostore.nodestore.db", "neostore.relationshipstore.db", "neostore.propertystore.db",
+							"neostore.propertystore.db.strings", "neostore.propertystore.db.arrays");
+ 
+					config = MathUtils.toStringArray(adjustedSizes);
+				}
+				else {
+					String s = Bench.getProperty(Bench.DB_NEO_CACHES);
+					config = s.split(":");
+				}
 			}
+			
+			
+			// Parse and set the neo4j persistent cache sizes
 
 			if (config.length != 5) {
 				ConsoleUtils.error("Invalid neo-caches. The format must be A:B:C:D:E, where:");
@@ -504,9 +569,41 @@ public class BenchmarkMicro extends Benchmark {
 				config = s.split(":");
 			}
 			else {
-				String s = Bench.getProperty(Bench.DB_NEO_GCR);
-				config = s.split(":");
+				
+				// Default behavior: Scale the database cache sizes according
+				// to the number of nodes and relationships, or set to the
+				// defaults if the database does not yet exist
+				
+				File dir = new File(dbDir);
+				if (dir.exists() && dir.isDirectory()) {
+										
+					String s = Bench.getProperty(Bench.DB_NEO_GCR_TOTAL);
+					long gcrCacheSize = Long.valueOf(s);
+					if (!s.equals("" + gcrCacheSize)) {
+						ConsoleUtils.error("Invalid number format of property: " + Bench.DB_NEO_GCR_TOTAL);
+						return 1;
+					}
+					
+					long[] onDiskSizes = FileUtils.getFileSizesB(dir, "neostore.nodestore.db", "neostore.relationshipstore.db");
+					
+					// In-memory size = (in-memory record size) * ((file size) / (on-disk record size))
+					// Reference: http://docs.neo4j.org/chunked/stable/configuration-caches.html
+
+					long[] inMemSizesMB = new long[] {
+						Math.round(Math.ceil((344.0 * onDiskSizes[0] /  9.0) / 10485767.0)),
+						Math.round(Math.ceil((208.0 * onDiskSizes[1] / 33.0) / 10485767.0))
+					};
+					
+					config = MathUtils.toStringArray(MathUtils.adjustSumApproximate(inMemSizesMB, gcrCacheSize, 1));
+				}
+				else {
+					String s = Bench.getProperty(Bench.DB_NEO_GCR);
+					config = s.split(":");
+				}
 			}
+			
+			
+			// Parse and set the neo4j GCR settings
 
 			if (config.length != 2) {
 				ConsoleUtils.error("Invalid neo-gcr. The format must be A:B, where:");
@@ -671,26 +768,6 @@ public class BenchmarkMicro extends Benchmark {
 		
 		
 		/*
-		 * Get the name of the results directory
-		 */
-		
-		String dirResults;
-		if (options.has("d") || options.has("dir")) {
-			dirResults = options.valueOf(options.has("d") ? "d" : "dir").toString();
-			if (!dirResults.endsWith("/")) dirResults += "/";
-		}
-		else {
-			String propDirResults = Bench.getProperty(Bench.RESULTS_DIRECTORY);
-			if (propDirResults == null) {
-				ConsoleUtils.error("Property \"" + Bench.RESULTS_DIRECTORY + "\" is not set and --dir is not specified.");
-				return 1;
-			}
-			if (!propDirResults.endsWith("/")) propDirResults += "/";
-			dirResults = propDirResults + "Micro/";
-		}
-		
-		
-		/*
 		 * Get the name of the ingest file (if necessary)
 		 */
 		
@@ -775,15 +852,8 @@ public class BenchmarkMicro extends Benchmark {
 		
 		
 		/*
-		 * Set the file, directory, and database names
+		 * Set the log file names
 		 */
-		
-		String dbPrefix = dirResults + dbShortName;
-		if (dbInstanceName != null && !dbInstanceName.equals("")) dbPrefix += "_" + dbInstanceName;
-		dbPrefix += "/";
-		
-		String warmupDbDir = dbPrefix + "warmup";
-		String dbDir = dbPrefix + "db";
 		
 		String logPrefix = dbPrefix + dbShortName;
 		if (dbInstanceName != null && !dbInstanceName.equals("")) logPrefix += "_" + dbInstanceName;
@@ -855,6 +925,15 @@ public class BenchmarkMicro extends Benchmark {
 			System.out.println("Log File    : " + logFile);
 			System.out.println("Summary Log : " + summaryLogFile);
 			System.out.println("Summary File: " + summaryLogFileText);
+		}
+		
+		if (dbConfig.size() > 0) {
+			System.out.println("");
+			System.out.println("Database Configuration:");
+			TreeSet<String> t = new TreeSet<String>(dbConfig.keySet());
+			for (String k : t) {
+				System.out.println("    " + k + " = " + dbConfig.get(k));
+			}
 		}
 		
 		
