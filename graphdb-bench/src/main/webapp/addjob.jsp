@@ -155,6 +155,12 @@
 			<input type="text" name="java_heap_size" id="java_heap_size" value="1G" />
 		
 			<label class="checkbox">
+				<input class="checkbox" type="checkbox" name="no_provenance"
+						value="true"/>
+				Disable provenance
+			</label>
+		
+			<label class="checkbox">
 				<input class="checkbox" type="checkbox" name="use_stored_procedures"
 						value="true"/>
 				Enable the use of stored procedures (if they are available for the given database engine)
@@ -301,12 +307,12 @@
 				<label>Number of Operations
 					<span class="small">At least 1</span>
 				</label>
-				<input type="text" name="op_count" id="op_count" value="1000" />
+				<input type="text" name="op_count" id="op_count" value="<%= BenchmarkMicro.DEFAULT_OP_COUNT %>" />
 				
 				<label>Number of Warmup Operations
 					<span class="small">At least 1</span>
 				</label>
-				<input type="text" name="warmup_op_count" id="warmup_op_count" value="1000" />
+				<input type="text" name="warmup_op_count" id="warmup_op_count" value="<%= BenchmarkMicro.DEFAULT_OP_COUNT %>" />
 
 				<div class="clear"></div>
 			</div>

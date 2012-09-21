@@ -137,6 +137,7 @@ public class Job {
 		String s_opCount = WebUtils.getStringParameter(request, "op_count");
 		String s_warmupOpCount = WebUtils.getStringParameter(request, "warmup_op_count");
 		String s_kHops = WebUtils.getStringParameter(request, "k_hops");
+		boolean noProvenance = WebUtils.getBooleanParameter(request, "no_provenance", false);
 		boolean useStoredProcedures = WebUtils.getBooleanParameter(request, "use_stored_procedures", false);
 		boolean noWarmup = WebUtils.getBooleanParameter(request, "no_warmup", false);
 		boolean noCachePollution = WebUtils.getBooleanParameter(request, "no_cache_pollution", false);
@@ -187,6 +188,10 @@ public class Job {
 			if (!s_txBuffer.equals("" + BenchmarkMicro.DEFAULT_NUM_THREADS)) {
 				arguments.add("--tx-buffer"); arguments.add(s_txBuffer);
 			}
+		}
+		
+		if (noProvenance) {
+			arguments.add("--no-provenance");
 		}
 		
 		if (noCachePollution) {

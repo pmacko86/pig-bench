@@ -176,6 +176,9 @@
 					  	      1.1 * d3.max(data, function(d) { return d._xvalue; })])
 					  .range([0, chart_inner_width])
 					  .nice();
+			
+			var xunit = "";
+			var xunitscale = 1;
 		
 		
 			
@@ -272,6 +275,26 @@
 				
 				xticks = t;
 			}
+						
+			<% if (chartProperties.xautounit) { %>
+			
+			if (data_xscale == "linear") { 
+				if ((xticks[1] % 1000) == 0) {
+					xunit = "thousands";
+					xunitscale *= 1000;
+					if (((xticks[1] / xunitscale) % 1000) == 0) {
+						xunit = "millions";
+						xunitscale *= 1000;
+					}
+				}
+			}
+			
+			<% } %>
+			
+			xlabel = "<%= chartProperties.xlabel %>";
+			if (xunit != "") {
+				xlabel = xlabel + " (" + xunit + ")";
+			}
 			
 			chart.selectAll(".xline")
 				 .data(xticks)
@@ -292,7 +315,7 @@
 				 .attr("dx", ".35em")
 				 .attr("text-anchor", "middle")
 				 .text(function(d) {
-					return d;
+					return d / xunitscale;
 				 });
 			
 			chart.append("line")
@@ -308,7 +331,7 @@
 				 .attr("dx", 0)
 				 .attr("dy", 0)
 				 .attr("text-anchor", "middle")
-				 .text("<%= chartProperties.xlabel %>");
+				 .text(xlabel);
 			
 			
 			

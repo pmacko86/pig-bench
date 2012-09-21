@@ -45,6 +45,8 @@ public class ChartProperties {
 	
 	public String xscale = "linear";
 	public String xlabel = "";
+	public boolean xautounit = true;
+	
 	public String yscale = "linear";
 	public String ylabel = "";
 	

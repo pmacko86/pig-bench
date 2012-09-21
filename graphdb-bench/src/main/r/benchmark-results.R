@@ -6,6 +6,23 @@
 #   Peter Macko (http://eecs.harvard.edu/~pmacko)
 #
 
+library(outliers)
+
+
+#
+# Function install.prerequisites
+#
+# Description:
+#   Installs are packages that are a prerequisite to this one
+#
+# Usage:
+#   install.prerequisites()
+#
+install.prerequisites <- function() {
+
+	install.packages("outliers")
+}
+
 
 #
 # Function find.benchmark.results.file
@@ -97,8 +114,10 @@ load.benchmark.results.khop <- function(database.name, database.instance) {
 	
 	# Isolate and parse OperationGetKHopNeighbors
 	
-	data.get.khop   <- data[substr(data$name, 0, 26) == "OperationGetKHopNeighbors-", ]
-	data.get.khop$k <- as.numeric(substring(data.get.khop$name, 27))
+	data.get.khop.all      <- data[substr(data$name, 0, 26) == "OperationGetKHopNeighbors-", ]
+	data.get.khop          <- data.get.khop.all[!grepl("undirected", data.get.khop.all$name), ]
+	data.get.khop$k        <- as.numeric(substring(data.get.khop$name, 27))
+	data.get.khop$directed <- TRUE
 
 	data.get.khop$result        <- lapply(strsplit(as.character(data.get.khop$result), ":"), as.numeric)
 	data.get.khop$unique.nodes  <- as.numeric(lapply(data.get.khop$result, function(x) x[1]))
@@ -107,6 +126,37 @@ load.benchmark.results.khop <- function(database.name, database.instance) {
 	data.get.khop$get.in.vertex <- as.numeric(lapply(data.get.khop$result, function(x) x[4]))
 
 	data.get.khop
+}
+
+
+#
+# Function load.benchmark.results.khop.undirected
+#
+# Description:
+#   Load GraphDB benchmark results for OperationGetKHopNeighbors
+#
+# Usage:
+#   load.benchmark.results.khop.undirected(database.name, database.instance)
+#
+load.benchmark.results.khop.undirected <- function(database.name, database.instance) {
+
+	data <- load.benchmark.results(database.name, database.instance, "get-k")
+
+	
+	# Isolate and parse OperationGetKHopNeighbors
+	
+	data.get.khop.all                 <- data[substr(data$name, 0, 26) == "OperationGetKHopNeighbors-", ]
+	data.get.khop.undirected          <- data.get.khop.all[grepl("undirected", data.get.khop.all$name), ]
+	data.get.khop.undirected$k        <- as.numeric(substring(sub("-undirected", "", data.get.khop.undirected$name), 27))
+	data.get.khop.undirected$directed <- FALSE
+
+	data.get.khop.undirected$result        <- lapply(strsplit(as.character(data.get.khop.undirected$result), ":"), as.numeric)
+	data.get.khop.undirected$unique.nodes  <- as.numeric(lapply(data.get.khop.undirected$result, function(x) x[1]))
+	data.get.khop.undirected$real.hops     <- as.numeric(lapply(data.get.khop.undirected$result, function(x) x[2]))
+	data.get.khop.undirected$get.out.edges <- as.numeric(lapply(data.get.khop.undirected$result, function(x) x[3]))
+	data.get.khop.undirected$get.in.vertex <- as.numeric(lapply(data.get.khop.undirected$result, function(x) x[4]))
+
+	data.get.khop.undirected
 }
 
 
@@ -130,4 +180,44 @@ load.benchmark.results.all.neighbors <- function(database.name, database.instanc
 	data$unique.nodes <- as.numeric(as.character(data$result))
 
 	data
+}
+
+
+#
+# Function khop.linear.model
+#
+# Description:
+#   Create a linear model fit to k-hop data, and optionally filter the data
+#
+# Usage:
+#   khop.linear.model(data)
+#
+khop.linear.model <- function(khop.data, limit=NaN) {
+	
+	d <- khop.data
+	if (!is.nan(limit)) {
+		d <- d[d$unique.nodes < limit,]
+	}
+	d <- d[!outlier(d$time, logical=TRUE), ]
+	
+	lm(d$time ~ d$unique.nodes, na.action=na.exclude)
+}
+
+
+#
+# Function with.khop.linear.model
+#
+# Description:
+#   Add a linear model fit to k-hop data, and optionally filter the data
+#
+# Usage:
+#   data <- with.khop.linear.model(data)
+#
+with.khop.linear.model <- function(khop.data, limit=NaN) {
+	
+	l <- khop.linear.model(khop.data, limit)
+	d <- khop.data
+	d$time.fit <- l$coefficients[1] + (l$coefficients[2] * d$unique.nodes)
+	
+	d
 }

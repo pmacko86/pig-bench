@@ -53,11 +53,11 @@ import joptsimple.OptionSet;
 public class BenchmarkMicro extends Benchmark {
 	
 	/// The default file for ingest
-	public static final String DEFAULT_INGEST_FILE = "barabasi_1000_5000.graphml";
+	public static final String DEFAULT_INGEST_FILE = "barabasi_1k_5k.graphml";
 	
 	/// The defaults
 	public static final int DEFAULT_NUM_THREADS = 1;
-	public static final int DEFAULT_OP_COUNT = 1000;
+	public static final int DEFAULT_OP_COUNT = 100;
 	public static final String DEFAULT_K_HOPS = "1:5";
 	public static final int DEFAULT_BARABASI_N = 1000;
 	public static final int DEFAULT_BARABASI_M = 5;

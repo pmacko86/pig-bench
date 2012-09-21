@@ -588,7 +588,7 @@
 					chartProperties.yvalue = "d.time";
 					if (logScale) chartProperties.yscale = "log";
 					if (dropExtremes) chartProperties.dropTopBottomExtremes = true;
-					chartProperties.xlabel = "Number of Calls to Vertex.getOutEdges()";
+					chartProperties.xlabel = "Number of Retrieved Neighborhoods"; // e.g. calls to Vertex.getVertices()
 					chartProperties.ylabel = "Execution Time (ms)";
 					chartProperties.series_column = "label";
 					chartProperties.series_label_function = "return d.label.replace(/^Operation/, '')";
@@ -601,7 +601,7 @@
 					
 					chartProperties.attach = "chart_all_additionalKHopNeighborsPlots_2";
 					chartProperties.xvalue = "d.result[3]";
-					chartProperties.xlabel = "Number of Calls to Edge.getInVertex()";
+					chartProperties.xlabel = "Number of Retrieved Neighborhood Nodes";
 					
 					%>
 						<div class="chart_outer"><div class="chart chart_all_additionalKHopNeighborsPlots_2">
