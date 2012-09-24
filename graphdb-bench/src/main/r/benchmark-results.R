@@ -114,26 +114,26 @@ load.benchmark.results.khop <- function(database.name, database.instance, keep.o
 	
 	# Isolate and parse OperationGetKHopNeighbors
 	
-	data.get.khop.all      <- data[substr(data$name, 0, 26) == "OperationGetKHopNeighbors-", ]
-	data.get.khop          <- data.get.khop.all[!grepl("undirected", data.get.khop.all$name), ]
-	data.get.khop$k        <- as.numeric(substring(data.get.khop$name, 27))
-	data.get.khop$directed <- TRUE
+	data          <- data[substr(data$name, 0, 26) == "OperationGetKHopNeighbors-", ]
+	data          <- data[!grepl("undirected", data$name), ]
+	data$k        <- as.numeric(substring(data$name, 27))
+	data$directed <- TRUE
 
-	data.get.khop$result        <- lapply(strsplit(as.character(data.get.khop$result), ":"), as.numeric)
-	data.get.khop$unique.nodes  <- as.numeric(lapply(data.get.khop$result, function(x) x[1]))
-	data.get.khop$real.hops     <- as.numeric(lapply(data.get.khop$result, function(x) x[2]))
-	data.get.khop$get.out.edges <- as.numeric(lapply(data.get.khop$result, function(x) x[3]))
-	data.get.khop$get.in.vertex <- as.numeric(lapply(data.get.khop$result, function(x) x[4]))
+	data$result            <- lapply(strsplit(as.character(data$result), ":"), as.numeric)
+	data$unique.vertices   <- as.numeric(lapply(data$result, function(x) x[1]))
+	data$real.hops         <- as.numeric(lapply(data$result, function(x) x[2]))
+	data$get.vertices      <- as.numeric(lapply(data$result, function(x) x[3]))
+	data$get.vertices.next <- as.numeric(lapply(data$result, function(x) x[4]))
 	
 	    
 	if (!keep.outliers) {
-		for (k in unique(data.get.khop$k)) {
-			outliers <- outlier(data.get.khop[data.get.khop$k == k, ]$time)
-			data.get.khop <- data.get.khop[!(data.get.khop$time %in% outliers), ]
+		for (k in unique(data$k)) {
+			outliers <- outlier(data[data$k == k, ]$time)
+			data <- data[!(data$time %in% outliers), ]
 		}
 	}
 	
-	data.get.khop
+	data
 }
 
 
@@ -149,29 +149,30 @@ load.benchmark.results.khop <- function(database.name, database.instance, keep.o
 load.benchmark.results.khop.undirected <- function(database.name, database.instance, keep.outliers=FALSE) {
 
 	data <- load.benchmark.results(database.name, database.instance, "get-k")
-
+	
 	
 	# Isolate and parse OperationGetKHopNeighbors
 	
-	data.get.khop.all                 <- data[substr(data$name, 0, 26) == "OperationGetKHopNeighbors-", ]
-	data.get.khop.undirected          <- data.get.khop.all[grepl("undirected", data.get.khop.all$name), ]
-	data.get.khop.undirected$k        <- as.numeric(substring(sub("-undirected", "", data.get.khop.undirected$name), 27))
-	data.get.khop.undirected$directed <- FALSE
+	data          <- data[substr(data$name, 0, 26) == "OperationGetKHopNeighbors-", ]
+	data          <- data[grepl("undirected", data$name), ]
+	data$k        <- as.numeric(substring(sub("-undirected", "", data$name), 27))
+	data$directed <- FALSE
 
-	data.get.khop.undirected$result        <- lapply(strsplit(as.character(data.get.khop.undirected$result), ":"), as.numeric)
-	data.get.khop.undirected$unique.nodes  <- as.numeric(lapply(data.get.khop.undirected$result, function(x) x[1]))
-	data.get.khop.undirected$real.hops     <- as.numeric(lapply(data.get.khop.undirected$result, function(x) x[2]))
-	data.get.khop.undirected$get.out.edges <- as.numeric(lapply(data.get.khop.undirected$result, function(x) x[3]))
-	data.get.khop.undirected$get.in.vertex <- as.numeric(lapply(data.get.khop.undirected$result, function(x) x[4]))
-	    
+	data$result            <- lapply(strsplit(as.character(data$result), ":"), as.numeric)
+	data$unique.vertices   <- as.numeric(lapply(data$result, function(x) x[1]))
+	data$real.hops         <- as.numeric(lapply(data$result, function(x) x[2]))
+	data$get.vertices      <- as.numeric(lapply(data$result, function(x) x[3]))
+	data$get.vertices.next <- as.numeric(lapply(data$result, function(x) x[4]))
+	
+	
 	if (!keep.outliers) {
-		for (k in unique(data.get.khop.undirected$k)) {
-			outliers <- outlier(data.get.khop.undirected[data.get.khop.undirected$k == k, ]$time)
-			data.get.khop.undirected <- data.get.khop.undirected[!(data.get.khop.undirected$time %in% outliers), ]
+		for (k in unique(data$k)) {
+			outliers <- outlier(data[data$k == k, ]$time)
+			data <- data[!(data$time %in% outliers), ]
 		}
 	}
 	
-	data.get.khop.undirected
+	data
 }
 
 
@@ -205,7 +206,7 @@ load.benchmark.results.parse.op.stat <- function(data, start.index=2) {
 	data$get.all.vertices.next <- as.numeric(lapply(data$result, function(x) unlist(strsplit(x[start.index + 5], "="))[2]))
 	
 	stopifnot(unlist(strsplit(unlist(data[1,]$result)[start.index + 6],"="))[1] == "uniqueVertices")
-	data$unique.nodes <- as.numeric(lapply(data$result, function(x) unlist(strsplit(x[start.index + 6], "="))[2]))
+	data$unique.vertices <- as.numeric(lapply(data$result, function(x) unlist(strsplit(x[start.index + 6], "="))[2]))
 	
 	data
 }
@@ -282,7 +283,7 @@ load.benchmark.results.all.neighbors <- function(database.name, database.instanc
 	# Isolate and parse OperationGetAllNeighbors
 
 	data              <- data[data$name == "OperationGetAllNeighbors", ]
-	data$unique.nodes <- as.numeric(as.character(data$result))
+	data$unique.vertices <- as.numeric(as.character(data$result))
 	
 	if (!keep.outliers) {
 		data <- data[!outlier(data$time, logical=TRUE), ]
@@ -296,7 +297,7 @@ load.benchmark.results.all.neighbors <- function(database.name, database.instanc
 # Function khop.linear.model
 #
 # Description:
-#   Create a linear model fit to k-hop data, and optionally filter the data
+#   Create a linear model fit to k-hop data
 #
 # Usage:
 #   khop.linear.model(data)
@@ -305,30 +306,11 @@ khop.linear.model <- function(khop.data, limit=NaN) {
 	
 	d <- khop.data
 	if (!is.nan(limit)) {
-		d <- d[d$unique.nodes < limit,]
+		d <- d[d$unique.vertices < limit,]
 	}
 	#d <- d[!outlier(d$time, logical=TRUE), ]
 	
-	lm(d$time ~ d$unique.nodes + d$unique.nodes, na.action=na.exclude)
-}
-
-
-#
-# Function with.khop.linear.fit
-#
-# Description:
-#   Add a linear model fit to k-hop data, and optionally filter the data
-#
-# Usage:
-#   data <- with.khop.linear.fit(data)
-#
-with.khop.linear.fit <- function(khop.data, limit=NaN) {
-	
-	l <- khop.linear.model(khop.data, limit)
-	d <- khop.data
-	d$time.fit <- l$coefficients[1] + (l$coefficients[2] * d$unique.nodes)
-	
-	d
+	lm(d$time ~ d$unique.vertices + d$unique.vertices, na.action=na.exclude)
 }
 
 
@@ -336,7 +318,7 @@ with.khop.linear.fit <- function(khop.data, limit=NaN) {
 # Function khop.quadratic.model
 #
 # Description:
-#   Create a quadratic model fit to k-hop data, and optionally filter the data
+#   Create a quadratic model fit to k-hop data
 #
 # Usage:
 #   khop.quadratic.model(data)
@@ -345,11 +327,49 @@ khop.quadratic.model <- function(khop.data, limit=NaN) {
 	
 	d <- khop.data
 	if (!is.nan(limit)) {
-		d <- d[d$unique.nodes < limit,]
+		d <- d[d$unique.vertices < limit,]
 	}
 	#d <- d[!outlier(d$time, logical=TRUE), ]
 	
-	lm(d$time ~ d$unique.nodes + I(d$unique.nodes^2), na.action=na.exclude)
+	lm(d$time ~ d$unique.vertices + I(d$unique.vertices^2), na.action=na.exclude)
+}
+
+
+#
+# Function with.khop.polynomial.fit
+#
+# Description:
+#   Apply a polynomial model
+#
+with.khop.polynomial.fit <- function(khop.data, model) {
+	
+	d <- khop.data
+	d$time.fit <- 0
+	
+	for (c in rev(model$coefficients)) {
+		d$time.fit <- (d$time.fit * d$unique.vertices) + c
+	}
+	
+	d
+}
+
+
+#
+# Function with.khop.linear.fit
+#
+# Description:
+#   Add a linear model fit to k-hop data
+#
+# Usage:
+#   data <- with.khop.linear.fit(data)
+#
+with.khop.linear.fit <- function(khop.data, limit=NaN) {
+	
+	l <- khop.linear.model(khop.data, limit)
+	d <- khop.data
+	d$time.fit <- l$coefficients[1] + (l$coefficients[2] * d$unique.vertices)
+	
+	d
 }
 
 
@@ -357,7 +377,7 @@ khop.quadratic.model <- function(khop.data, limit=NaN) {
 # Function with.khop.quadratic.fit
 #
 # Description:
-#   Add a linear model fit to k-hop data, and optionally filter the data
+#   Add a linear model fit to k-hop data
 #
 # Usage:
 #   data <- with.khop.quadratic.fit(data)
@@ -366,7 +386,88 @@ with.khop.quadratic.fit <- function(khop.data, limit=NaN) {
 	
 	l <- khop.quadratic.model(khop.data, limit)
 	d <- khop.data
-	d$time.fit <- l$coefficients[1] + (l$coefficients[2] * d$unique.nodes) + (l$coefficients[3] * I(d$unique.nodes^2))
+	d$time.fit <- l$coefficients[1] + (l$coefficients[2] * d$unique.vertices) + (l$coefficients[3] * I(d$unique.vertices^2))
 	
 	d
+}
+
+
+##
+##
+## Plotting
+##
+##
+
+#
+# Colors for k in k-hop plots
+#
+
+khop.colors <- c("violet", "blue", "green", "orange", "red")
+
+
+#
+# Function plot.khops
+#
+# Description:
+#   Plot a khops plot
+#
+plot.khops <- function(khop.data, x, y, xlab, ylab, log="", xmax=NaN, ymax=NaN, kmax=NaN, hold=FALSE) {
+	
+	data <- khop.data
+	mask <- !is.nan(x) & !is.nan(y)
+	if (!is.nan(xmax)) {
+		mask <- mask & (x <= xmax)
+	}
+	if (!is.nan(ymax)) {
+		mask <- mask & (y <= ymax)
+	}
+	if (!is.nan(kmax)) {
+		mask <- mask & (data$k <= kmax)
+	}
+	
+	if (!hold) {
+		plot(x[mask], y[mask], log=log, xlab=xlab, ylab=ylab)
+	}
+	
+	k.values <- unique(data$k)
+	for (k in sort(k.values, decreasing=TRUE)) {
+		m <- mask & (data$k == k)
+		points(x[m], y[m], col=khop.colors[k])
+	}
+}
+
+
+#
+# Function plot.khops.time.vs.unique.vertices
+#
+# Description:
+#   Plot time vs. unique vertices for khops
+#
+plot.khops.time.vs.unique.vertices <- function(khop.data, ...) {
+
+	plot.khops(khop.data, khop.data$unique.vertices, khop.data$time, "Unique Vertices", "Time (ms)", ...)
+}
+
+
+#
+# Function plot.khops.time.vs.retrieved.vertices
+#
+# Description:
+#   Plot time vs. retrieved vertices for khops
+#
+plot.khops.time.vs.retrieved.vertices <- function(khop.data, ...) {
+	
+	plot.khops(khop.data, khop.data$get.vertices.next, khop.data$time, "Retrieved Vertices", "Time (ms)",...)
+}
+
+
+#
+# Function plot.khops.time.vs.retrieved.neighborhoods
+#
+# Description:
+#   Plot time vs. retrieved neighborhoods for khops
+#
+plot.khops.time.vs.retrieved.neighborhoods <- function(khop.data, ...) {
+	
+	plot.khops(khop.data, khop.data$get.vertices, khop.data$time, "Retrieved Neighborhoods", "Time (ms)", ...)
 }
