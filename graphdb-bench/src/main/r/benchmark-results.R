@@ -186,6 +186,21 @@ load.benchmark.results.khop.undirected <- function(database.name, database.insta
 #
 load.benchmark.results.parse.op.stat <- function(data, start.index=2) {
 	
+	stopifnot(unlist(strsplit(unlist(data[1,]$result)[start.index + 0],"="))[1] == "getVertices")
+	data$get.vertices <- as.numeric(lapply(data$result, function(x) unlist(strsplit(x[start.index + 0], "="))[2]))
+	
+	stopifnot(unlist(strsplit(unlist(data[1,]$result)[start.index + 1],"="))[1] == "getVerticesNext")
+	data$get.vertices.next <- as.numeric(lapply(data$result, function(x) unlist(strsplit(x[start.index + 1], "="))[2]))
+	
+	stopifnot(unlist(strsplit(unlist(data[1,]$result)[start.index + 2],"="))[1] == "getEdges")
+	data$get.edges <- as.numeric(lapply(data$result, function(x) unlist(strsplit(x[start.index + 2], "="))[2]))
+	
+	stopifnot(unlist(strsplit(unlist(data[1,]$result)[start.index + 3],"="))[1] == "getEdgesNext")
+	data$get.edges.next <- as.numeric(lapply(data$result, function(x) unlist(strsplit(x[start.index + 3], "="))[2]))
+	
+	stopifnot(unlist(strsplit(unlist(data[1,]$result)[start.index + 4],"="))[1] == "getAllVertices")
+	data$get.all.vertices <- as.numeric(lapply(data$result, function(x) unlist(strsplit(x[start.index + 4], "="))[2]))
+	
 	stopifnot(unlist(strsplit(unlist(data[1,]$result)[start.index + 5],"="))[1] == "getAllVerticesNext")
 	data$get.all.vertices.next <- as.numeric(lapply(data$result, function(x) unlist(strsplit(x[start.index + 5], "="))[2]))
 	
@@ -218,7 +233,7 @@ load.benchmark.results.global.clustering.coefficient <- function(database.name, 
 	data$coefficient  <- as.numeric(lapply(data$result, function(x) x[1]))
 	
 	data <- load.benchmark.results.parse.op.stat(data)
-
+	
 	data
 }
 
@@ -243,6 +258,8 @@ load.benchmark.results.network.average.clustering.coefficient <- function(databa
 	
 	data$result <- strsplit(as.character(data$result), ":")
 	data$coefficient  <- as.numeric(lapply(data$result, function(x) x[1]))
+	
+	data <- load.benchmark.results.parse.op.stat(data)
 	
 	data
 }
