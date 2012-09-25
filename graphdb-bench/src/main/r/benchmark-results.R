@@ -24,6 +24,14 @@ install.prerequisites <- function() {
 }
 
 
+
+################################################################################
+##                                                                            ##
+##  Loading and Parsing                                                       ##
+##                                                                            ##
+################################################################################
+
+
 #
 # Function find.benchmark.results.file
 #
@@ -90,9 +98,18 @@ load.benchmark.results <- function(database.name, database.instance, workload.ar
 
 	data <- read.csv(find.benchmark.results.file(database.name, database.instance, workload.argument))
 	
+	
 	# Convert the time to ms and memory to MB
+	
 	data$time   <- data$time / 1000000.0
 	data$memory <- data$memory / 1000000.0
+	
+	
+	# Database name and instance
+	
+	data$database.name <- database.name
+	data$database.instance <- database.instance
+	
 	
 	data
 }
@@ -107,25 +124,41 @@ load.benchmark.results <- function(database.name, database.instance, workload.ar
 # Usage:
 #   load.benchmark.results.khop(database.name, database.instance)
 #
-load.benchmark.results.khop <- function(database.name, database.instance, keep.outliers=FALSE) {
+load.benchmark.results.khop <- function(database.name, database.instance, keep.outliers=FALSE, directed=TRUE) {
 
 	data <- load.benchmark.results(database.name, database.instance, "get-k")
 
 	
 	# Isolate and parse OperationGetKHopNeighbors
 	
-	data          <- data[substr(data$name, 0, 26) == "OperationGetKHopNeighbors-", ]
-	data          <- data[!grepl("undirected", data$name), ]
-	data$k        <- as.numeric(substring(data$name, 27))
-	data$directed <- TRUE
-
+	if (directed) {
+		data          <- data[substr(data$name, 0, 26) == "OperationGetKHopNeighbors-", ]
+		data          <- data[!grepl("undirected", data$name), ]
+		data$k        <- as.numeric(substring(data$name, 27))
+		data$directed <- TRUE
+	}
+	else {
+		data          <- data[substr(data$name, 0, 26) == "OperationGetKHopNeighbors-", ]
+		data          <- data[grepl("undirected", data$name), ]
+		data$k        <- as.numeric(substring(sub("-undirected", "", data$name), 27))
+		data$directed <- FALSE
+	}
+	
+	
+	# Parse the statistics
+	
 	data$result            <- lapply(strsplit(as.character(data$result), ":"), as.numeric)
 	data$unique.vertices   <- as.numeric(lapply(data$result, function(x) x[1]))
 	data$real.hops         <- as.numeric(lapply(data$result, function(x) x[2]))
 	data$get.vertices      <- as.numeric(lapply(data$result, function(x) x[3]))
 	data$get.vertices.next <- as.numeric(lapply(data$result, function(x) x[4]))
 	
-	    
+	data$retrieved.vertices      <- data$get.vertices.next
+	data$retrieved.neighborhoods <- data$get.vertices
+	
+	
+	# Remove outliers
+	
 	if (!keep.outliers) {
 		for (k in unique(data$k)) {
 			outliers <- outlier(data[data$k == k, ]$time)
@@ -148,31 +181,7 @@ load.benchmark.results.khop <- function(database.name, database.instance, keep.o
 #
 load.benchmark.results.khop.undirected <- function(database.name, database.instance, keep.outliers=FALSE) {
 
-	data <- load.benchmark.results(database.name, database.instance, "get-k")
-	
-	
-	# Isolate and parse OperationGetKHopNeighbors
-	
-	data          <- data[substr(data$name, 0, 26) == "OperationGetKHopNeighbors-", ]
-	data          <- data[grepl("undirected", data$name), ]
-	data$k        <- as.numeric(substring(sub("-undirected", "", data$name), 27))
-	data$directed <- FALSE
-
-	data$result            <- lapply(strsplit(as.character(data$result), ":"), as.numeric)
-	data$unique.vertices   <- as.numeric(lapply(data$result, function(x) x[1]))
-	data$real.hops         <- as.numeric(lapply(data$result, function(x) x[2]))
-	data$get.vertices      <- as.numeric(lapply(data$result, function(x) x[3]))
-	data$get.vertices.next <- as.numeric(lapply(data$result, function(x) x[4]))
-	
-	
-	if (!keep.outliers) {
-		for (k in unique(data$k)) {
-			outliers <- outlier(data[data$k == k, ]$time)
-			data <- data[!(data$time %in% outliers), ]
-		}
-	}
-	
-	data
+	load.benchmark.results.khop(database.name, database.instance, keep.outliers=keep.outliers, directed=FALSE)
 }
 
 
@@ -293,45 +302,41 @@ load.benchmark.results.all.neighbors <- function(database.name, database.instanc
 }
 
 
-#
-# Function khop.linear.model
-#
-# Description:
-#   Create a linear model fit to k-hop data
-#
-# Usage:
-#   khop.linear.model(data)
-#
-khop.linear.model <- function(khop.data, limit=NaN) {
-	
-	d <- khop.data
-	if (!is.nan(limit)) {
-		d <- d[d$unique.vertices < limit,]
-	}
-	#d <- d[!outlier(d$time, logical=TRUE), ]
-	
-	lm(d$time ~ d$unique.vertices + d$unique.vertices, na.action=na.exclude)
-}
+
+################################################################################
+##                                                                            ##
+##  Models                                                                    ##
+##                                                                            ##
+################################################################################
 
 
 #
-# Function khop.quadratic.model
+# Function khop.polynomial.model
 #
 # Description:
-#   Create a quadratic model fit to k-hop data
+#   Create a polynomial model fit to k-hop data
 #
 # Usage:
-#   khop.quadratic.model(data)
+#   khop.polynomial.model(data)
 #
-khop.quadratic.model <- function(khop.data, limit=NaN) {
+khop.polynomial.model <- function(khop.data, x=NULL, n=1, limit=NA) {
 	
-	d <- khop.data
-	if (!is.nan(limit)) {
-		d <- d[d$unique.vertices < limit,]
+	d <- khop.data	
+	if (is.null(x)) {
+		x <- d$unique.vertices
 	}
-	#d <- d[!outlier(d$time, logical=TRUE), ]
+	if (!is.na(limit)) {
+		mask <- x < limit
+		d <- d[mask,]
+		x <- x[mask]
+	}
 	
-	lm(d$time ~ d$unique.vertices + I(d$unique.vertices^2), na.action=na.exclude)
+	switch (n,
+		lm(d$time ~ x, na.action=na.exclude),
+		lm(d$time ~ x + I(x^2), na.action=na.exclude),
+		lm(d$time ~ x + I(x^2) + I(x^3), na.action=na.exclude),
+		lm(d$time ~ x + I(x^2) + I(x^3) + I(x^4), na.action=na.exclude),
+		lm(d$time ~ x + I(x^2) + I(x^3) + I(x^4) + I(x^5), na.action=na.exclude))
 }
 
 
@@ -341,13 +346,17 @@ khop.quadratic.model <- function(khop.data, limit=NaN) {
 # Description:
 #   Apply a polynomial model
 #
-with.khop.polynomial.fit <- function(khop.data, model) {
+khop.polynomial.fit <- function(khop.data, model, x=NULL) {
 	
 	d <- khop.data
+	if (is.null(x)) {
+		x <- d$unique.vertices
+	}
+
 	d$time.fit <- 0
 	
 	for (c in rev(model$coefficients)) {
-		d$time.fit <- (d$time.fit * d$unique.vertices) + c
+		d$time.fit <- (d$time.fit * x) + c
 	}
 	
 	d
@@ -363,46 +372,26 @@ with.khop.polynomial.fit <- function(khop.data, model) {
 # Usage:
 #   data <- with.khop.linear.fit(data)
 #
-with.khop.linear.fit <- function(khop.data, limit=NaN) {
+with.khop.polynomial.fit <- function(khop.data, x=NULL, ...) {
 	
-	l <- khop.linear.model(khop.data, limit)
-	d <- khop.data
-	d$time.fit <- l$coefficients[1] + (l$coefficients[2] * d$unique.vertices)
-	
-	d
+	khop.polynomial.fit(khop.data, khop.polynomial.model(khop.data, x=x, ...), x=x)
 }
 
 
-#
-# Function with.khop.quadratic.fit
-#
-# Description:
-#   Add a linear model fit to k-hop data
-#
-# Usage:
-#   data <- with.khop.quadratic.fit(data)
-#
-with.khop.quadratic.fit <- function(khop.data, limit=NaN) {
-	
-	l <- khop.quadratic.model(khop.data, limit)
-	d <- khop.data
-	d$time.fit <- l$coefficients[1] + (l$coefficients[2] * d$unique.vertices) + (l$coefficients[3] * I(d$unique.vertices^2))
-	
-	d
-}
 
+################################################################################
+##                                                                            ##
+##  Plotting                                                                  ##
+##                                                                            ##
+################################################################################
 
-##
-##
-## Plotting
-##
-##
 
 #
 # Colors for k in k-hop plots
 #
 
-khop.colors <- c("violet", "blue", "green", "orange", "red")
+khop.colors      <- c("violet", "blue", "green", "orange", "red")
+khop.dark.colors <- c("darkviolet", "darkblue", "darkgreen", "darkorange", "darkred")
 
 
 #
@@ -411,28 +400,127 @@ khop.colors <- c("violet", "blue", "green", "orange", "red")
 # Description:
 #   Plot a khops plot
 #
-plot.khops <- function(khop.data, x, y, xlab, ylab, log="", xmax=NaN, ymax=NaN, kmax=NaN, hold=FALSE) {
+# Arguments:
+#   khop.data       the actual data
+#   x               the X values, must be a column or a derivation of a column of khop.data
+#   y               the Y values, must ve a column or a derivation of a column of khop.data
+#   xlab            the label of the X axis
+#   ylab            the label of the Y axis
+#   log             which axes should be log-scale (valid values are "", "x", "y", and "xy")
+#   xmin            the minimum X value
+#   ymin            the minimum Y value
+#   kmin            the minimum K value
+#   xmax            the maximum X value
+#   ymax            the maximum Y value
+#   kmax            the maximum K value
+#   hold            FALSE to create a new plot, TRUE to add to the current plot
+#   legend          whether to draw a legend with the different values of K
+#   dark            whether to use dark colors instead of the default colors
+#   real.hops       FALSE to color points by k, TRUE to color them by real.hops
+#
+plot.khops <- function(khop.data, x, y=NULL, xlab=NA, ylab=NA, log="", xmin=NA, ymin=NA, kmin=NA,
+                       xmax=NA, ymax=NA, kmax=NA, hold=FALSE, legend=TRUE, dark=FALSE, real.hops=FALSE) {
+	
+	
+	# Get the X and Y vectors
+	
+	if (is.null(y)) {
+		y <- khop.data$time
+		ylab <- "Time (ms)"
+	}
+	
+	if (length(x) == 1 && is.character(x)) {
+		if (is.na(xlab)) { xlab = x; }
+		x <- khop.data[[x]]
+	}
+	
+	if (length(y) == 1 && is.character(y)) {
+		if (is.na(ylab)) { ylab = y; }
+		y <- khop.data[[y]]
+	}
+
+	
+	# Filter the data
 	
 	data <- khop.data
 	mask <- !is.nan(x) & !is.nan(y)
-	if (!is.nan(xmax)) {
-		mask <- mask & (x <= xmax)
+	if (!is.na(xmax)) { mask <- mask & (x <= xmax) }
+	if (!is.na(ymax)) { mask <- mask & (y <= ymax) }
+	if (!is.na(kmax)) { mask <- mask & (data$k <= kmax) }
+	if (!is.na(xmin)) { mask <- mask & (x >= xmin) }
+	if (!is.na(ymin)) { mask <- mask & (y >= ymin) }
+	if (!is.na(kmin)) { mask <- mask & (data$k >= kmin) }
+	
+	if (real.hops) {
+		data.k <- data$real.hops
 	}
-	if (!is.nan(ymax)) {
-		mask <- mask & (y <= ymax)
+	else {
+		data.k <- data$k
 	}
-	if (!is.nan(kmax)) {
-		mask <- mask & (data$k <= kmax)
+	k.values <- unique(data.k[mask])
+	
+	
+	# Get the colors
+	
+	colors <- khop.colors
+	if (dark) {
+		colors <- khop.dark.colors
 	}
+	
+	
+	# Create a new plot
 	
 	if (!hold) {
+	
 		plot(x[mask], y[mask], log=log, xlab=xlab, ylab=ylab)
+		
+		
+		# Legend
+		
+		if (legend) {
+		
+			legend("topleft",
+				legend=paste("k =", as.character(k.values)),
+				inset=0.01, pch=c(1),
+				col=colors[k.values])
+		}
+	
+	
+		# Title
+		
+		unique.databse.names <- unique(khop.data[mask,]$database.name)
+		unique.databse.instances <- unique(khop.data[mask,]$database.instance)
+		
+		if (length(unique.databse.names) == 1) {
+			unique.databse.names.string = paste("Database", paste(unique.databse.names, collapse=", "))
+		}
+		else {
+			unique.databse.names.string = paste("Databases", paste(unique.databse.names, collapse=", "))
+		}
+		
+		if (length(unique.databse.instances) == 1) {
+			unique.databse.instances.string = paste("Instance", paste(unique.databse.instances, collapse=", "))
+		}
+		else {
+			unique.databse.instances.string = paste("Instances", paste(unique.databse.instances, collapse=", "))
+		}
+		
+		title("GetKHopNeighbors")
+		
+		if (length(unique.databse.names) == 1) {
+			mtext(paste(unique.databse.names.string, ", ", unique.databse.instances.string, sep=""))
+		}
+		else {
+			mtext(paste(unique.databse.names.string, "; ", unique.databse.instances.string, sep=""))
+		}
 	}
 	
-	k.values <- unique(data$k)
+	
+	# Plot
+	
 	for (k in sort(k.values, decreasing=TRUE)) {
-		m <- mask & (data$k == k)
-		points(x[m], y[m], col=khop.colors[k])
+		m <- mask & (data.k == k)
+		points(x[m], y[m], col=colors[k])
 	}
 }
 
