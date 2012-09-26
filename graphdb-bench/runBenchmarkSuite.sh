@@ -62,7 +62,7 @@ MAVEN_OUTPUT_LEVEL_OPTS=-e
 JRAT=/usr/local/java/shiftone-jrat.jar
 JRAT_OPTS="-Djrat.factory=org.shiftone.jrat.provider.tree.TreeMethodHandlerFactory"
 
-PROFILER4J= /usr/local/java/profiler4j/agent.jar
+PROFILER4J=/usr/local/java/profiler4j/agent.jar
 PROFILER4J_OPTS=
 
 
