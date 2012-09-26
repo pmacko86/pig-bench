@@ -413,13 +413,21 @@ khop.dark.colors <- c("darkviolet", "darkblue", "darkgreen", "darkorange", "dark
 #   xmax            the maximum X value
 #   ymax            the maximum Y value
 #   kmax            the maximum K value
+#   k               set the K value
 #   hold            FALSE to create a new plot, TRUE to add to the current plot
 #   legend          whether to draw a legend with the different values of K
-#   dark            whether to use dark colors instead of the default colors
+#   colors          set the vector of colors to use
 #   real.hops       FALSE to color points by k, TRUE to color them by real.hops
+#   order.k.asc     TRUE to plot small K's first before larger K's
+#   type            the plot type ("p" for points, "l" for lines, etc.)
+#   pch             the points type
+#   plot.title      the plot title
+#   plot.subtitle   the plot subtitle
 #
 plot.khops <- function(khop.data, x, y=NULL, xlab=NA, ylab=NA, log="", xmin=NA, ymin=NA, kmin=NA,
-                       xmax=NA, ymax=NA, kmax=NA, hold=FALSE, legend=TRUE, dark=FALSE, real.hops=FALSE) {
+                       xmax=NA, ymax=NA, kmax=NA, k=NULL, hold=FALSE, legend=TRUE, colors=NULL,
+                       real.hops=FALSE, order.k.asc=FALSE, type="p", pch=1,
+                       plot.title="GetKHopNeighbors", plot.subtitle=NULL) {
 	
 	
 	# Get the X and Y vectors
@@ -444,6 +452,7 @@ plot.khops <- function(khop.data, x, y=NULL, xlab=NA, ylab=NA, log="", xmin=NA, 
 	
 	data <- khop.data
 	mask <- !is.nan(x) & !is.nan(y)
+	if (!is.null( k)) { mask <- mask & (data$k %in% k); }
 	if (!is.na(xmax)) { mask <- mask & (x <= xmax) }
 	if (!is.na(ymax)) { mask <- mask & (y <= ymax) }
 	if (!is.na(kmax)) { mask <- mask & (data$k <= kmax) }
@@ -462,9 +471,12 @@ plot.khops <- function(khop.data, x, y=NULL, xlab=NA, ylab=NA, log="", xmin=NA, 
 	
 	# Get the colors
 	
-	colors <- khop.colors
-	if (dark) {
-		colors <- khop.dark.colors
+	if (is.null(colors)) {
+		colors <- khop.colors
+	}
+	stopifnot(length(colors) >= 1)
+	while (max(k.values) > length(colors)) {
+		colors <- c(colors, colors)
 	}
 	
 	
@@ -472,7 +484,7 @@ plot.khops <- function(khop.data, x, y=NULL, xlab=NA, ylab=NA, log="", xmin=NA, 
 	
 	if (!hold) {
 	
-		plot(x[mask], y[mask], log=log, xlab=xlab, ylab=ylab)
+		plot(x[mask], y[mask], log=log, xlab=xlab, ylab=ylab, type=type, pch=pch)
 		
 		
 		# Legend
@@ -481,46 +493,56 @@ plot.khops <- function(khop.data, x, y=NULL, xlab=NA, ylab=NA, log="", xmin=NA, 
 		
 			legend("topleft",
 				legend=paste("k =", as.character(k.values)),
-				inset=0.01, pch=c(1),
+				inset=0.01, pch=pch,
 				col=colors[k.values])
 		}
 	
 	
 		# Title
 		
-		unique.databse.names <- unique(khop.data[mask,]$database.name)
-		unique.databse.instances <- unique(khop.data[mask,]$database.instance)
-		
-		if (length(unique.databse.names) == 1) {
-			unique.databse.names.string = paste("Database", paste(unique.databse.names, collapse=", "))
-		}
-		else {
-			unique.databse.names.string = paste("Databases", paste(unique.databse.names, collapse=", "))
-		}
-		
-		if (length(unique.databse.instances) == 1) {
-			unique.databse.instances.string = paste("Instance", paste(unique.databse.instances, collapse=", "))
-		}
-		else {
-			unique.databse.instances.string = paste("Instances", paste(unique.databse.instances, collapse=", "))
-		}
-		
-		title("GetKHopNeighbors")
-		
-		if (length(unique.databse.names) == 1) {
-			mtext(paste(unique.databse.names.string, ", ", unique.databse.instances.string, sep=""))
-		}
-		else {
-			mtext(paste(unique.databse.names.string, "; ", unique.databse.instances.string, sep=""))
+		if (!is.null(plot.title)) {
+			
+			title(plot.title)
+			
+			if (!is.null(plot.subtitle)) {
+			
+				mtext(plot.subtitle)
+			}
+			else {
+				
+				unique.databse.names <- unique(khop.data[mask,]$database.name)
+				unique.databse.instances <- unique(khop.data[mask,]$database.instance)
+				
+				if (length(unique.databse.names) == 1) {
+					unique.databse.names.string = paste("Database", paste(unique.databse.names, collapse=", "))
+				}
+				else {
+					unique.databse.names.string = paste("Databases", paste(unique.databse.names, collapse=", "))
+				}
+				
+				if (length(unique.databse.instances) == 1) {
+					unique.databse.instances.string = paste("Instance", paste(unique.databse.instances, collapse=", "))
+				}
+				else {
+					unique.databse.instances.string = paste("Instances", paste(unique.databse.instances, collapse=", "))
+				}
+				
+				if (length(unique.databse.names) == 1) {
+					mtext(paste(unique.databse.names.string, ", ", unique.databse.instances.string, sep=""))
+				}
+				else {
+					mtext(paste(unique.databse.names.string, "; ", unique.databse.instances.string, sep=""))
+				}
+			}
 		}
 	}
 	
 	
 	# Plot
 	
-	for (k in sort(k.values, decreasing=TRUE)) {
-		m <- mask & (data.k == k)
-		points(x[m], y[m], col=colors[k])
+	for (my.k in sort(k.values, decreasing=!order.k.asc)) {
+		m <- mask & (data.k == my.k)
+		points(x[m], y[m], col=colors[my.k], type=type, pch=pch)
 	}
 }
 
