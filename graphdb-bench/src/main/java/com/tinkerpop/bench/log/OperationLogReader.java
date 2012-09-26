@@ -41,7 +41,6 @@ public class OperationLogReader implements Iterable<OperationLogEntry> {
 				this.cachedIterable = cache.get(cacheKey);
 			}
 			if (this.cachedIterable == null) {
-				System.err.println("miss " + logFile);
 				try {
 					synchronized (cache) {
 						Iterator<OperationLogEntry> i = new OperationLogEntryIterator(this.logFile);
@@ -54,9 +53,6 @@ public class OperationLogReader implements Iterable<OperationLogEntry> {
 					throw new RuntimeException(
 							"Could not create OperationLogEntryIterator: Cannot open '" + logFile + "'", e.getCause());
 				}
-			}
-			else {
-				System.err.println("HIT");
 			}
 		}
 		else {
