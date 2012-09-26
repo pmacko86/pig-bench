@@ -352,6 +352,8 @@ public class ShowOperationRunTimes extends HttpServlet {
 	public static void printRunTimesDetails(PrintWriter writer, Map<String, Collection<Job>> operationsToJobs,
 			String format, HttpServletResponse response, String groupBy) {
 		
+		long start = System.currentTimeMillis();
+		
 		
 		// Get the run time for each job
 		
@@ -368,7 +370,7 @@ public class ShowOperationRunTimes extends HttpServlet {
 			
 			for (Job job : operationsToJobs.get(operationName)) {
 				
-				OperationLogReader reader = new OperationLogReader(job.getLogFile());
+				OperationLogReader reader = new OperationLogReader(job.getLogFile(), operationName);
 				for (OperationLogEntry e : reader) {
 					if (e.getName().equals(operationName)) {
 						operationsJobsRunTimes.add(new Triple<String, Job, OperationLogEntry>(operationName, job, e));
@@ -526,6 +528,12 @@ public class ShowOperationRunTimes extends HttpServlet {
 			}
 	        
 	        writer.println("Invalid format.");
-		}		
+		}
+		
+		
+		long end = System.currentTimeMillis();
+		@SuppressWarnings("unused")
+		long time = end - start;
+		//System.err.println("printRunTimesDetails: " + (time / 1000.0) + " seconds");
 	}
 }
