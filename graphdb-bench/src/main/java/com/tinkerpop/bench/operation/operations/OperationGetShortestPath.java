@@ -96,8 +96,8 @@ public class OperationGetShortestPath extends Operation {
 					u = prev.get(u);
 				}
 				
-				// format path_len:get_nbrs:get_vertex
-				setResult(result.size() + ":" + get_nbrs + ":" + get_vertex);
+				// format path_len:get_nbrs:get_vertex:unique_vertices
+				setResult(result.size() + ":" + get_nbrs + ":" + get_vertex + ":" + dist.size());
 			}
 		} catch (Exception e) {
 			throw e;

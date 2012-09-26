@@ -302,6 +302,61 @@ load.benchmark.results.all.neighbors <- function(database.name, database.instanc
 }
 
 
+#
+# Function load.benchmark.results.shortest.path
+#
+# Description:
+#   Load GraphDB benchmark results for OperationGetShortestPath
+#
+# Usage:
+#   load.benchmark.results.shortest.path(database.name, database.instance)
+#
+load.benchmark.results.shortest.path <- function(database.name, database.instance, keep.outliers=FALSE, property=FALSE) {
+	
+	# Isolate and parse OperationGetShortestPath or OperationGetShortestPathProperty
+	
+	if (property) {
+		data <- load.benchmark.results(database.name, database.instance, "shortest-path-prop")
+		data <- data[data$name == "OperationGetShortestPathProperty", ]
+	}
+	else {
+		data <- load.benchmark.results(database.name, database.instance, "shortest-path")
+		data <- data[data$name == "OperationGetShortestPath", ]
+	}
+	data$directed <- FALSE	
+	
+	
+	# Parse the statistics
+	
+	data$result            <- lapply(strsplit(as.character(data$result), ":"), as.numeric)
+	data$path.length       <- as.numeric(lapply(data$result, function(x) x[1]))
+	data$get.vertices      <- as.numeric(lapply(data$result, function(x) x[2]))
+	data$get.vertices.next <- as.numeric(lapply(data$result, function(x) x[3]))
+	
+	data$retrieved.vertices      <- data$get.vertices.next
+	data$retrieved.neighborhoods <- data$get.vertices
+	
+	if (property) {
+		# TODO
+	}
+	else {
+		if (length(data$result[0]) > 3) {
+			data$unique.vertices <- as.numeric(lapply(data$result, function(x) x[4]))
+		}
+	}
+	
+	
+	# Remove outliers
+	
+	if (!keep.outliers) {
+		outliers <- outlier(data$time)
+		data <- data[!(data$time %in% outliers), ]
+	}
+	
+	data
+}
+
+
 
 ################################################################################
 ##                                                                            ##
@@ -390,8 +445,205 @@ with.khop.polynomial.fit <- function(khop.data, x=NULL, ...) {
 # Colors for k in k-hop plots
 #
 
-khop.colors      <- c("violet", "blue", "green", "orange", "red")
-khop.dark.colors <- c("darkviolet", "darkblue", "darkgreen", "darkorange", "darkred")
+colors.rainbow5 <- c("violet", "blue", "green", "orange", "red")
+
+
+#
+# Function benchmark.results.generate.plot.default.subtitle
+#
+# Description:
+#   Generate a default plot subtitle
+#
+benchmark.results.generate.plot.default.subtitle <- function(data) {
+	unique.databse.names <- unique(data$database.name)
+	unique.databse.instances <- unique(data$database.instance)
+	
+	if (length(unique.databse.names) == 1) {
+		unique.databse.names.string = paste("Database", paste(unique.databse.names, collapse=", "))
+	}
+	else {
+		unique.databse.names.string = paste("Databases", paste(unique.databse.names, collapse=", "))
+	}
+	
+	if (length(unique.databse.instances) == 1) {
+		unique.databse.instances.string = paste("Instance", paste(unique.databse.instances, collapse=", "))
+	}
+	else {
+		unique.databse.instances.string = paste("Instances", paste(unique.databse.instances, collapse=", "))
+	}
+	
+	if (length(unique.databse.names) == 1) {
+		paste(unique.databse.names.string, ", ", unique.databse.instances.string, sep="")
+	}
+	else {
+		paste(unique.databse.names.string, "; ", unique.databse.instances.string, sep="")
+	}
+}
+
+
+#
+# Function plot.results
+#
+# Description:
+#   Plot the results
+#
+# Arguments:
+#   data                the actual data
+#   x                   the X values, must be a column or a derivation of a column of khop.data
+#   y                   the Y values, must ve a column or a derivation of a column of khop.data
+#   xlab                the label of the X axis
+#   ylab                the label of the Y axis
+#   log                 which axes should be log-scale (valid values are "", "x", "y", and "xy")
+#   xmin                the minimum X value
+#   ymin                the minimum Y value
+#   xmax                the maximum X value
+#   ymax                the maximum Y value
+#   hold                FALSE to create a new plot, TRUE to add to the current plot
+#   legend              whether to draw a legend with the different category values
+#   legend.prefix       prefix for the categories in the legend
+#   category.colors     set the vector of colors to use
+#   category.column     the column name that specifies the category
+#   category.stable     TRUE if the categories are small integers and their color associations need to be stable
+#   order.asc           TRUE to draw the categories in the ascending order
+#   type                the plot type ("p" for points, "l" for lines, etc.)
+#   pch                 the points type
+#   plot.title          the plot title
+#   plot.subtitle       the plot subtitle
+#
+plot.results <- function(data, x, y=NULL, xlab=NA, ylab=NA, log="", xmin=NA, ymin=NA,
+                         xmax=NA, ymax=NA,hold=FALSE, legend=TRUE, legend.prefix="", category.colors=NULL,
+                         category.column=NULL, category.stable=FALSE, order.asc=TRUE,
+                         type="p", pch=1, plot.title=NULL, plot.subtitle=NULL) {
+	
+	
+	# Get the X and Y vectors
+	
+	if (is.null(y)) {
+		y <- data$time
+		ylab <- "Time (ms)"
+	}
+	
+	if (length(x) == 1 && is.character(x)) {
+		if (is.na(xlab)) { xlab = x; }
+		x <- data[[x]]
+	}
+	
+	if (length(y) == 1 && is.character(y)) {
+		if (is.na(ylab)) { ylab = y; }
+		y <- data[[y]]
+	}
+
+	
+	# Filter the data
+	
+	mask <- !is.nan(x) & !is.nan(y)
+	if (!is.na(xmax)) { mask <- mask & (x <= xmax) }
+	if (!is.na(ymax)) { mask <- mask & (y <= ymax) }
+	if (!is.na(xmin)) { mask <- mask & (x >= xmin) }
+	if (!is.na(ymin)) { mask <- mask & (y >= ymin) }
+	
+	
+	# Categories
+	
+	if (is.null(category.column)) {
+		categories <- c(NULL)
+	}
+	else {
+		categories <- sort(unique(data[mask,][[category.column]]))
+	}
+	
+	
+	# Get the colors
+	
+	colors <- category.colors
+	if (is.null(colors)) {
+		if (is.null(category.column)) {
+			colors <- "black"
+		}
+		else {
+			colors <- colors.rainbow5
+		}
+	}
+	
+	stopifnot(length(colors) >= 1)
+	
+	if (!is.null(category.column)) {
+		if (category.stable) {
+			need.colors <- max(categories)
+		}
+		else {
+			need.colors <- length(categories)
+		}
+		while (need.colors > length(colors)) {
+			colors <- c(colors, colors)
+		}
+	}
+
+	
+	# Create a new plot
+	
+	if (!hold) {
+	
+		plot(x[mask], y[mask], log=log, xlab=xlab, ylab=ylab, type=type, pch=pch)
+		
+		
+		# Legend
+		
+		if (legend && !is.null(category.column)) {
+			if (category.stable) {
+				legend.category.colors <- colors[categories]
+			}
+			else {
+				legend.category.colors <- colors
+			}
+			legend("topleft",
+				legend=paste(legend.prefix, as.character(categories), sep=""),
+				inset=0.01, pch=pch,
+				col=legend.category.colors)
+		}
+	
+	
+		# Title
+		
+		if (is.null(plot.title)) {
+			unique.names <- sort(unique(sub("-.*$", "", sub("^Operation", "", unique(data[mask,]$name)))))
+			plot.title <- paste(unique.names, collapse=", ")
+		}
+		
+		title(plot.title)
+		if (!is.null(plot.subtitle)) {
+			mtext(plot.subtitle)
+		}
+		else {
+			mtext(benchmark.results.generate.plot.default.subtitle(data[mask,]))
+		}
+	}
+	
+	
+	# Plot
+	
+	categories.in.drawing.order <- categories
+	if (!is.null(category.column)) {
+		categories.in.drawing.order <- sort(categories, decreasing=!order.asc)
+	}
+	
+	for (category in categories.in.drawing.order) {
+		if (is.null(category.column)) {
+			m <- mask
+			category.color <- colors[1]
+		}
+		else {
+			m <- mask & (data[[category.column]] == category)
+			if (category.stable) {
+				category.color <- colors[category]
+			}
+			else {
+				category.color <- colors[which(categories == category)]
+			}
+		}
+		points(x[m], y[m], col=category.color, type=type, pch=pch)
+	}
+}
 
 
 #
@@ -404,146 +656,41 @@ khop.dark.colors <- c("darkviolet", "darkblue", "darkgreen", "darkorange", "dark
 #   khop.data       the actual data
 #   x               the X values, must be a column or a derivation of a column of khop.data
 #   y               the Y values, must ve a column or a derivation of a column of khop.data
-#   xlab            the label of the X axis
-#   ylab            the label of the Y axis
-#   log             which axes should be log-scale (valid values are "", "x", "y", and "xy")
-#   xmin            the minimum X value
-#   ymin            the minimum Y value
 #   kmin            the minimum K value
-#   xmax            the maximum X value
-#   ymax            the maximum Y value
 #   kmax            the maximum K value
 #   k               set the K value
-#   hold            FALSE to create a new plot, TRUE to add to the current plot
-#   legend          whether to draw a legend with the different values of K
-#   colors          set the vector of colors to use
 #   real.hops       FALSE to color points by k, TRUE to color them by real.hops
-#   order.k.asc     TRUE to plot small K's first before larger K's
-#   type            the plot type ("p" for points, "l" for lines, etc.)
-#   pch             the points type
-#   plot.title      the plot title
-#   plot.subtitle   the plot subtitle
+#   colors          set the vector of colors to use for the various values of K
+#   order.k.asc     TRUE to draw the various datasets by the increasing value of K
+#   ...             arguments to plot.results
 #
-plot.khops <- function(khop.data, x, y=NULL, xlab=NA, ylab=NA, log="", xmin=NA, ymin=NA, kmin=NA,
-                       xmax=NA, ymax=NA, kmax=NA, k=NULL, hold=FALSE, legend=TRUE, colors=NULL,
-                       real.hops=FALSE, order.k.asc=FALSE, type="p", pch=1,
-                       plot.title="GetKHopNeighbors", plot.subtitle=NULL) {
-	
-	
-	# Get the X and Y vectors
-	
-	if (is.null(y)) {
-		y <- khop.data$time
-		ylab <- "Time (ms)"
-	}
-	
-	if (length(x) == 1 && is.character(x)) {
-		if (is.na(xlab)) { xlab = x; }
-		x <- khop.data[[x]]
-	}
-	
-	if (length(y) == 1 && is.character(y)) {
-		if (is.na(ylab)) { ylab = y; }
-		y <- khop.data[[y]]
-	}
-
+plot.khops <- function(khop.data, x, y=NULL, kmin=NA, kmax=NA, k=NULL, real.hops=FALSE,
+                       colors=NULL, order.k.asc=FALSE, ...) {
 	
 	# Filter the data
 	
 	data <- khop.data
-	mask <- !is.nan(x) & !is.nan(y)
-	if (!is.null( k)) { mask <- mask & (data$k %in% k); }
-	if (!is.na(xmax)) { mask <- mask & (x <= xmax) }
-	if (!is.na(ymax)) { mask <- mask & (y <= ymax) }
-	if (!is.na(kmax)) { mask <- mask & (data$k <= kmax) }
-	if (!is.na(xmin)) { mask <- mask & (x >= xmin) }
-	if (!is.na(ymin)) { mask <- mask & (y >= ymin) }
-	if (!is.na(kmin)) { mask <- mask & (data$k >= kmin) }
 	
 	if (real.hops) {
 		data.k <- data$real.hops
+		k.column <- "real.hops"
 	}
 	else {
 		data.k <- data$k
-	}
-	k.values <- unique(data.k[mask])
-	
-	
-	# Get the colors
-	
-	if (is.null(colors)) {
-		colors <- khop.colors
-	}
-	stopifnot(length(colors) >= 1)
-	while (max(k.values) > length(colors)) {
-		colors <- c(colors, colors)
+		k.column <- "k"
 	}
 	
-	
-	# Create a new plot
-	
-	if (!hold) {
-	
-		plot(x[mask], y[mask], log=log, xlab=xlab, ylab=ylab, type=type, pch=pch)
-		
-		
-		# Legend
-		
-		if (legend) {
-		
-			legend("topleft",
-				legend=paste("k =", as.character(k.values)),
-				inset=0.01, pch=pch,
-				col=colors[k.values])
-		}
-	
-	
-		# Title
-		
-		if (!is.null(plot.title)) {
-			
-			title(plot.title)
-			
-			if (!is.null(plot.subtitle)) {
-			
-				mtext(plot.subtitle)
-			}
-			else {
-				
-				unique.databse.names <- unique(khop.data[mask,]$database.name)
-				unique.databse.instances <- unique(khop.data[mask,]$database.instance)
-				
-				if (length(unique.databse.names) == 1) {
-					unique.databse.names.string = paste("Database", paste(unique.databse.names, collapse=", "))
-				}
-				else {
-					unique.databse.names.string = paste("Databases", paste(unique.databse.names, collapse=", "))
-				}
-				
-				if (length(unique.databse.instances) == 1) {
-					unique.databse.instances.string = paste("Instance", paste(unique.databse.instances, collapse=", "))
-				}
-				else {
-					unique.databse.instances.string = paste("Instances", paste(unique.databse.instances, collapse=", "))
-				}
-				
-				if (length(unique.databse.names) == 1) {
-					mtext(paste(unique.databse.names.string, ", ", unique.databse.instances.string, sep=""))
-				}
-				else {
-					mtext(paste(unique.databse.names.string, "; ", unique.databse.instances.string, sep=""))
-				}
-			}
-		}
-	}
+	mask <- !is.nan(x) & !is.nan(y)
+	if (!is.null( k)) { mask <- mask & (data$k %in% k); }
+	if (!is.na(kmax)) { mask <- mask & (data$k <= kmax) }
+	if (!is.na(kmin)) { mask <- mask & (data$k >= kmin) }
 	
 	
 	# Plot
 	
-	for (my.k in sort(k.values, decreasing=!order.k.asc)) {
-		m <- mask & (data.k == my.k)
-		points(x[m], y[m], col=colors[my.k], type=type, pch=pch)
-	}
+	plot.results(data, x, y=y, legend.prefix="k = ",
+	             category.colors=colors, category.stable=TRUE, category.column=k.column,
+	             order.asc=order.k.asc, ...)
 }
 
 
@@ -555,7 +702,7 @@ plot.khops <- function(khop.data, x, y=NULL, xlab=NA, ylab=NA, log="", xmin=NA, 
 #
 plot.khops.time.vs.unique.vertices <- function(khop.data, ...) {
 
-	plot.khops(khop.data, khop.data$unique.vertices, khop.data$time, "Unique Vertices", "Time (ms)", ...)
+	plot.khops(khop.data, khop.data$unique.vertices, xlab="Unique Vertices", ...)
 }
 
 
@@ -567,7 +714,7 @@ plot.khops.time.vs.unique.vertices <- function(khop.data, ...) {
 #
 plot.khops.time.vs.retrieved.vertices <- function(khop.data, ...) {
 	
-	plot.khops(khop.data, khop.data$get.vertices.next, khop.data$time, "Retrieved Vertices", "Time (ms)",...)
+	plot.khops(khop.data, khop.data$get.vertices.next, xlab="Retrieved Vertices", ...)
 }
 
 
@@ -579,5 +726,5 @@ plot.khops.time.vs.retrieved.vertices <- function(khop.data, ...) {
 #
 plot.khops.time.vs.retrieved.neighborhoods <- function(khop.data, ...) {
 	
-	plot.khops(khop.data, khop.data$get.vertices, khop.data$time, "Retrieved Neighborhoods", "Time (ms)", ...)
+	plot.khops(khop.data, khop.data$get.vertices, xlab="Retrieved Neighborhoods", ...)
 }
