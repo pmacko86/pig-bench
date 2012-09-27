@@ -34,6 +34,7 @@ import com.tinkerpop.bench.util.FileUtils;
 import com.tinkerpop.bench.util.GraphUtils;
 import com.tinkerpop.bench.util.LogUtils;
 import com.tinkerpop.bench.util.MathUtils;
+import com.tinkerpop.bench.util.OutputUtils;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.extensions.impls.sql.SqlGraph;
@@ -126,6 +127,7 @@ public class BenchmarkMicro extends Benchmark {
 		System.err.println("  --k-hops K              Set the number of k-hops");
 		System.err.println("  --k-hops K1:K2          Set a range of k-hops");
 		System.err.println("  --op-count N            Set the number of operations");
+		System.err.println("  --update-directly       Run non-load updates directly, not on a temp. clone");
 		System.err.println("  --use-stored-procedures Enable the use of stored procedures");
 		System.err.println("  --warmup-ingest FILE    Set a different file for ingest during " +
 										"the warmup");
@@ -236,6 +238,7 @@ public class BenchmarkMicro extends Benchmark {
 		parser.accepts("ingest-as-undirected");
 		parser.accepts("k-hops").withRequiredArg().ofType(String.class);
 		parser.accepts("op-count").withRequiredArg().ofType(Integer.class);
+		parser.accepts("update-directly");
 		parser.accepts("use-stored-procedures");
 		parser.accepts("warmup-op-count").withRequiredArg().ofType(Integer.class);
 		parser.accepts("warmup-ingest").withRequiredArg().ofType(String.class);
@@ -329,6 +332,11 @@ public class BenchmarkMicro extends Benchmark {
 			warmup = false;
 		}
 		
+		boolean updateDirectly = false;
+		if (options.has("update-directly")) {
+			updateDirectly = true;
+		}
+		
 		if (options.has("use-stored-procedures")) {
 			GlobalConfig.useStoredProcedures = true;
 		}
@@ -420,6 +428,56 @@ public class BenchmarkMicro extends Benchmark {
 		
 		
 		/*
+		 * Get the list of workloads
+		 */
+		
+		LinkedList<Workload> workloads = new LinkedList<Workload>();
+
+		@SuppressWarnings("unused")
+		boolean hasUpdates = false;
+		boolean hasLoadUpdates = false;
+		boolean hasNonLoadUpdates = false;
+		boolean hasReadOnly = false;
+
+		for (Workload w : Workload.WORKLOADS.values()) {
+			if (options.has(w.getShortName())) {
+				
+				workloads.add(w);
+				
+				if (w.isUpdate()) {
+					hasUpdates = true;
+					if (w.getUpdateCategory() == Workload.UpdateCategory.LOAD_UPDATE) hasLoadUpdates = true;
+					if (w.getUpdateCategory() != Workload.UpdateCategory.LOAD_UPDATE) hasNonLoadUpdates = true;
+				}
+				else {
+					hasReadOnly = true;
+				}
+			}
+		}
+		
+		if (hasLoadUpdates) {
+			
+			if (hasNonLoadUpdates || hasReadOnly) {
+				ConsoleUtils.error("Cannot combine load operations (such as --ingest, --generate) with other operations");
+				return 1;
+			}
+			
+			if (updateDirectly) {
+				ConsoleUtils.warn("Argument --update-directly is implicit with load operations such as --ingest or --generate");
+			}
+			
+			updateDirectly = true;
+		}
+		else {
+			
+			if (updateDirectly && !hasNonLoadUpdates) {
+				ConsoleUtils.error("The --update-directly option can be used only if there is at least one update workload");
+				return 1;
+			}
+		}
+
+		
+		/*
 		 * Get the name of the database instance
 		 */
 		
@@ -488,6 +546,15 @@ public class BenchmarkMicro extends Benchmark {
 		
 		String warmupDbDir = dbPrefix + "warmup";
 		String dbDir = dbPrefix + "db";
+		
+		boolean duplicateDatabaseInstance = !updateDirectly && hasNonLoadUpdates;
+		String warmupDbDirSource = warmupDbDir;
+		String dbDirSource = dbDir;
+				
+		if (duplicateDatabaseInstance) {
+			warmupDbDir += "-clone";
+			dbDir += "-clone";
+		}
 
 		
 		/*
@@ -730,18 +797,6 @@ public class BenchmarkMicro extends Benchmark {
 				}
 			}
 		}
-		
-		
-		/*
-		 * Get the list of workloads
-		 */
-		
-		LinkedList<Workload> workloads = new LinkedList<Workload>(); 
-		for (Workload w : Workload.WORKLOADS.values()) {
-			if (options.has(w.getShortName())) {
-				workloads.add(w);
-			}
-		}
 
 		
 		/*
@@ -938,14 +993,33 @@ public class BenchmarkMicro extends Benchmark {
 		
 		
 		/*
-		 * Run the benchmark
+		 * Run the warmup benchmark
 		 */
 		
 		LinkedHashMap<String, String> resultFiles = new LinkedHashMap<String, String>();
 		
 		if (warmup) {
 			ConsoleUtils.sectionHeader("Warmup Run");
+			
+			if (duplicateDatabaseInstance) {
+				System.out.print("Creating a temporary clone: ");
+				long start = System.currentTimeMillis();
+				try {
+					dbEngine.duplicateDatabase(warmupDbDirSource, warmupDbDir, warmupDbConfig);
+				}
+				catch (Throwable t) {
+					long tm = System.currentTimeMillis() - start;
+					System.out.println("failed [" + OutputUtils.formatTimeMS(tm) + "]");
+					ConsoleUtils.error(t.getMessage());
+					t.printStackTrace(System.err);
+					return 1;
+				}
+				long t = System.currentTimeMillis() - start;
+				System.out.println("done [" + OutputUtils.formatTimeMS(t) + "]");
+			}
+			
 			graphDescriptor = new GraphDescriptor(dbEngine, warmupDbDir, warmupDbConfig);
+			
 			try {
 				warmupBenchmark.runBenchmark(graphDescriptor, logs ? warmupLogFile : null, numThreads);
 			}
@@ -961,8 +1035,32 @@ public class BenchmarkMicro extends Benchmark {
 			Cache.dropAll();
 		}
 		
+		
+		/*
+		 * Run the benchmark
+		 */
+		
 		ConsoleUtils.sectionHeader("Benchmark Run");
+		
+		if (duplicateDatabaseInstance) {
+			System.out.print("Creating a temporary clone: ");
+			long start = System.currentTimeMillis();
+			try {
+				dbEngine.duplicateDatabase(dbDirSource, dbDir, warmupDbConfig);
+			}
+			catch (Throwable t) {
+				long tm = System.currentTimeMillis() - start;
+				System.out.println("failed [" + OutputUtils.formatTimeMS(tm) + "]");
+				ConsoleUtils.error(t.getMessage());
+				t.printStackTrace(System.err);
+				return 1;
+			}
+			long t = System.currentTimeMillis() - start;
+			System.out.println("done [" + OutputUtils.formatTimeMS(t) + "]");
+		}
+		
 		graphDescriptor = new GraphDescriptor(dbEngine, dbDir, dbConfig);
+		
 		BenchResults results = null;
 		try {
 			results = benchmark.runBenchmark(graphDescriptor, logs ? logFile : null, numThreads);

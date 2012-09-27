@@ -100,4 +100,42 @@ public class FileUtils {
 		
 		return adjusted;
 	}
+
+
+	/**
+	 * Recursively delete the directory if it exists
+	 * 
+	 * @param dir the directory
+	 * @return true if the directory existed, false if not
+	 */
+	public static boolean deleteDir(File dir) {
+		
+		// This function was migrated here from LogUtils
+	
+		if (dir.exists()) {
+			for (File file : dir.listFiles()) {
+				if (file.isDirectory())
+					deleteDir(file.getAbsolutePath());
+				else
+					file.delete();
+			}
+			dir.delete();
+			
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+
+
+	/**
+	 * Recursively delete the directory if it exists
+	 * 
+	 * @param dirStr the directory
+	 * @return true if the directory existed, false if not
+	 */
+	public static boolean deleteDir(String dirStr) {
+		return deleteDir(new File(dirStr));
+	}
 }

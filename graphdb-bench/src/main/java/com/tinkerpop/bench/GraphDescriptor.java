@@ -3,7 +3,7 @@ package com.tinkerpop.bench;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.tinkerpop.bench.util.LogUtils;
+import com.tinkerpop.bench.util.FileUtils;
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.extensions.impls.sql.SqlGraph;
 
@@ -23,17 +23,26 @@ public class GraphDescriptor {
 	private boolean threadLocal = GlobalConfig.oneDbConnectionPerThread;
 
 	public GraphDescriptor(DatabaseEngine graphEngine) {
-		this(graphEngine, null, null);
+		this(graphEngine, null, null, false);
 	}
 
 	public GraphDescriptor(DatabaseEngine graphEngine, String graphDir, Map<String, String> configuration) {
+		this(graphEngine, graphDir, configuration, false);
+	}
+
+	public GraphDescriptor(DatabaseEngine graphEngine, String graphDir, Map<String, String> configuration, boolean isNew) {
 		this.graphEngine = graphEngine;
 		this.graphType = graphEngine.getBlueprintsClass();
 		this.graphDir = graphDir;
 		this.configuration.putAll(configuration);
 		
 		if (CPL.isAttached()) {
-			cplObject = CPLObject.lookupOrCreate(Bench.ORIGINATOR, getCPLObjectName(), Bench.TYPE_DB);
+			if (isNew) {
+				cplObject = CPLObject.create(Bench.ORIGINATOR, getCPLObjectName(), Bench.TYPE_DB);
+			}
+			else {
+				cplObject = CPLObject.lookupOrCreate(Bench.ORIGINATOR, getCPLObjectName(), Bench.TYPE_DB);
+			}
 			if (cplObject.getVersion() == 0) initializeCPLObject();
 		}
 	}
@@ -121,7 +130,7 @@ public class GraphDescriptor {
 			shutdownGraph();
 			
 			if (getDatabaseEngine().isPersistent()) {
-				deleteDir(graphDir);
+				FileUtils.deleteDir(graphDir);
 			}
 		}
 		
@@ -133,10 +142,6 @@ public class GraphDescriptor {
 		}
 		
 		recreateCPLObject();
-	}
-
-	private void deleteDir(String pathStr) {
-		LogUtils.deleteDir(pathStr);
 	}
 	
 	protected String getCPLObjectName() {

@@ -141,6 +141,7 @@ public class Job {
 		boolean useStoredProcedures = WebUtils.getBooleanParameter(request, "use_stored_procedures", false);
 		boolean noWarmup = WebUtils.getBooleanParameter(request, "no_warmup", false);
 		boolean noCachePollution = WebUtils.getBooleanParameter(request, "no_cache_pollution", false);
+		boolean updateDirectly = WebUtils.getBooleanParameter(request, "update_directly", false);
 		String s_javaHeapSize = WebUtils.getStringParameter(request, "java_heap_size");
 		
 		boolean ingestAsUndirected = WebUtils.getBooleanParameter(request, "ingest_as_undirected", false);
@@ -155,15 +156,28 @@ public class Job {
 		// Get the workloads
 		
 		String[] a_workloads = WebUtils.getStringParameterValues(request, "workloads");
+		HashMap<String, Workload> workloads = new HashMap<String, Workload>();
 		
 		boolean usesOpCount = false;
-		HashMap<String, Workload> workloads = new HashMap<String, Workload>();
+		boolean hasUpdates = false;
+		@SuppressWarnings("unused")
+		boolean hasLoadUpdates = false;
+		boolean hasNonLoadUpdates = false;
+				
 		if (a_workloads != null) {
 			for (String w : a_workloads) {
+				
 				Workload workload = Workload.WORKLOADS.get(w);
 				if (workload == null) throw new IllegalArgumentException("Unknown workload: " + w);
+				
 				workloads.put(w, workload);
+				
 				if (workload.isUsingOpCount()) usesOpCount = true;
+				if (workload.isUpdate()) {
+					hasUpdates = true;
+					if (workload.getUpdateCategory() == Workload.UpdateCategory.LOAD_UPDATE) hasLoadUpdates = true;
+					if (workload.getUpdateCategory() != Workload.UpdateCategory.LOAD_UPDATE) hasNonLoadUpdates = true;
+				}
 			}
 		}
 
@@ -204,6 +218,10 @@ public class Job {
 		
 		if (useStoredProcedures) {
 			arguments.add("--use-stored-procedures");
+		}
+		
+		if (updateDirectly && hasUpdates && hasNonLoadUpdates) {
+			arguments.add("--update-directly");
 		}
 		
 		if (a_workloads != null) {

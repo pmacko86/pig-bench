@@ -177,6 +177,12 @@
 						value="true"/>
 				Disable the warmup run before the benchmark run
 			</label>
+		
+			<label class="checkbox">
+				<input class="checkbox" type="checkbox" name="update_directly"
+						value="true"/>
+				Run non-load update operations directly on the database instead of a temporary clone 
+			</label>
 			
 			
 			<p class="middle">Workloads (select one or more):</p>
@@ -186,6 +192,21 @@
 					workloads.put(w.getLongName().toLowerCase(), w);
 				}
 				%>
+					<p class="middle_inner">Graph Loading and Generation</p>
+				<%
+				for (Workload w : workloads.values()) {
+					if (w.getUpdateCategory() != UpdateCategory.LOAD_UPDATE) continue;
+					%>
+						<label class="checkbox">
+							<input class="checkbox" type="checkbox" name="workloads"
+									onchange="set_div_visibility()"
+									value="<%= w.getShortName() %>"/>
+							<%= w.getLongName() %>
+						</label>
+					<%
+				}
+				%>
+					<div style="height:10px"></div>
 					<p class="middle_inner">Read-Only Workloads</p>
 				<%
 				for (Workload w : workloads.values()) {

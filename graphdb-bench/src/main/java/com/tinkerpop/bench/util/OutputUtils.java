@@ -2,11 +2,12 @@ package com.tinkerpop.bench.util;
 
 
 /**
- * A collection of miscellaneous utilities for (file) output
+ * A collection of miscellaneous utilities for file and console output
  * 
  * @author Peter Macko
  */
 public class OutputUtils {
+	
 	
 	/**
 	 * Returns the string where all non-ascii and <, &, > are encoded as numeric entities. I.e. "&lt;A &amp; B &gt;"
@@ -48,5 +49,18 @@ public class OutputUtils {
 	    }
 
 	    return stringBuffer.toString();
+	}
+	
+	
+	/**
+	 * Format time in ms
+	 * 
+	 * @param t the time in milliseconds
+	 * @return a formatted string
+	 */
+	public static String formatTimeMS(long t) {
+		double s = t / 1000.0;
+		int m = (int) (s / 60); s -= m * 60;
+		return String.format("%d minute%s %.3f seconds", m, m == 1 ? "" : "s", s);
 	}
 }

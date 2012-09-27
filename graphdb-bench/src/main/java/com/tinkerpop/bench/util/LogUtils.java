@@ -43,20 +43,6 @@ public class LogUtils {
 	// (new File(pathStr)).mkdirs();
 	// }
 
-	public static void deleteDir(String dirStr) {
-		File dir = new File(dirStr);
-
-		if (dir.exists()) {
-			for (File file : dir.listFiles()) {
-				if (file.isDirectory())
-					deleteDir(file.getAbsolutePath());
-				else
-					file.delete();
-			}
-			dir.delete();
-		}
-	}
-
 	public static String pathToName(String filename) {
 		int startName = (filename.lastIndexOf(File.separator) == -1) ? -1
 				: filename.lastIndexOf(File.separator);

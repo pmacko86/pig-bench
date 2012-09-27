@@ -23,6 +23,7 @@ import com.tinkerpop.bench.operationFactory.OperationFactoryGeneric;
 import com.tinkerpop.bench.operationFactory.OperationFactoryLog;
 import com.tinkerpop.bench.util.ConsoleUtils;
 import com.tinkerpop.bench.util.LogUtils;
+import com.tinkerpop.bench.util.OutputUtils;
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.Vertex;
@@ -421,10 +422,7 @@ public class BenchRunner {
 							}
 							if (main) {
 								long t = System.currentTimeMillis() - pollutionStart;
-								double s = t / 1000.0;
-								int m = (int) (s / 60); s -= m * 60;
-								System.out.printf(" [%d minute%s %.3f seconds]", m, m == 1 ? "" : "s", s);
-								System.out.println();
+								System.out.println(" [" + OutputUtils.formatTimeMS(t) + "]");
 							}
 						}
 					}
@@ -455,9 +453,7 @@ public class BenchRunner {
 								
 								if (operation_i != 0) {
 									long t = System.currentTimeMillis() - operationsStart;
-									double s = t / 1000.0;
-									int m = (int) (s / 60); s -= m * 60;
-									System.out.printf(" [%d minute%s %.3f seconds]", m, m == 1 ? "" : "s", s);
+									System.out.println(" [" + OutputUtils.formatTimeMS(t) + "]");
 								}
 								
 								lastOperationName = operation.getName();
@@ -518,10 +514,7 @@ public class BenchRunner {
 					
 					if (main) {
 						long t = System.currentTimeMillis() - operationsStart;
-						double s = t / 1000.0;
-						int m = (int) (s / 60); s -= m * 60;
-						System.out.printf(" [%d minute%s %.3f seconds]", m, m == 1 ? "" : "s", s);
-						System.out.println();
+						System.out.println(" [" + OutputUtils.formatTimeMS(t) + "]");
 					}
 				}
 				

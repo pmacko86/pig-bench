@@ -33,6 +33,11 @@ public class Workload {
 		 * Workloads that make permanent changes to the database. 
 		 */
 		PERMANENT_UPDATE,
+		
+		/**
+		 * Update workloads used to load and delete graphs.
+		 */
+		LOAD_UPDATE,
 	}
 	
 	
@@ -44,13 +49,13 @@ public class Workload {
 	static {
 		Map<String, Workload> m = new TreeMap<String, Workload>();
 		m.put("add", new Workload("add", "Add nodes and edges",
-				"Adding nodes and edges to the database", null, true, UpdateCategory.PERMANENT_UPDATE));
+				"Add random nodes and edges to the database", null, true, UpdateCategory.PERMANENT_UPDATE));
 		m.put("clustering-coeff", new Workload("clustering-coeff", "Global and network average clustering coefficients",
-				"Compute the global and network average clustering coefficients", null, false, UpdateCategory.READ_ONLY));
+				"Global and network average clustering coefficients", null, false, UpdateCategory.READ_ONLY));
 		m.put("clustering-local", new Workload("clustering-local", "Local clustering coefficients",
-				"Compute the local clustering coefficients", null, false, UpdateCategory.READ_ONLY));
-		m.put("delete-graph", new Workload("delete-graph", "Delete graph",
-				"Delete the entire graph", null, false, UpdateCategory.PERMANENT_UPDATE));
+				"Local clustering coefficients", null, false, UpdateCategory.READ_ONLY));
+		/*m.put("delete-graph", new Workload("delete-graph", "Delete graph",
+				"Delete the entire graph", null, false, UpdateCategory.LOAD_UPDATE));*/
 		m.put("shortest-path", new Workload("shortest-path", "Shortest path",
 				"Shortest path algorithm", null, true, UpdateCategory.READ_ONLY));
 		m.put("shortest-path-prop", new Workload("shortest-path-prop", "Shortest path with properties",
@@ -58,7 +63,7 @@ public class Workload {
 		m.put("sssp", new Workload("sssp", "Single source shortest path",
 				"Single source shortest path algorithm", null, true, UpdateCategory.READ_ONLY));
 		m.put("generate", new Workload("generate", "Generate",
-				"Generate (or grow) the graph based on the given model", "MODEL", false, UpdateCategory.PERMANENT_UPDATE));
+				"Generate (or grow) the graph based on the given model", "MODEL", false, UpdateCategory.LOAD_UPDATE));
 		m.put("get", new Workload("get", "Get",
 				"\"Get\" microbenchmarks", null, true, UpdateCategory.READ_ONLY));
 		m.put("get-k", new Workload("get-k", "Get k-hop",
@@ -66,7 +71,7 @@ public class Workload {
 		m.put("get-property", new Workload("get-property", "Get properties",
 				"\"Get\" Object store microbenchmarks", null, true, UpdateCategory.READ_ONLY));
 		m.put("ingest", new Workload("ingest", "Ingest",
-				"Ingest a file to the database (also delete the graph)", "FILE", false, UpdateCategory.PERMANENT_UPDATE));
+				"Ingest a file to the database (also delete the graph)", "FILE", false, UpdateCategory.LOAD_UPDATE));
 		WORKLOADS = Collections.unmodifiableMap(m);
 	}
 	
