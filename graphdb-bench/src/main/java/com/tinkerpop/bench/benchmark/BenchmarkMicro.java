@@ -108,6 +108,7 @@ public class BenchmarkMicro extends Benchmark {
 		System.err.println("Database engine options:");
 		System.err.println("  --database, -D NAME     Select a specific graph or a database instance");
 		System.err.println("  --db-config K=VAL,...   Specify one or more database configuration properties");
+		System.err.println("  --keep-temp-copy        Keep (do not delete) the temp. copy of the instance");
 		System.err.println("  --neo-caches A:B:..     Specify neo4j database cache configuration");
 		System.err.println("  --neo-gcr A:B           Specify neo4j GCR cache configuration");
 		System.err.println("  --sql-addr ADDR         Specify the SQL connection string (w/o DB name)");
@@ -127,7 +128,7 @@ public class BenchmarkMicro extends Benchmark {
 		System.err.println("  --k-hops K              Set the number of k-hops");
 		System.err.println("  --k-hops K1:K2          Set a range of k-hops");
 		System.err.println("  --op-count N            Set the number of operations");
-		System.err.println("  --update-directly       Run non-load updates directly, not on a temp. clone");
+		System.err.println("  --update-directly       Run non-load updates directly, not on a temp. copy");
 		System.err.println("  --use-stored-procedures Enable the use of stored procedures");
 		System.err.println("  --warmup-ingest FILE    Set a different file for ingest during " +
 										"the warmup");
@@ -189,6 +190,7 @@ public class BenchmarkMicro extends Benchmark {
 		parser.accepts("dir").withRequiredArg().ofType(String.class);
 		parser.accepts("dumb-terminal");
 		parser.accepts("help");
+		parser.accepts("keep-temp-copy");
 		parser.accepts("neo-caches");
 		parser.accepts("neo-gcr");
 		parser.accepts("no-cache-pollution");
@@ -311,6 +313,11 @@ public class BenchmarkMicro extends Benchmark {
 		boolean ingestAsUndirected = false;
 		if (options.has("ingest-as-undirected")) {
 			ingestAsUndirected = true;
+		}
+		
+		boolean keepTempCopy = false;
+		if (options.has("keep-temp-copy")) {
+			keepTempCopy = true;
 		}
 		
 		if (options.has("no-cache-pollution")) {
@@ -455,6 +462,11 @@ public class BenchmarkMicro extends Benchmark {
 			}
 		}
 		
+		
+		/*
+		 * Sanitize & check consistency
+		 */
+		
 		if (hasLoadUpdates) {
 			
 			if (hasNonLoadUpdates || hasReadOnly) {
@@ -472,6 +484,24 @@ public class BenchmarkMicro extends Benchmark {
 			
 			if (updateDirectly && !hasNonLoadUpdates) {
 				ConsoleUtils.error("The --update-directly option can be used only if there is at least one update workload");
+				return 1;
+			}
+		}
+		
+		if (keepTempCopy) {
+			
+			if (updateDirectly) {
+				ConsoleUtils.error("The --keep-temp-copy option cannot be combined with --update-directly");
+				return 1;
+			}
+			
+			if (hasLoadUpdates) {
+				ConsoleUtils.error("Cannot combine --keep-temp-copy with load operations (such as --ingest, --generate)");
+				return 1;
+			}
+			
+			if (!hasNonLoadUpdates) {
+				ConsoleUtils.error("The --keep-temp-copy option can be used only if there is at least one update workload");
 				return 1;
 			}
 		}
@@ -1002,7 +1032,7 @@ public class BenchmarkMicro extends Benchmark {
 			ConsoleUtils.sectionHeader("Warmup Run");
 			
 			if (duplicateDatabaseInstance) {
-				System.out.print("Creating a temporary clone: ");
+				System.out.print("Creating a temporary copy: ");
 				long start = System.currentTimeMillis();
 				try {
 					dbEngine.duplicateDatabase(warmupDbDirSource, warmupDbDir, warmupDbConfig);
@@ -1032,6 +1062,25 @@ public class BenchmarkMicro extends Benchmark {
 				CPLFile.lookup(new File(warmupLogFile)).addProperty("ANNOTATION",
 						options.valueOf("annotation").toString());
 			}
+			
+			if (duplicateDatabaseInstance && !keepTempCopy) {
+				System.out.print("Deleting the temporary copy: ");
+				long start = System.currentTimeMillis();
+				try {
+					if (warmupDbDir.equals(warmupDbDirSource)) throw new InternalError();
+					dbEngine.deleteDatabase(warmupDbDir, warmupDbConfig);
+				}
+				catch (Throwable t) {
+					long tm = System.currentTimeMillis() - start;
+					System.out.println("failed [" + OutputUtils.formatTimeMS(tm) + "]");
+					ConsoleUtils.error(t.getMessage());
+					t.printStackTrace(System.err);
+					return 1;
+				}
+				long t = System.currentTimeMillis() - start;
+				System.out.println("done [" + OutputUtils.formatTimeMS(t) + "]");
+			}
+			
 			Cache.dropAll();
 		}
 		
@@ -1043,7 +1092,7 @@ public class BenchmarkMicro extends Benchmark {
 		ConsoleUtils.sectionHeader("Benchmark Run");
 		
 		if (duplicateDatabaseInstance) {
-			System.out.print("Creating a temporary clone: ");
+			System.out.print("Creating a temporary copy: ");
 			long start = System.currentTimeMillis();
 			try {
 				dbEngine.duplicateDatabase(dbDirSource, dbDir, warmupDbConfig);
@@ -1074,6 +1123,24 @@ public class BenchmarkMicro extends Benchmark {
 		if (CPL.isAttached() && options.has("annotation") && logs) {
 			CPLFile.lookup(new File(logFile)).addProperty("ANNOTATION",
 					options.valueOf("annotation").toString());
+		}
+		
+		if (duplicateDatabaseInstance && !keepTempCopy) {
+			System.out.print("Deleting the temporary copy: ");
+			long start = System.currentTimeMillis();
+			try {
+				if (dbDir.equals(dbDirSource)) throw new InternalError();
+				dbEngine.deleteDatabase(dbDir, dbConfig);
+			}
+			catch (Throwable t) {
+				long tm = System.currentTimeMillis() - start;
+				System.out.println("failed [" + OutputUtils.formatTimeMS(tm) + "]");
+				ConsoleUtils.error(t.getMessage());
+				t.printStackTrace(System.err);
+				return 1;
+			}
+			long t = System.currentTimeMillis() - start;
+			System.out.println("done [" + OutputUtils.formatTimeMS(t) + "]");
 		}
 		
 		
@@ -1137,6 +1204,11 @@ public class BenchmarkMicro extends Benchmark {
 		ArrayList<OperationFactory> operationFactories = new ArrayList<OperationFactory>();
 
 		for (String graphmlFilename : graphmlFilenames) {
+			
+			
+			/*
+			 * Load workloads
+			 */
 
 			// DELETE the graph (also invoked for the ingest benchmark)
 			if (options.has("ingest") || options.has("delete-graph")) {
@@ -1168,6 +1240,40 @@ public class BenchmarkMicro extends Benchmark {
 							OperationGenerateGraph.class, 1, new GraphGenerator[] { g }));
 				}
 			}
+			
+			
+			/*
+			 * Update workloads
+			 */
+			
+			// ADD/SET microbenchmarks
+			if (options.has("add")) {
+				if (numThreads != 1 && GlobalConfig.transactionBufferSize != 1) {
+					throw new UnsupportedOperationException("Set property operations inside \"add\" "
+							+"are not supported in the multi-threaded mode with tx-buffer > 1");
+				}
+				
+				operationFactories.add(new OperationFactoryGeneric(
+						OperationAddManyVertices.class, 1,
+						new Integer[] { opCount }));
+				
+				operationFactories.add(new OperationFactoryGeneric(
+						OperationSetManyVertexProperties.class, 1,
+						new Object[] { PROPERTY_KEY, opCount }));
+				
+				operationFactories.add(new OperationFactoryGeneric(
+						OperationAddManyEdges.class, 1,
+						new Integer[] { opCount }));
+				
+				operationFactories.add(new OperationFactoryGeneric(
+						OperationSetManyEdgeProperties.class, 1,
+						new Object[] { PROPERTY_KEY, opCount }));
+			}
+			
+			
+			/*
+			 * Read-only workloads & workloads with temporary updates
+			 */
 
 			// GET microbenchmarks
 			if (options.has("get")) {
@@ -1269,32 +1375,7 @@ public class BenchmarkMicro extends Benchmark {
 			if (options.has("clustering-local")) {
 				operationFactories.add(new OperationFactoryRandomVertex(
 						OperationLocalClusteringCoefficient.class, opCount));
-            }
-			
-			// ADD/SET microbenchmarks
-			if (options.has("add")) {
-				if (numThreads != 1 && GlobalConfig.transactionBufferSize != 1) {
-					throw new UnsupportedOperationException("Set property operations inside \"add\" "
-							+"are not supported in the multi-threaded mode with tx-buffer > 1");
-				}
-				
-				operationFactories.add(new OperationFactoryGeneric(
-						OperationAddManyVertices.class, 1,
-						new Integer[] { opCount }));
-				
-				operationFactories.add(new OperationFactoryGeneric(
-						OperationSetManyVertexProperties.class, 1,
-						new Object[] { PROPERTY_KEY, opCount }));
-				
-				operationFactories.add(new OperationFactoryGeneric(
-						OperationAddManyEdges.class, 1,
-						new Integer[] { opCount }));
-				
-				operationFactories.add(new OperationFactoryGeneric(
-						OperationSetManyEdgeProperties.class, 1,
-						new Object[] { PROPERTY_KEY, opCount }));
-			}
-					
+            }					
 		}
 
 		return operationFactories;

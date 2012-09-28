@@ -230,6 +230,21 @@ public abstract class DatabaseEngine {
 	
 	
 	/**
+	 * Delete the database. This implementation provides a default behavior, which just deletes
+	 * the database directory.
+	 * 
+	 * @param dbDir the database directory
+	 * @param configuration the map of database-specific configuration arguments
+	 * @throws IOException on I/O error
+	 */
+	public void deleteDatabase(String dbDir, Map<String, String> configuration) throws IOException {
+		
+		if (!isPersistent()) throw new UnsupportedOperationException();
+		FileUtils.deleteDir(dbDir);
+	}
+	
+	
+	/**
 	 * BerkeleyDB
 	 */
 	public static class BerkeleyDB extends DatabaseEngine {		
@@ -347,6 +362,19 @@ public abstract class DatabaseEngine {
 		 */
 		@Override
 		public void duplicateDatabase(String dbSourceDir, String dbTargetDir, Map<String, String> configuration) throws IOException {
+			throw new UnsupportedOperationException();
+		}
+		
+		
+		/**
+		 * Delete the database.
+		 * 
+		 * @param dbDir the database directory
+		 * @param configuration the map of database-specific configuration arguments
+		 * @throws IOException on I/O error
+		 */
+		@Override
+		public void deleteDatabase(String dbDir, Map<String, String> configuration) throws IOException {
 			throw new UnsupportedOperationException();
 		}
 	}
