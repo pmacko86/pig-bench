@@ -278,6 +278,8 @@ public abstract class Operation {
         	throw new IllegalStateException("The graph is null");
         }
         
+        System.gc();
+        
         // http://stackoverflow.com/questions/466878/can-you-get-basic-gc-stats-in-java
         long startTotalGarbageCollections = 0;
         long startGarbageCollectionTime = 0;
