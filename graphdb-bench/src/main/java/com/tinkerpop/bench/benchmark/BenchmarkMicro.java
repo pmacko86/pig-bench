@@ -1360,6 +1360,15 @@ public class BenchmarkMicro extends Benchmark {
 						OperationGetSingleSourceShortestPath.class, opCount));
             }
 			
+			if (options.has("sssp-prop")) {
+				if (numThreads != 1) {
+					throw new UnsupportedOperationException("Operation \"sssp-prop\" "
+							+"is not supported in the multi-threaded mode");
+				}
+				operationFactories.add(new OperationFactoryRandomVertex(
+						OperationGetSingleSourceShortestPathProperty.class, opCount));
+            }
+			
 			// CLUSTERING COEFFICIENT benchmarks
 			if (options.has("clustering-coef") || options.has("clustering-coeff")) {
 				//operationFactories.add(new OperationFactoryRandomVertex(

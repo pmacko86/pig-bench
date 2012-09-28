@@ -1,5 +1,8 @@
 package com.tinkerpop.bench.operation;
 
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
+
 import com.tinkerpop.bench.Bench;
 import com.tinkerpop.bench.GlobalConfig;
 import com.tinkerpop.bench.GraphDescriptor;
@@ -28,6 +31,8 @@ public abstract class Operation {
 	private GraphDescriptor graphDescriptor = null;
 	private String name = null;
 	private long memory = -1;
+    private long totalGarbageCollections = 0;
+    private long garbageCollectionTime = 0;
 	private OperationLogWriter logWriter = null;
 	private OperationFactory factory = null;
 	private CPLObject cplObject = null;
@@ -169,6 +174,26 @@ public abstract class Operation {
 	
 	
 	/**
+	 * Return the number of garbage collections while the operation was running
+	 * 
+	 * @return the number of garbage collections
+	 */
+	public final long getGCCount() {
+		return totalGarbageCollections;
+	}
+	
+	
+	/**
+	 * Return the approximate time spent in garbage collection while the operation was running
+	 * 
+	 * @return the time in ms
+	 */
+	public final long getGCTimeMS() {
+		return garbageCollectionTime;
+	}
+	
+	
+	/**
 	 * Return the log writer
 	 * 
 	 * @return the log writer
@@ -253,6 +278,17 @@ public abstract class Operation {
         	throw new IllegalStateException("The graph is null");
         }
         
+        // http://stackoverflow.com/questions/466878/can-you-get-basic-gc-stats-in-java
+        long startTotalGarbageCollections = 0;
+        long startGarbageCollectionTime = 0;
+
+        for (GarbageCollectorMXBean gc : ManagementFactory.getGarbageCollectorMXBeans()) {
+            long count = gc.getCollectionCount();
+            long time = gc.getCollectionTime();
+            if (count >= 0) startTotalGarbageCollections += count;
+            if (time  >= 0) startGarbageCollectionTime += time;
+        }
+        
 		StatisticsHelper.stopMemory();	//XXX multi-threaded???
 		long start = System.nanoTime();
 		
@@ -293,6 +329,20 @@ public abstract class Operation {
 		
 		time = System.nanoTime() - start;
 		memory = StatisticsHelper.stopMemory();
+		
+        long stopTotalGarbageCollections = 0;
+        long stopGarbageCollectionTime = 0;
+
+        for (GarbageCollectorMXBean gc : ManagementFactory.getGarbageCollectorMXBeans()) {
+            long count = gc.getCollectionCount();
+            long time = gc.getCollectionTime();
+            if (count >= 0) stopTotalGarbageCollections += count;
+            if (time  >= 0) stopGarbageCollectionTime += time;
+        }
+        
+        totalGarbageCollections = stopTotalGarbageCollections - startTotalGarbageCollections;
+        garbageCollectionTime = stopGarbageCollectionTime - startGarbageCollectionTime;
+
 		onFinalize();
 	}
 	

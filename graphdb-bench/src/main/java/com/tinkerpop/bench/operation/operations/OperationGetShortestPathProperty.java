@@ -2,6 +2,7 @@ package com.tinkerpop.bench.operation.operations;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 
 import com.tinkerpop.bench.DatabaseEngine;
 import com.tinkerpop.bench.GlobalConfig;
@@ -51,12 +52,17 @@ public class OperationGetShortestPathProperty extends Operation {
 				int set_property = 0;
 				int remove_property = 0;
 				
+				// Only for the vertices that are in the queue
+				final HashMap<Vertex,Integer> dist = new HashMap<Vertex,Integer>();
+				
 				final Comparator<Vertex> minDist = new Comparator<Vertex>()
 				{
 					@SuppressWarnings({ "unchecked", "rawtypes" })
 					public int compare(Vertex left, Vertex right) {
-						Integer leftDist = (Integer) left.getProperty("dist");
-						Integer rightDist = (Integer) right.getProperty("dist");
+						//Integer leftDist = (Integer) left.getProperty("dist");
+						//Integer rightDist = (Integer) right.getProperty("dist");
+						Integer  leftDist = dist.get( left);
+						Integer rightDist = dist.get(right);
 						int l = leftDist  != null ?  leftDist.intValue() : Integer.MAX_VALUE;
 						int r = rightDist != null ? rightDist.intValue() : Integer.MAX_VALUE;
 						return l > r ? 1 : l < r ? -1 : ((Comparable) left.getId()).compareTo(right.getId());
@@ -64,30 +70,38 @@ public class OperationGetShortestPathProperty extends Operation {
 					}
 				};
 				
-				//dmargo: 11 is the Java default initial capacity...don't ask me why.
 				final PriorityHashQueue<Vertex> queue = new PriorityHashQueue<Vertex>(11, minDist);
 				
 				set_property++;
 				source.setProperty("dist", 0);
 				queue.add(source);
+				dist.put(source, 0);
 				
 				while (!queue.isEmpty()) {
-					Vertex u = queue.remove();
 					
-					if (u.equals(target))
-						break;
+					Vertex u = queue.remove();
+					if (u.equals(target)) break;
+					int dist_u = dist.remove(u);
 					
 					get_nbrs++;
 					Iterable<Vertex> vi = u.getVertices(direction);
 					for (Vertex v : vi) {
 						get_vertex++;
 						
-						get_property += 2;
-						Integer alt = (Integer) u.getProperty("dist") + 1;
-						Integer cur = (Integer) v.getProperty("dist");
-						if (cur == null) cur = Integer.MAX_VALUE;
+						int alt = dist_u + 1;
+						
+						Integer cur = dist.get(v);
+						int i_cur;
+						if (cur == null) {
+							get_property++;
+							cur = (Integer) v.getProperty("dist");
+							i_cur = cur == null ? Integer.MAX_VALUE : cur.intValue();
+						}
+						else {
+							i_cur = cur.intValue();
+						}
 					
-						if (alt < cur) {
+						if (alt < i_cur) {
 							set_property += 2;
 							
 							if (isRDFGraph)
@@ -96,6 +110,7 @@ public class OperationGetShortestPathProperty extends Operation {
 								v.setProperty("prev", ((Long) u.getId()).longValue());
 							
 							v.setProperty("dist", alt);
+							dist.put(v, alt);
 							queue.remove(v);
 							queue.add(v);
 						}

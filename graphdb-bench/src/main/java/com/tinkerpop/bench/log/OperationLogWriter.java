@@ -19,7 +19,7 @@ import edu.harvard.pass.cpl.CPLObject;
 
 public class OperationLogWriter {
 	
-	public static final String[] HEADERS = { "id", "name", "type", "args", "time", "result", "memory" };
+	public static final String[] HEADERS = { "id", "name", "type", "args", "time", "result", "memory", "gccount", "gctime" };
 	private static final char LOG_DELIM = LogUtils.LOG_DELIMITER.charAt(0);
 	
 	
@@ -84,6 +84,8 @@ public class OperationLogWriter {
 		buffer[4] = Long.toString(op.getTime());
 		buffer[5] = op.getResult().toString();
 		buffer[6] = Long.toString(op.getMemory());
+		buffer[6] = Long.toString(op.getGCCount());
+		buffer[6] = Long.toString(op.getGCTimeMS());
 		
 		if (writer != null) writer.writeNext(buffer);
 		

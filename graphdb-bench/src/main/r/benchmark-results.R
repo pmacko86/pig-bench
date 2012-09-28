@@ -306,7 +306,7 @@ load.benchmark.results.all.neighbors <- function(database.name, database.instanc
 # Function load.benchmark.results.shortest.path
 #
 # Description:
-#   Load GraphDB benchmark results for OperationGetShortestPath
+#   Load GraphDB benchmark results for OperationGetShortestPath or OperationGetShortestPathProperty
 #
 # Usage:
 #   load.benchmark.results.shortest.path(database.name, database.instance)
@@ -323,16 +323,18 @@ load.benchmark.results.shortest.path <- function(database.name, database.instanc
 		data <- load.benchmark.results(database.name, database.instance, "shortest-path")
 		data <- data[data$name == "OperationGetShortestPath", ]
 	}
-	data$directed <- FALSE	
+	data$directed <- FALSE
+	data$property <- property
 	
 	
 	# Parse the statistics
 	
 	data$result            <- lapply(strsplit(as.character(data$result), ":"), as.numeric)
-	data$path.length       <- as.numeric(lapply(data$result, function(x) x[1]))
+	data$result.size       <- as.numeric(lapply(data$result, function(x) x[1]))
 	data$get.vertices      <- as.numeric(lapply(data$result, function(x) x[2]))
 	data$get.vertices.next <- as.numeric(lapply(data$result, function(x) x[3]))
 	
+	data$path.length             <- data$result.size
 	data$retrieved.vertices      <- data$get.vertices.next
 	data$retrieved.neighborhoods <- data$get.vertices
 	
@@ -357,6 +359,57 @@ load.benchmark.results.shortest.path <- function(database.name, database.instanc
 }
 
 
+#
+# Function load.benchmark.results.sssp
+#
+# Description:
+#   Load GraphDB benchmark results for OperationGetSingleSourceShortestPath or OperationGetSingleSourceShortestPathProperty
+#
+# Usage:
+#   load.benchmark.results.sssp(database.name, database.instance)
+#
+load.benchmark.results.sssp <- function(database.name, database.instance, keep.outliers=FALSE, property=FALSE) {
+	
+	# Isolate and parse OperationGetShortestPath or OperationGetShortestPathProperty
+	
+	if (property) {
+		data <- load.benchmark.results(database.name, database.instance, "sssp-prop")
+		data <- data[data$name == "OperationGetSingleSourceShortestPathProperty", ]
+	}
+	else {
+		data <- load.benchmark.results(database.name, database.instance, "sssp")
+		data <- data[data$name == "OperationGetSingleSourceShortestPath", ]
+	}
+	data$directed <- FALSE
+	data$property <- property
+	
+	
+	# Parse the statistics
+	
+	data$result            <- lapply(strsplit(as.character(data$result), ":"), as.numeric)
+	data$result.size       <- as.numeric(lapply(data$result, function(x) x[1]))
+	data$get.vertices      <- as.numeric(lapply(data$result, function(x) x[2]))
+	data$get.vertices.next <- as.numeric(lapply(data$result, function(x) x[3]))
+	
+	data$retrieved.vertices      <- data$get.vertices.next
+	data$retrieved.neighborhoods <- data$get.vertices
+	
+	if (property) {
+		# TODO
+	}
+	
+	
+	# Remove outliers
+	
+	if (!keep.outliers) {
+		outliers <- outlier(data$time)
+		data <- data[!(data$time %in% outliers), ]
+	}
+	
+	data
+}
+
+
 
 ################################################################################
 ##                                                                            ##
@@ -366,22 +419,34 @@ load.benchmark.results.shortest.path <- function(database.name, database.instanc
 
 
 #
-# Function khop.polynomial.model
+# Function polynomial.model
 #
 # Description:
-#   Create a polynomial model fit to k-hop data
+#   Create a polynomial model
 #
 # Usage:
-#   khop.polynomial.model(data)
+#   polynomial.model(data, data$unique.vertices)
 #
-khop.polynomial.model <- function(khop.data, x=NULL, n=1, limit=NA) {
+polynomial.model <- function(data, x, n=1, xmin=NA, xmax=NA, k=NA) {
 	
-	d <- khop.data	
-	if (is.null(x)) {
-		x <- d$unique.vertices
+	d <- data
+	if (length(x) == 1 && is.character(x)) {
+		x <- d[[x]]
 	}
-	if (!is.na(limit)) {
-		mask <- x < limit
+	
+	if (!is.na(xmax)) {
+		mask <- x <= xmax
+		d <- d[mask,]
+		x <- x[mask]
+	}
+	if (!is.na(xmin)) {
+		mask <- x >= xmin
+		d <- d[mask,]
+		x <- x[mask]
+	}
+	
+	if (!is.na(k)) {	# For k-hop operations
+		mask <- d$k == k
 		d <- d[mask,]
 		x <- x[mask]
 	}
@@ -401,11 +466,11 @@ khop.polynomial.model <- function(khop.data, x=NULL, n=1, limit=NA) {
 # Description:
 #   Apply a polynomial model
 #
-khop.polynomial.fit <- function(khop.data, model, x=NULL) {
+apply.polynomial.model <- function(data, x, model) {
 	
-	d <- khop.data
-	if (is.null(x)) {
-		x <- d$unique.vertices
+	d <- data
+	if (length(x) == 1 && is.character(x)) {
+		x <- d[[x]]
 	}
 
 	d$time.fit <- 0
@@ -419,6 +484,39 @@ khop.polynomial.fit <- function(khop.data, model, x=NULL) {
 
 
 #
+# Function compare.polynomial.models
+#
+# Description:
+#   Compare two polynomial models
+#
+compare.polynomial.models <- function(data, x, n1=1, n2=2, n3=NA, n4=NA, ...) {
+	
+	nm <- 1
+	m1 <- polynomial.model(data, x, n=n1, ...)
+	
+	if (!is.na(n2)) {
+		nm <- 2
+		m2 <- polynomial.model(data, x, n=n2, ...)
+	}
+	if (!is.na(n3) && nm == 2) {
+		nm <- 3
+		m3 <- polynomial.model(data, x, n=n3, ...)
+	}
+	
+	if (!is.na(n4) && nm == 3) {
+		nm <- 4
+		m4 <- polynomial.model(data, x, n=n4, ...)
+	}
+	
+	switch (nm,
+		anova(m1),
+		anova(m1, m2),
+		anova(m1, m2, m3),
+		anova(m1, m2, m3, m4))
+}
+
+
+#
 # Function with.khop.linear.fit
 #
 # Description:
@@ -428,8 +526,11 @@ khop.polynomial.fit <- function(khop.data, model, x=NULL) {
 #   data <- with.khop.linear.fit(data)
 #
 with.khop.polynomial.fit <- function(khop.data, x=NULL, ...) {
-	
-	khop.polynomial.fit(khop.data, khop.polynomial.model(khop.data, x=x, ...), x=x)
+
+	if (is.null(x)) {
+		x <- khop.data$unique.vertices
+	}	
+	apply.polynomial.model(khop.data, x, polynomial.model(khop.data, x, ...))
 }
 
 

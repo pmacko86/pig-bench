@@ -62,6 +62,8 @@ public class Workload {
 				"Shortest paths with in-DB marking", null, true, UpdateCategory.TEMPORARY_UPDATE));
 		m.put("sssp", new Workload("sssp", "Single source shortest path",
 				"Single source shortest path algorithm", null, true, UpdateCategory.READ_ONLY));
+		m.put("sssp-prop", new Workload("sssp-prop", "Single source shortest path with properties",
+				"Single source shortest path with in-DB marking", null, true, UpdateCategory.TEMPORARY_UPDATE));
 		m.put("generate", new Workload("generate", "Generate",
 				"Generate (or grow) the graph based on the given model", "MODEL", false, UpdateCategory.LOAD_UPDATE));
 		m.put("get", new Workload("get", "Get",
