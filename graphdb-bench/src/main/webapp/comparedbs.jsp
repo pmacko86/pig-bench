@@ -410,7 +410,7 @@
 							<div style="height:10px"></div>
 							
 							<label>
-								Filter (all box plots) =
+								Filter =
 								<span class="small">
 									Use: d.time, d.result[], etc.
 								</span>
@@ -420,7 +420,7 @@
 									value="<%= StringEscapeUtils.escapeHtml(boxPlotFilter) %>"/>
 							
 							<label>
-								Y Value (summary box plot) =
+								Y Value =
 								<span class="small">
 									Use: d.time, d.result[], etc.
 								</span>
@@ -563,11 +563,12 @@
 					chartProperties.attach = "chart_all_plotTimeVsRetrievedNodes";
 					chartProperties.filter = boxPlotFilter;
 					chartProperties.xvalue = "d.result[0]";
-					chartProperties.yvalue = "d.time";
+					chartProperties.yvalue = boxPlotYValue;
 					if (logScale) chartProperties.yscale = "log";
 					if (dropExtremes) chartProperties.dropTopBottomExtremes = true;
 					chartProperties.xlabel = "Number of Retrieved Unique Nodes";
-					chartProperties.ylabel = "Execution Time (ms)";
+					chartProperties.ylabel = "d.time".equals(boxPlotYValue) 
+							? "Execution Time (ms)" : StringEscapeUtils.escapeXml(boxPlotYValue);	// TODO Need better escape
 					chartProperties.series_column = "label";
 					chartProperties.series_label_function = "return d.label.replace(/^Operation/, '')";
 					
@@ -585,11 +586,12 @@
 					chartProperties.attach = "chart_all_additionalKHopNeighborsPlots_1";
 					chartProperties.filter = boxPlotFilter;
 					chartProperties.xvalue = "d.result[2]";
-					chartProperties.yvalue = "d.time";
+					chartProperties.yvalue = boxPlotYValue;
 					if (logScale) chartProperties.yscale = "log";
 					if (dropExtremes) chartProperties.dropTopBottomExtremes = true;
 					chartProperties.xlabel = "Number of Retrieved Neighborhoods"; // e.g. calls to Vertex.getVertices()
-					chartProperties.ylabel = "Execution Time (ms)";
+					chartProperties.ylabel = "d.time".equals(boxPlotYValue) 
+							? "Execution Time (ms)" : StringEscapeUtils.escapeXml(boxPlotYValue);	// TODO Need better escape
 					chartProperties.series_column = "label";
 					chartProperties.series_label_function = "return d.label.replace(/^Operation/, '')";
 					

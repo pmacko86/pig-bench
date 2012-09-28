@@ -1,9 +1,10 @@
 package com.tinkerpop.bench.operation.operations;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import com.tinkerpop.bench.operation.Operation;
-import com.tinkerpop.bench.util.BloomFilter;
+//import com.tinkerpop.bench.util.BloomFilter;
 import com.tinkerpop.bench.util.GraphUtils;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Vertex;
@@ -13,20 +14,19 @@ public class OperationGetKHopNeighbors extends Operation {
 	private Vertex startVertex;
 	private int k;
 	private Direction direction;
-	//private HashSet<Vertex> result;
-	private BloomFilter result;
+	private HashSet<Object> result;
+	//private BloomFilter result;
 	
 	@Override
 	protected void onInitialize(Object[] args) {
 		startVertex = getGraph().getVertex(args[0]);
 		k = args.length > 1 ? (Integer) args[1] : 2;
 		direction = args.length > 2 ? (Direction) args[2] : Direction.OUT;
-		//result = new HashSet<Vertex>();
 	}
 	
 	@Override
 	protected void onDelayedInitialize() {
-		result = new BloomFilter(10 * 1000 * 1000, 0.001);	// FIXME Do this properly
+		result = new HashSet<Object>();
 	}
 	
 	@Override
