@@ -116,6 +116,8 @@ public class ShowLogFile extends HttpServlet {
 			writer.println("\t<th>Result</th>");
 			writer.println("\t<th class=\"numeric\">Time (ms)</th>");
 			writer.println("\t<th class=\"numeric\">Memory (MB)</th>");
+			writer.println("\t<th class=\"numeric\">GC Count</th>");
+			writer.println("\t<th class=\"numeric\">GC Time (ms)</th>");
 			writer.println("</tr>");
 
 			for (OperationLogEntry e : reader) {
@@ -132,6 +134,8 @@ public class ShowLogFile extends HttpServlet {
 				writer.println("\t<td>" + e.getResult() + "</td>");
 				writer.println("\t<td class=\"numeric\">" + String.format("%.3f", e.getTime() / 1000000.0) + "</td>");
 				writer.println("\t<td class=\"numeric\">" + String.format("%.3f", e.getMemory() / 1000000.0) + "</td>");
+				writer.println("\t<td class=\"numeric\">" + (e.getGCCount()  < 0 ? "N/A" : "" + e.getGCCount() ) + "</td>");
+				writer.println("\t<td class=\"numeric\">" + (e.getGCTimeMS() < 0 ? "N/A" : "" + e.getGCTimeMS()) + "</td>");
 				writer.println("</tr>");
 			}
 			writer.println("</table>");
@@ -154,6 +158,8 @@ public class ShowLogFile extends HttpServlet {
 				buffer[4] = Long.toString(e.getTime());
 				buffer[5] = e.getResult().toString();
 				buffer[6] = Long.toString(e.getMemory());
+				buffer[7] = Long.toString(e.getGCCount());
+				buffer[8] = Long.toString(e.getGCTimeMS());
 				
 				w.writeNext(buffer);
 			}

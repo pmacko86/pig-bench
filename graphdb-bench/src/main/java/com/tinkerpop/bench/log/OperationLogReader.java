@@ -152,21 +152,29 @@ public class OperationLogReader implements Iterable<OperationLogEntry> {
 
 		private OperationLogEntry extractLogEntry(String[] tokens) throws IOException {
 
-			if (tokens.length != OperationLogWriter.HEADERS.length) {
+			if (tokens.length != 7 && tokens.length != OperationLogWriter.HEADERS.length) {
 				throw new IOException("Unexpected number of tokens");
 			}
 			
-			// TODO
 			
-			int opId = Integer.parseInt(tokens[0]);
-			String name = tokens[1].intern();
-			String type = tokens[2].intern();
+			// Original fields
+			
+			int opId      = Integer.parseInt(tokens[0]);
+			String name   = tokens[1].intern();
+			String type   = tokens[2].intern();
 			String[] args = extractArgs(tokens[3]);
-			long time = Long.parseLong(tokens[4]);
+			long time     = Long.parseLong(tokens[4]);
 			String result = tokens[5];
-			long memory = Long.parseLong(tokens[6]);
+			long memory   = Long.parseLong(tokens[6]);
+			
+			
+			// New fields as of 9/27/12
+			
+			long gcCount  = tokens.length <= 7 ? -1 : Long.parseLong(tokens[7]);
+			long gcTime   = tokens.length <= 8 ? -1 : Long.parseLong(tokens[8]);
 
-			return new OperationLogEntry(opId, name, type, args, time, result, memory);
+			
+			return new OperationLogEntry(opId, name, type, args, time, result, memory, gcCount, gcTime);
 		}
 
 		private String[] extractArgs(String argsStr) {

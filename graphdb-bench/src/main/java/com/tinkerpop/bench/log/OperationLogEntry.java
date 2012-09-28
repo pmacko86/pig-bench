@@ -9,10 +9,11 @@ public class OperationLogEntry {
 	private long time = -1;
 	private String result = null;
 	private long memory = -1;
+	private long gcCount = -1;
+	private long gcTimeMS = -1;
 
 	public OperationLogEntry(int opId, String name, String type, String[] args,
-			long time, String result, long memory) {
-		super();
+			long time, String result, long memory, long gcCount, long gcTimeMS)  {
 		this.opId = opId;
 		this.name = name;
 		this.type = type;
@@ -20,6 +21,8 @@ public class OperationLogEntry {
 		this.time = time;
 		this.result = result;
 		this.memory = memory;
+		this.gcCount = gcCount;
+		this.gcTimeMS = gcTimeMS;
 	}
 
 	public int getOpId() {
@@ -48,5 +51,13 @@ public class OperationLogEntry {
 
 	public long getMemory() {
 		return memory;
+	}
+
+	public long getGCCount() {
+		return gcCount;
+	}
+
+	public long getGCTimeMS() {
+		return gcTimeMS;
 	}
 }

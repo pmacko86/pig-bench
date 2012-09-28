@@ -492,6 +492,7 @@ public class BenchRunner {
 						
 						// Execute the operation
 						
+				        System.gc(); // XXX Concurrency?
 						operation.execute();
 						
 						

@@ -410,6 +410,8 @@ public class ShowOperationRunTimes extends HttpServlet {
 			writer.println("\t<th>Result</th>");
 			writer.println("\t<th class=\"numeric\">Time (ms)</th>");
 			writer.println("\t<th class=\"numeric\">Memory (MB)</th>");
+			writer.println("\t<th class=\"numeric\">GC Count</th>");
+			writer.println("\t<th class=\"numeric\">GC Time (ms)</th>");
 			writer.println("</tr>");
 
 			for (Triple<String, Job, OperationLogEntry> p : operationsJobsRunTimes) {
@@ -438,6 +440,8 @@ public class ShowOperationRunTimes extends HttpServlet {
 				writer.println("\t<td>" + e.getResult() + "</td>");
 				writer.println("\t<td class=\"numeric\">" + String.format("%.3f", e.getTime() / 1000000.0) + "</td>");
 				writer.println("\t<td class=\"numeric\">" + String.format("%.3f", e.getMemory() / 1000000.0) + "</td>");
+				writer.println("\t<td class=\"numeric\">" + (e.getGCCount()  < 0 ? "N/A" : "" + e.getGCCount() ) + "</td>");
+				writer.println("\t<td class=\"numeric\">" + (e.getGCTimeMS() < 0 ? "N/A" : "" + e.getGCTimeMS()) + "</td>");
 				writer.println("</tr>");
 			}
 			writer.println("</table>");
@@ -450,7 +454,7 @@ public class ShowOperationRunTimes extends HttpServlet {
 			}
 	        
 	        CSVWriter w = new CSVWriter(writer);
-	        String[] buffer = new String[8];
+	        String[] buffer = new String[10];
 	        
 	        int index = 0;
 	        buffer[index++] = "label";
@@ -458,9 +462,11 @@ public class ShowOperationRunTimes extends HttpServlet {
 	        buffer[index++] = "dbengine";
 	        buffer[index++] = "dbinstance";
 	       	buffer[index++] = "args";
-	       	buffer[index++] = "time";
+	       	buffer[index++] = "time";		// ns
 	       	buffer[index++] = "result";
 	       	buffer[index++] = "memory";
+	       	buffer[index++] = "gccount";
+	       	buffer[index++] = "gctime";		// ms
 	        w.writeNext(buffer);
 	        
 	        String lastOperation = null;
@@ -511,6 +517,8 @@ public class ShowOperationRunTimes extends HttpServlet {
 				buffer[index++] = Long.toString(e.getTime());
 				buffer[index++] = e.getResult().toString();
 				buffer[index++] = Long.toString(e.getMemory());
+				buffer[index++] = Long.toString(e.getGCCount());
+				buffer[index++] = Long.toString(e.getGCTimeMS());
 
 				w.writeNext(buffer);
 				

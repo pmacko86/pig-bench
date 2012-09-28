@@ -278,7 +278,7 @@ public abstract class Operation {
         	throw new IllegalStateException("The graph is null");
         }
         
-        System.gc();
+        // XXX Concurrency?
         
         // http://stackoverflow.com/questions/466878/can-you-get-basic-gc-stats-in-java
         long startTotalGarbageCollections = 0;
