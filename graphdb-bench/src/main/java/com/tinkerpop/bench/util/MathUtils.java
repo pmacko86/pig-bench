@@ -143,4 +143,16 @@ public class MathUtils {
 
 		return s;
 	}
+	
+	
+	/**
+	 * Log
+	 * 
+	 * @param x the number
+	 * @param b the base
+	 * @return the log
+	 */
+	public static double log(double x, double b) {
+		return Math.log(x) / Math.log(b);
+	}
 }
