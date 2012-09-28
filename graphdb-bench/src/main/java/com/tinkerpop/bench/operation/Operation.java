@@ -21,6 +21,7 @@ import edu.harvard.pass.cpl.CPLObject;
 /**
  * @author Alex Averbuch (alex.averbuch@gmail.com)
  * @author Martin Neumann (m.neumann.1980@gmail.com)
+ * @author Peter Macko (pmacko@gmail.com)
  */
 public abstract class Operation {
 
@@ -278,6 +279,8 @@ public abstract class Operation {
         	throw new IllegalStateException("The graph is null");
         }
         
+        onDelayedInitialize();
+        
         // XXX Concurrency?
         
         // http://stackoverflow.com/questions/466878/can-you-get-basic-gc-stats-in-java
@@ -357,6 +360,8 @@ public abstract class Operation {
 	protected abstract void onInitialize(Object[] args);
 
 	protected abstract void onExecute() throws Exception;
+	
+	protected void onDelayedInitialize() throws Exception {};
 	
 	protected void onFinalize() throws Exception {};
 	
