@@ -167,6 +167,13 @@
 			</label>
 		
 			<label class="checkbox">
+				<input class="checkbox" type="checkbox" name="use_specialized"
+						value="true"/>
+				Enable the use of specialized routines expressed in the database engine's native API
+				instead of the Blueprints API (if available) 
+			</label>
+		
+			<label class="checkbox">
 				<input class="checkbox" type="checkbox" name="no_cache_pollution"
 						value="true"/>
 				Disable cache pollution before running the benchmarks

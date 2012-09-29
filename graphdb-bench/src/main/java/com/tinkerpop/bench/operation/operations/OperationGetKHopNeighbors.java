@@ -3,11 +3,17 @@ package com.tinkerpop.bench.operation.operations;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import com.sparsity.dex.gdb.EdgesDirection;
+import com.sparsity.dex.gdb.Graph;
+import com.sparsity.dex.gdb.OIDList;
+import com.sparsity.dex.gdb.OIDListIterator;
+import com.tinkerpop.bench.GlobalConfig;
 import com.tinkerpop.bench.operation.Operation;
 //import com.tinkerpop.bench.util.BloomFilter;
 import com.tinkerpop.bench.util.GraphUtils;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Vertex;
+import com.tinkerpop.blueprints.impls.dex.DexGraph;
 
 public class OperationGetKHopNeighbors extends Operation {
 
@@ -31,6 +37,12 @@ public class OperationGetKHopNeighbors extends Operation {
 	
 	@Override
 	protected void onExecute() throws Exception {
+		
+		if (GlobalConfig.useSpecializedProcedures && getGraph() instanceof DexGraph) {
+			onExecuteDex(((DexGraph) getGraph()).getRawGraph());
+			return;
+		}
+		
 		try {
 			int real_hops, get_ops = 0, get_vertex = 0;
 			
@@ -76,6 +88,68 @@ public class OperationGetKHopNeighbors extends Operation {
 	@Override
 	protected void onFinalize() {
 		result = null;
-		System.gc();
+	}
+	
+	protected void onExecuteDex(Graph graph) throws Exception {
+		
+		int real_hops, get_ops = 0, get_vertex = 0;
+		
+		com.sparsity.dex.gdb.TypeList tlist = graph.findEdgeTypes();
+		com.sparsity.dex.gdb.TypeListIterator typeItr = tlist.iterator();
+		int[] types = new int[tlist.count()];
+		int ti = 0; while (typeItr.hasNext()) types[ti++] = typeItr.nextType();
+		tlist.delete();
+		tlist = null;
+		
+		EdgesDirection d;
+		switch (direction) {
+		case OUT : d = EdgesDirection.Outgoing; break;
+		case IN  : d = EdgesDirection.Ingoing; break;
+		case BOTH: d = EdgesDirection.Any; break;
+		default  : throw new IllegalArgumentException("Invalid direction"); 
+		}
+
+		OIDList curr = new OIDList();
+		OIDList next = new OIDList();
+		
+		curr.add(((Long) startVertex.getId()).longValue());
+		
+		for (real_hops = 0; real_hops < k; real_hops++) {
+
+			int nextSize = 0;
+			
+			OIDListIterator currItr = curr.iterator();
+			while (currItr.hasNext()) {
+				long u = currItr.nextOID();
+				
+				get_ops++;
+				
+				for (int t : types) {
+					com.sparsity.dex.gdb.Objects objs = graph.neighbors(u, t, d);
+					com.sparsity.dex.gdb.ObjectsIterator objsItr = objs.iterator();
+					
+					while (objsItr.hasNext()) {
+						get_vertex++;
+						long v = objsItr.nextObject();
+						if (result.add(v)) {
+							next.add(v);
+							nextSize++;
+						}
+					}
+					
+					objsItr.close();
+					objs.close();
+				}
+			}
+			
+			if (nextSize == 0) break;
+			
+			OIDList tmp = curr;
+			curr = next;
+			tmp.clear();
+			next = tmp;
+		}
+		
+		setResult(result.size() + ":" + real_hops + ":" + get_ops + ":" + get_vertex);
 	}
 }

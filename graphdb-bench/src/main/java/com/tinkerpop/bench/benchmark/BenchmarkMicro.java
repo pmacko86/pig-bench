@@ -129,6 +129,7 @@ public class BenchmarkMicro extends Benchmark {
 		System.err.println("  --k-hops K1:K2          Set a range of k-hops");
 		System.err.println("  --op-count N            Set the number of operations");
 		System.err.println("  --update-directly       Run non-load updates directly, not on a temp. copy");
+		System.err.println("  --use-specialized       Enable the use of specialized routines");
 		System.err.println("  --use-stored-procedures Enable the use of stored procedures");
 		System.err.println("  --warmup-ingest FILE    Set a different file for ingest during " +
 										"the warmup");
@@ -242,6 +243,7 @@ public class BenchmarkMicro extends Benchmark {
 		parser.accepts("op-count").withRequiredArg().ofType(Integer.class);
 		parser.accepts("update-directly");
 		parser.accepts("use-stored-procedures");
+		parser.accepts("use-specialized");
 		parser.accepts("warmup-op-count").withRequiredArg().ofType(Integer.class);
 		parser.accepts("warmup-ingest").withRequiredArg().ofType(String.class);
 		
@@ -342,6 +344,10 @@ public class BenchmarkMicro extends Benchmark {
 		boolean updateDirectly = false;
 		if (options.has("update-directly")) {
 			updateDirectly = true;
+		}
+		
+		if (options.has("use-specialized")) {
+			GlobalConfig.useSpecializedProcedures = true;
 		}
 		
 		if (options.has("use-stored-procedures")) {

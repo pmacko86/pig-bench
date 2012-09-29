@@ -138,6 +138,7 @@ public class Job {
 		String s_warmupOpCount = WebUtils.getStringParameter(request, "warmup_op_count");
 		String s_kHops = WebUtils.getStringParameter(request, "k_hops");
 		boolean noProvenance = WebUtils.getBooleanParameter(request, "no_provenance", false);
+		boolean useSpecialized = WebUtils.getBooleanParameter(request, "use_specialized", false);
 		boolean useStoredProcedures = WebUtils.getBooleanParameter(request, "use_stored_procedures", false);
 		boolean noWarmup = WebUtils.getBooleanParameter(request, "no_warmup", false);
 		boolean noCachePollution = WebUtils.getBooleanParameter(request, "no_cache_pollution", false);
@@ -215,7 +216,11 @@ public class Job {
 		if (noWarmup) {
 			arguments.add("--no-warmup");
 		}
-		
+
+		if (useSpecialized) {
+			arguments.add("--use-specialized");
+		}
+
 		if (useStoredProcedures) {
 			arguments.add("--use-stored-procedures");
 		}
