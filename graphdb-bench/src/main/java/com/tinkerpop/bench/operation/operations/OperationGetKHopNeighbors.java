@@ -3,6 +3,10 @@ package com.tinkerpop.bench.operation.operations;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Relationship;
+
 import com.sparsity.dex.gdb.EdgesDirection;
 import com.sparsity.dex.gdb.Graph;
 import com.sparsity.dex.gdb.OIDList;
@@ -14,6 +18,8 @@ import com.tinkerpop.bench.util.GraphUtils;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.blueprints.impls.dex.DexGraph;
+import com.tinkerpop.blueprints.impls.neo4j.Neo4jGraph;
+import com.tinkerpop.blueprints.impls.neo4j.Neo4jVertex;
 
 public class OperationGetKHopNeighbors extends Operation {
 
@@ -43,46 +49,46 @@ public class OperationGetKHopNeighbors extends Operation {
 			return;
 		}
 		
-		try {
-			int real_hops, get_ops = 0, get_vertex = 0;
-			
-			ArrayList<Vertex> curr = new ArrayList<Vertex>();
-			ArrayList<Vertex> next = new ArrayList<Vertex>();
-			
-			curr.add(startVertex);
-			
-			for(real_hops = 0; real_hops < k; real_hops++) {
-				
-				for (Vertex u : curr) {
-					
-					get_ops++;
-					
-					Iterable<Vertex> vi = u.getVertices(direction);
-					for (Vertex v : vi) {
-						
-						get_vertex++;
-						
-						if (result.add(v.getId())) {
-							next.add(v);
-						}
-					}
-					GraphUtils.close(vi);
-				}
-				
-				if(next.size() == 0)
-					break;
-				
-				ArrayList<Vertex> tmp = curr;
-				curr = next;
-				tmp.clear();
-				next = tmp;
-			}
-			
-			setResult(result.size() + ":" + real_hops + ":" + get_ops + ":" + get_vertex);
-			
-		} catch (Exception e) {
-			throw e;
+		if (GlobalConfig.useSpecializedProcedures && getGraph() instanceof Neo4jGraph) {
+			onExecuteNeo(((Neo4jGraph) getGraph()).getRawGraph());
+			return;
 		}
+		
+		int real_hops, get_ops = 0, get_vertex = 0;
+
+		ArrayList<Vertex> curr = new ArrayList<Vertex>();
+		ArrayList<Vertex> next = new ArrayList<Vertex>();
+
+		curr.add(startVertex);
+
+		for(real_hops = 0; real_hops < k; real_hops++) {
+
+			for (Vertex u : curr) {
+
+				get_ops++;
+
+				Iterable<Vertex> vi = u.getVertices(direction);
+				for (Vertex v : vi) {
+
+					get_vertex++;
+
+					if (result.add(v.getId())) {
+						next.add(v);
+					}
+				}
+				GraphUtils.close(vi);
+			}
+
+			if(next.size() == 0)
+				break;
+
+			ArrayList<Vertex> tmp = curr;
+			curr = next;
+			tmp.clear();
+			next = tmp;
+		}
+
+		setResult(result.size() + ":" + real_hops + ":" + get_ops + ":" + get_vertex);
 	}
 
 	@Override
@@ -151,5 +157,53 @@ public class OperationGetKHopNeighbors extends Operation {
 		}
 		
 		setResult(result.size() + ":" + real_hops + ":" + get_ops + ":" + get_vertex);
+	}
+	
+	protected void onExecuteNeo(GraphDatabaseService graph) throws Exception {
+		
+		int real_hops, get_ops = 0, get_vertex = 0;
+
+		org.neo4j.graphdb.Direction d;
+		switch (direction) {
+		case OUT : d = org.neo4j.graphdb.Direction.OUTGOING; break;
+		case IN  : d = org.neo4j.graphdb.Direction.INCOMING; break;
+		case BOTH: d = org.neo4j.graphdb.Direction.BOTH; break;
+		default  : throw new IllegalArgumentException("Invalid direction"); 
+		}
+
+		ArrayList<Node> curr = new ArrayList<Node>();
+		ArrayList<Node> next = new ArrayList<Node>();
+
+		curr.add(((Neo4jVertex) startVertex).getRawVertex());
+
+		for(real_hops = 0; real_hops < k; real_hops++) {
+
+			for (Node u : curr) {
+
+				get_ops++;
+
+				Iterable<Relationship> itr;
+				itr = u.getRelationships(d);
+				for (Relationship r : itr) {
+					Node v = r.getOtherNode(u);
+
+					get_vertex++;
+
+					if (result.add(v.getId())) {
+						next.add(v);
+					}
+				}
+			}
+
+			if(next.size() == 0)
+				break;
+
+			ArrayList<Node> tmp = curr;
+			curr = next;
+			tmp.clear();
+			next = tmp;
+		}
+
+		setResult(result.size() + ":" + real_hops + ":" + get_ops + ":" + get_vertex);		
 	}
 }
