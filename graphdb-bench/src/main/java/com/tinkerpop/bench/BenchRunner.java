@@ -10,6 +10,7 @@ import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.tinkerpop.bench.GraphDescriptor.OpenMode;
 import com.tinkerpop.bench.benchmark.Benchmark;
 import com.tinkerpop.bench.log.OperationLogWriter;
 import com.tinkerpop.bench.operation.Operation;
@@ -91,7 +92,7 @@ public class BenchRunner {
 	 * @throws IOException if the log writer fails
 	 */
 	public BenchRunner(GraphDescriptor graphDescriptor, File logFile,
-			Benchmark benchmark, int numThreads) throws IOException {
+			Benchmark benchmark, OpenMode openMode, int numThreads) throws IOException {
 		
 		this.graphDescriptor = graphDescriptor;
 		this.benchmark = benchmark;
@@ -100,7 +101,7 @@ public class BenchRunner {
 
 		logWriter = LogUtils.getOperationLogWriter(this.logFile);
 
-		openFactory = new OperationFactoryGeneric(OperationOpenGraph.class);
+		openFactory = new OperationFactoryGeneric(OperationOpenGraph.class, new Object[] { openMode });
 		shutdownFactory = new OperationFactoryGeneric(OperationShutdownGraph.class);
 		gcFactory = new OperationFactoryGeneric(OperationDoGC.class);
 		

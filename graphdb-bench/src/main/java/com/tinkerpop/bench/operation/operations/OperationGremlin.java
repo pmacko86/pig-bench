@@ -1,6 +1,9 @@
 package com.tinkerpop.bench.operation.operations;
 
+import java.util.ArrayList;
+
 import com.tinkerpop.bench.operation.Operation;
+import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.gremlin.groovy.Gremlin;
 import com.tinkerpop.pipes.Pipe;
 
@@ -10,16 +13,20 @@ import com.tinkerpop.pipes.Pipe;
 public class OperationGremlin extends Operation {
 
 	private String gremlinScript = null;
-	@SuppressWarnings("rawtypes")
-	private Pipe compiledScript = null;
+	private Pipe<Vertex, Vertex> compiledScript = null;
 
 	// args
 	// -> 0 gremlinScript
+	@SuppressWarnings("unchecked")
 	@Override
 	protected void onInitialize(Object[] args) {
 		this.gremlinScript = (String) args[0];
 		this.compiledScript = Gremlin.compile(this.gremlinScript);
-		// compiledScript.setStarts(graph.getVertex(1)); // FIXME necessary?
+		if (args.length >= 2) {
+			ArrayList<Vertex> a = new ArrayList<Vertex>();
+			a.add(getGraph().getVertex(args[1]));
+			compiledScript.setStarts(a);
+		}
 	}
 
 	@Override

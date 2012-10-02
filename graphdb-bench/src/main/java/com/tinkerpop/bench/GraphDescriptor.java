@@ -11,6 +11,14 @@ import edu.harvard.pass.cpl.CPL;
 import edu.harvard.pass.cpl.CPLObject;
 
 public class GraphDescriptor {
+	
+	/**
+	 * Graph open mode
+	 */
+	public enum OpenMode {
+		DEFAULT,
+		BULKLOAD
+	}
 
 	private DatabaseEngine graphEngine = null;
 	private Class<? extends Graph> graphType = null;
@@ -21,6 +29,7 @@ public class GraphDescriptor {
 	private HashMap<Long, Graph> graphsMap = new HashMap<Long, Graph>();
 	private CPLObject cplObject = null;
 	private boolean threadLocal = GlobalConfig.oneDbConnectionPerThread;
+	private OpenMode lastOpenMode = null;
 
 	public GraphDescriptor(DatabaseEngine graphEngine) {
 		this(graphEngine, null, null, false);
@@ -72,14 +81,25 @@ public class GraphDescriptor {
 	// Functionality
 	//
 
-	public Graph openGraph() throws Exception {
+	public Graph openGraph(OpenMode mode) throws Exception {
+		
+		if (lastOpenMode != null) {
+			if (!mode.equals(lastOpenMode)) {
+				throw new IllegalStateException("Cannot reopen the graph using a different mode");
+			}
+		}
 		
 		Graph g = getGraph();
 		if (null != g) return g;
 		
-		g = graphEngine.newInstance(graphDir, configuration);
+		switch (mode) {
+		case DEFAULT : g = graphEngine.newInstance(graphDir, configuration); break;
+		case BULKLOAD: g = graphEngine.newInstanceForBulkload(graphDir, configuration); break;
+		default      : throw new IllegalArgumentException("Invalid graph open mode");
+		}
 		
 		synchronized (this) {
+			lastOpenMode = mode;
 			if (graph == null) graph = g;
 		}
 		
@@ -135,7 +155,7 @@ public class GraphDescriptor {
 		}
 		
 		try {
-			openGraph();
+			openGraph(lastOpenMode == null ? OpenMode.DEFAULT : lastOpenMode);
 		}
 		catch (Exception e) {
 			throw new RuntimeException(e);

@@ -12,6 +12,7 @@ import com.tinkerpop.blueprints.extensions.impls.dex.ExtendedDexGraph;
 import com.tinkerpop.blueprints.extensions.impls.neo4j.ExtendedNeo4jGraph;
 import com.tinkerpop.blueprints.extensions.impls.sql.SqlGraph;
 import com.tinkerpop.blueprints.extensions.impls.bdb.BdbGraph;
+import com.tinkerpop.blueprints.impls.neo4jbatch.Neo4jBatchGraph;
 //import com.tinkerpop.blueprints.pgm.impls.hollow.HollowGraph;
 
 import edu.harvard.pass.cpl.CPL;
@@ -186,6 +187,18 @@ public abstract class DatabaseEngine {
 	
 	
 	/**
+	 * Create a new instance of the Graph for graph ingest
+	 * 
+	 * @param dbDir the database directory
+	 * @param configuration the map of database-specific configuration arguments
+	 * @return the new instance
+	 */
+	public Graph newInstanceForBulkload(String dbDir, Map<String, String> configuration) {
+		return newInstance(dbDir, configuration);
+	}
+	
+	
+	/**
 	 * Duplicate a database instance. This implementation provides a default behavior, which just copies the
 	 * database directory (overwriting the target) for persistent databases, but throws UnsupportedOperationException
 	 * for non-persistent databases. Please override to provide a different behavior if needed, and remember to
@@ -320,6 +333,18 @@ public abstract class DatabaseEngine {
 		@Override
 		public ExtendedNeo4jGraph newInstance(String dbDir, Map<String, String> configuration) {
 			return new ExtendedNeo4jGraph(dbDir, configuration);
+		}
+		
+		/**
+		 * Create a new instance of the Graph for graph ingest
+		 * 
+		 * @param dbDir the database directory
+		 * @param configuration the map of database-specific configuration arguments
+		 * @return the new instance
+		 */
+		@Override
+		public Graph newInstanceForBulkload(String dbDir, Map<String, String> configuration) {
+			return new Neo4jBatchGraph(dbDir, configuration);
 		}
 	}
 	

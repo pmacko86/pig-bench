@@ -84,7 +84,7 @@ public class BenchmarkMicro extends Benchmark {
 		System.err.println("General options:");
 		System.err.println("  --annotation TEXT       Include an annotation in the " +
 										"disclosed provenance");
-		System.err.println("  --dir, -d DIR           Set the database and results directory");
+		System.err.println("  --dir DIR               Set the database and results directory");
 		System.err.println("  --dumb-terminal         Use the dumb terminal settings");
 		System.err.println("  --help                  Print this help message");
 		System.err.println("  --no-cache-pollution    Disable cache pollution before benchmarks");
@@ -106,7 +106,7 @@ public class BenchmarkMicro extends Benchmark {
 		}
 		System.err.println("");
 		System.err.println("Database engine options:");
-		System.err.println("  --database, -D NAME     Select a specific graph or a database instance");
+		System.err.println("  --database, -d NAME     Select a specific graph or a database instance");
 		System.err.println("  --db-config K=VAL,...   Specify one or more database configuration properties");
 		System.err.println("  --keep-temp-copy        Keep (do not delete) the temp. copy of the instance");
 		System.err.println("  --neo-caches A:B:..     Specify neo4j database cache configuration");
@@ -185,7 +185,6 @@ public class BenchmarkMicro extends Benchmark {
 		parser.accepts("annotation").withRequiredArg().ofType(String.class);
 		
 		parser.accepts("d").withRequiredArg().ofType(String.class);
-		parser.accepts("D").withRequiredArg().ofType(String.class);
 		parser.accepts("database").withRequiredArg().ofType(String.class);
 		parser.accepts("db-config").withRequiredArg().ofType(String.class).withValuesSeparatedBy(',');
 		parser.accepts("dir").withRequiredArg().ofType(String.class);
@@ -451,6 +450,7 @@ public class BenchmarkMicro extends Benchmark {
 		boolean hasLoadUpdates = false;
 		boolean hasNonLoadUpdates = false;
 		boolean hasReadOnly = false;
+		boolean hasIngest = false;
 
 		for (Workload w : Workload.WORKLOADS.values()) {
 			if (options.has(w.getShortName())) {
@@ -465,6 +465,8 @@ public class BenchmarkMicro extends Benchmark {
 				else {
 					hasReadOnly = true;
 				}
+				
+				if (w.getShortName().equalsIgnoreCase("ingest")) hasIngest = true;
 			}
 		}
 		
@@ -472,6 +474,15 @@ public class BenchmarkMicro extends Benchmark {
 		/*
 		 * Sanitize & check consistency
 		 */
+		
+		if (hasIngest) {
+			if (workloads.size() != 1) {
+				ConsoleUtils.error("Cannot combine --ingest with any other operation");
+				return 1;
+			}
+		}
+		
+		boolean isIngest = hasIngest;	// Can do this because we have just established that --ingest can be used only by itself
 		
 		if (hasLoadUpdates) {
 			
@@ -518,8 +529,8 @@ public class BenchmarkMicro extends Benchmark {
 		 */
 		
 		String dbInstanceName = null;
-		if (options.has("D") || options.has("database")) {
-			dbInstanceName = options.valueOf(options.has("D") ? "D" : "database").toString();
+		if (options.has("d") || options.has("database")) {
+			dbInstanceName = options.valueOf(options.has("d") ? "d" : "database").toString();
 			if (!Pattern.matches("^[a-z][a-z0-9_]*$", dbInstanceName)) {
 	    		throw new RuntimeException("Invalid database name (can contain only lower-case letters, "
 	    				+ "numbers, and _, and has to start with a letter)");
@@ -557,8 +568,8 @@ public class BenchmarkMicro extends Benchmark {
 		 */
 		
 		String dirResults;
-		if (options.has("d") || options.has("dir")) {
-			dirResults = options.valueOf(options.has("d") ? "d" : "dir").toString();
+		if (options.has("dir")) {
+			dirResults = options.valueOf("dir").toString();
 			if (!dirResults.endsWith("/")) dirResults += "/";
 		}
 		else {
@@ -619,7 +630,7 @@ public class BenchmarkMicro extends Benchmark {
 				// does not yet exist
 				
 				File dir = new File(dbDir);
-				if (dir.exists() && dir.isDirectory()) {
+				if (dir.exists() && dir.isDirectory() && !isIngest) {
 					
 					String s = Bench.getProperty(Bench.DB_NEO_CACHES_TOTAL);
 					long persistentCacheSize = Long.valueOf(s);
@@ -678,7 +689,7 @@ public class BenchmarkMicro extends Benchmark {
 				// defaults if the database does not yet exist
 				
 				File dir = new File(dbDir);
-				if (dir.exists() && dir.isDirectory()) {
+				if (dir.exists() && dir.isDirectory() && !isIngest) {
 										
 					String s = Bench.getProperty(Bench.DB_NEO_GCR_TOTAL);
 					long gcrCacheSize = Long.valueOf(s);
@@ -980,7 +991,7 @@ public class BenchmarkMicro extends Benchmark {
 			
 			try {
 				graphDescriptor = new GraphDescriptor(dbEngine, dbDir, dbConfig);
-				Graph g = graphDescriptor.openGraph();
+				Graph g = graphDescriptor.openGraph(GraphDescriptor.OpenMode.DEFAULT);
 				GraphUtils.printGraphML(out, g, false);
 				graphDescriptor.shutdownGraph();
 			}
@@ -1057,7 +1068,8 @@ public class BenchmarkMicro extends Benchmark {
 			graphDescriptor = new GraphDescriptor(dbEngine, warmupDbDir, warmupDbConfig);
 			
 			try {
-				warmupBenchmark.runBenchmark(graphDescriptor, logs ? warmupLogFile : null, numThreads);
+				warmupBenchmark.runBenchmark(graphDescriptor, logs ? warmupLogFile : null,
+						isIngest ? GraphDescriptor.OpenMode.BULKLOAD : GraphDescriptor.OpenMode.DEFAULT, numThreads);
 			}
 			catch (Throwable t) {
 				ConsoleUtils.error(t.getMessage());
@@ -1118,7 +1130,8 @@ public class BenchmarkMicro extends Benchmark {
 		
 		BenchResults results = null;
 		try {
-			results = benchmark.runBenchmark(graphDescriptor, logs ? logFile : null, numThreads);
+			results = benchmark.runBenchmark(graphDescriptor, logs ? logFile : null,
+					isIngest ? GraphDescriptor.OpenMode.BULKLOAD : GraphDescriptor.OpenMode.DEFAULT, numThreads);
 		}
 		catch (Throwable t) {
 			ConsoleUtils.error(t.getMessage());

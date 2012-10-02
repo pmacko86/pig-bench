@@ -39,9 +39,11 @@ public class OperationLoadGraphML extends Operation implements FastGraphMLReader
 		Graph graph = getGraph();
 		try {
 			System.out.print(": ");
-			FastGraphMLReader.inputGraph(graph, new FileInputStream(
-					graphmlPath), GlobalConfig.transactionBufferSize,
+			FileInputStream fin = new FileInputStream(graphmlPath);
+			FastGraphMLReader.inputGraph(graph, fin, GlobalConfig.transactionBufferSize,
 					null, null, null, this, ingestAsUndirected);
+			/*com.tinkerpop.blueprints.util.io.graphml.GraphMLReader.inputGraph(graph,
+					fin, GlobalConfig.transactionBufferSize, null, null, null);*/
 			Cache.getInstance(getGraph()).invalidate();
 			setResult("DONE");
 		} catch (Exception e) {

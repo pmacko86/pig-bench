@@ -19,6 +19,10 @@ public class OperationFactoryGeneric extends OperationFactoryBase implements Wit
 		this(operationType, -1, new Object[] {});
 	}
 
+	public OperationFactoryGeneric(Class<?> operationType, Object[] args) {
+		this(operationType, -1, args);
+	}
+
 	public OperationFactoryGeneric(Class<?> operationType, int opCount) {
 		this(operationType, opCount, new Object[] {});
 	}

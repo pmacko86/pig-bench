@@ -39,7 +39,7 @@ public abstract class Benchmark {
 	 * @throws Exception on error
 	 */
 	public final BenchResults runBenchmark(GraphDescriptor graphDescriptor, String logOut) throws Exception {
-		return runBenchmark(graphDescriptor, logOut, 1);
+		return runBenchmark(graphDescriptor, logOut, GraphDescriptor.OpenMode.DEFAULT, 1);
 	}
 	
 	
@@ -52,8 +52,13 @@ public abstract class Benchmark {
 	 * @return some benchmark results
 	 * @throws Exception on error
 	 */
-	public final BenchResults runBenchmark(GraphDescriptor graphDescriptor, String logOut, int threads) throws Exception {
-		BenchRunner benchRunner = new BenchRunner(graphDescriptor, logOut == null ? null : new File(logOut), this, threads);
+	public final BenchResults runBenchmark(GraphDescriptor graphDescriptor, String logOut,
+			GraphDescriptor.OpenMode openMode, int threads) throws Exception {
+		
+		BenchRunner benchRunner = new BenchRunner(graphDescriptor,
+				logOut == null ? null : new File(logOut),
+				this, openMode, threads);
+		
 		return benchRunner.runBenchmark();
 	}
 }
