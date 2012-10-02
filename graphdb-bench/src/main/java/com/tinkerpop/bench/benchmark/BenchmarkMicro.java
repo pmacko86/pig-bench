@@ -191,13 +191,14 @@ public class BenchmarkMicro extends Benchmark {
 		parser.accepts("dumb-terminal");
 		parser.accepts("help");
 		parser.accepts("keep-temp-copy");
-		parser.accepts("neo-caches");
-		parser.accepts("neo-gcr");
+		parser.accepts("neo-caches").withRequiredArg().ofType(String.class);
+		parser.accepts("neo-gcr").withRequiredArg().ofType(String.class);
 		parser.accepts("no-cache-pollution");
 		parser.accepts("no-color");
 		parser.accepts("no-logs");
 		parser.accepts("no-provenance");
 		parser.accepts("no-warmup");
+		parser.accepts("no-workloads");	/* undocumented on purpose */
 		parser.accepts("single-db-connection");
 		parser.accepts("sql-addr").withRequiredArg().ofType(Integer.class);
 		parser.accepts("threads").withRequiredArg().ofType(Integer.class);
@@ -338,6 +339,11 @@ public class BenchmarkMicro extends Benchmark {
 		boolean warmup = true;
 		if (options.has("no-warmup")) {
 			warmup = false;
+		}
+		
+		boolean skipWorkloads = false;
+		if (options.has("no-workloads")) {
+			skipWorkloads = true;
 		}
 		
 		boolean updateDirectly = false;
@@ -622,6 +628,16 @@ public class BenchmarkMicro extends Benchmark {
 			if (options.has("neo-caches")) {
 				String s = options.valueOf("neo-caches").toString();
 				config = s.split(":");
+				
+				if (config.length == 1) {
+					s = Bench.getProperty(Bench.DB_NEO_CACHES);
+					int t = Integer.parseInt(config[0]);
+					if (t < 16) {
+						ConsoleUtils.error("Invalid neo-caches; the total size must be at least 16");
+						return 1;
+					}
+					config = MathUtils.toStringArray(MathUtils.adjustSumApproximate(MathUtils.fromStringArray(s.split(":")), t, 1));
+				}
 			}
 			else {
 				
@@ -1068,8 +1084,10 @@ public class BenchmarkMicro extends Benchmark {
 			graphDescriptor = new GraphDescriptor(dbEngine, warmupDbDir, warmupDbConfig);
 			
 			try {
-				warmupBenchmark.runBenchmark(graphDescriptor, logs ? warmupLogFile : null,
-						isIngest ? GraphDescriptor.OpenMode.BULKLOAD : GraphDescriptor.OpenMode.DEFAULT, numThreads);
+				if (!skipWorkloads) {
+					warmupBenchmark.runBenchmark(graphDescriptor, logs ? warmupLogFile : null,
+							isIngest ? GraphDescriptor.OpenMode.BULKLOAD : GraphDescriptor.OpenMode.DEFAULT, numThreads);
+				}
 			}
 			catch (Throwable t) {
 				ConsoleUtils.error(t.getMessage());
@@ -1130,8 +1148,10 @@ public class BenchmarkMicro extends Benchmark {
 		
 		BenchResults results = null;
 		try {
-			results = benchmark.runBenchmark(graphDescriptor, logs ? logFile : null,
-					isIngest ? GraphDescriptor.OpenMode.BULKLOAD : GraphDescriptor.OpenMode.DEFAULT, numThreads);
+			if (!skipWorkloads) {
+				results = benchmark.runBenchmark(graphDescriptor, logs ? logFile : null,
+						isIngest ? GraphDescriptor.OpenMode.BULKLOAD : GraphDescriptor.OpenMode.DEFAULT, numThreads);
+			}
 		}
 		catch (Throwable t) {
 			ConsoleUtils.error(t.getMessage());

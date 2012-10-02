@@ -23,6 +23,7 @@ public class OperationLoadGraphML extends Operation implements FastGraphMLReader
 	private String graphmlPath = null;
 	private String lastProgressString = "";
 	private long lastProgressTime = 0;
+	private long lastProgressObjectCount = 0;
 	private boolean ingestAsUndirected;
 	
 
@@ -86,15 +87,18 @@ public class OperationLoadGraphML extends Operation implements FastGraphMLReader
 			return;
 		}
 		lastProgressTime = t;
+		long objects = vertices + edges;
+		long d = objects - lastProgressObjectCount; 
+		lastProgressObjectCount = objects;
 		
 		if (ConsoleUtils.useEscapeSequences) {
-			String s = "" + vertices + " vertices, " + edges + " edges";
+			String s = String.format(" %d vertices, %d edges (%.2f ops/s)", vertices, edges, d/(dt/1000.0));
 			System.out.print(ConsoleUtils.getBackspaces(lastProgressString.length()));
 			System.out.print(s);
 			lastProgressString = s;
 		}
 		else {
-			String s = "" + vertices + " vertices, " + edges + " edges... ";
+			String s = String.format(" %d vertices, %d edges (%.2f ops/s)... ", vertices, edges, d/(dt/1000.0));
 			System.out.print(s);
 			lastProgressString = s;			
 		}

@@ -146,6 +146,40 @@ public class MathUtils {
 	
 	
 	/**
+	 * Convert an array of Strings to an array of ints
+	 * 
+	 * @param a the array of strings
+	 * @return the array of ints
+	 */
+	public static int[] fromStringArray(String[] a) {
+		
+		int[] r = new int[a.length];
+		for (int i = 0; i < a.length; i++) {
+			r[i] = Integer.parseInt(a[i]);
+		}
+
+		return r;
+	}
+	
+	
+	/**
+	 * Convert an array of Strings to an array of longs
+	 * 
+	 * @param a the array of strings
+	 * @return the array of longs
+	 */
+	public static long[] fromStringArrayLong(String[] a) {
+		
+		long[] r = new long[a.length];
+		for (int i = 0; i < a.length; i++) {
+			r[i] = Long.parseLong(a[i]);
+		}
+
+		return r;
+	}
+
+	
+	/**
 	 * Log
 	 * 
 	 * @param x the number
