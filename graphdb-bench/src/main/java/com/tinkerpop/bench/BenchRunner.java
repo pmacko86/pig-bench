@@ -18,6 +18,7 @@ import com.tinkerpop.bench.operation.OperationDeleteGraph;
 import com.tinkerpop.bench.operation.OperationDoGC;
 import com.tinkerpop.bench.operation.OperationOpenGraph;
 import com.tinkerpop.bench.operation.OperationShutdownGraph;
+import com.tinkerpop.bench.operation.operations.OperationLoadFGF;
 import com.tinkerpop.bench.operation.operations.OperationLoadGraphML;
 import com.tinkerpop.bench.operationFactory.OperationFactory;
 import com.tinkerpop.bench.operationFactory.OperationFactoryGeneric;
@@ -354,6 +355,7 @@ public class BenchRunner {
 							
 							for (Operation op : f.getOperations()) {
 								if (!op.getClass().equals(OperationDeleteGraph.class)
+										&& !op.getClass().equals(OperationLoadFGF.class)
 										&& !op.getClass().equals(OperationLoadGraphML.class)) {
 									polluteCache = true;
 								}

@@ -1242,7 +1242,7 @@ public class BenchmarkMicro extends Benchmark {
 	public ArrayList<OperationFactory> createOperationFactories() {
 		ArrayList<OperationFactory> operationFactories = new ArrayList<OperationFactory>();
 
-		for (String graphmlFilename : graphmlFilenames) {
+		for (String ingestFile : graphmlFilenames) {
 			
 			
 			/*
@@ -1262,10 +1262,24 @@ public class BenchmarkMicro extends Benchmark {
 
 			// INGEST benchmarks
 			if (options.has("ingest")) {
-				operationFactories.add(new OperationFactoryGeneric(
-						OperationLoadGraphML.class, 1,
-						new Object[] { graphmlFilename, ingestAsUndirected },
-						LogUtils.pathToName(graphmlFilename)));
+				if (ingestFile.endsWith(".graphml")) {
+					operationFactories.add(new OperationFactoryGeneric(
+							OperationLoadGraphML.class, 1,
+							new Object[] { ingestFile, ingestAsUndirected },
+							LogUtils.pathToName(ingestFile)));
+				}
+				else if (ingestFile.endsWith(".fgf")) {
+					if (ingestAsUndirected) {
+						throw new UnsupportedOperationException("--ingest-as-undirected is not supported by the .fgf loader");
+					}
+					operationFactories.add(new OperationFactoryGeneric(
+							OperationLoadFGF.class, 1,
+							new Object[] { ingestFile },
+							LogUtils.pathToName(ingestFile)));
+				}
+				else {
+					throw new IllegalArgumentException("Unknown ingest file type");
+				}
 			}
 			
 			// GENERATE benchmarks

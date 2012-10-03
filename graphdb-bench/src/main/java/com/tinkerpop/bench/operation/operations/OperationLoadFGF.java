@@ -1,7 +1,6 @@
 package com.tinkerpop.bench.operation.operations;
 
 import java.io.File;
-import java.io.FileInputStream;
 
 import com.tinkerpop.bench.GlobalConfig;
 import com.tinkerpop.bench.cache.Cache;
@@ -9,30 +8,28 @@ import com.tinkerpop.bench.operation.Operation;
 import com.tinkerpop.bench.util.ConsoleUtils;
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.extensions.io.GraphProgressListener;
-import com.tinkerpop.blueprints.extensions.io.graphml.FastGraphMLReader;
+import com.tinkerpop.blueprints.extensions.io.fgf.FGFGraphLoader;
 
 import edu.harvard.pass.cpl.CPL;
 import edu.harvard.pass.cpl.CPLFile;
 
+
 /**
- * @author Alex Averbuch (alex.averbuch@gmail.com)
  * @author Peter Macko (pmacko@eecs.harvard.edu)
  */
-public class OperationLoadGraphML extends Operation implements GraphProgressListener {
+public class OperationLoadFGF extends Operation implements GraphProgressListener {
 
-	private String graphmlPath = null;
+	private File file = null;
 	private String lastProgressString = "";
 	private long lastProgressTime = 0;
 	private long lastProgressObjectCount = 0;
-	private boolean ingestAsUndirected;
 	
 
 	// args
 	// -> 0 graphmlDir
 	@Override
 	protected void onInitialize(Object[] args) {
-		this.graphmlPath = (String) args[0];
-		this.ingestAsUndirected = ((Boolean) args[1]).booleanValue();
+		this.file = new File((String) args[0]);
 	}
 
 	@Override
@@ -40,12 +37,8 @@ public class OperationLoadGraphML extends Operation implements GraphProgressList
 		Graph graph = getGraph();
 		try {
 			System.out.print(": ");
-			FileInputStream fin = new FileInputStream(graphmlPath);
-			FastGraphMLReader.inputGraph(graph, fin, GlobalConfig.transactionBufferSize,
-					null, null, null, this, ingestAsUndirected);
-			/*com.tinkerpop.blueprints.util.io.graphml.GraphMLReader.inputGraph(graph,
-					fin, GlobalConfig.transactionBufferSize, null, null, null);*/
-			Cache.getInstance(getGraph()).invalidate();
+			(new FGFGraphLoader(file)).loadTo(graph, GlobalConfig.transactionBufferSize);
+			Cache.getInstance(graph).invalidate();
 			setResult("DONE");
 		} catch (Exception e) {
 			throw e;
@@ -55,7 +48,7 @@ public class OperationLoadGraphML extends Operation implements GraphProgressList
 	@Override
 	protected void onFinalize() throws Exception {
 		if (CPL.isAttached()) {
-			getCPLObject().dataFlowFrom(CPLFile.lookupOrCreate(new File(graphmlPath)));
+			getCPLObject().dataFlowFrom(CPLFile.lookupOrCreate(file));
 			getGraphDescriptor().getCPLObject().dataFlowFrom(getCPLObject());
 		}
 	}
