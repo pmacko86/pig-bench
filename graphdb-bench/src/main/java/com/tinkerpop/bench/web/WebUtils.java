@@ -256,7 +256,7 @@ public class WebUtils {
 			if (f.isDirectory()) continue;
 			String name = f.getName();
 			
-			if (name.endsWith(".graphml")) {
+			if (name.endsWith(".graphml") || name.endsWith(".fgf")) {
 				r.add(name);
 			}
 		}
