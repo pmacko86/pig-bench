@@ -37,7 +37,7 @@ public class OperationLoadFGF extends Operation implements GraphProgressListener
 		Graph graph = getGraph();
 		try {
 			System.out.print(": ");
-			(new FGFGraphLoader(file)).loadTo(graph, GlobalConfig.transactionBufferSize);
+			(new FGFGraphLoader(file)).loadTo(graph, GlobalConfig.transactionBufferSize, this);
 			Cache.getInstance(graph).invalidate();
 			setResult("DONE");
 		} catch (Exception e) {
