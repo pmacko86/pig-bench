@@ -966,7 +966,7 @@ public class BenchmarkMicro extends Benchmark {
 		sb.append("__date_");
 		sb.append((new SimpleDateFormat("yyyyMMdd-HHmmss")).format(new Date()));
 		
-		String argString = sb.toString().replaceAll("\\s+", "");
+		String argString = sb.toString().replaceAll("\\s+", "").replaceAll("/", "-");
 		
 		
 		/*

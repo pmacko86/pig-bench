@@ -7,8 +7,10 @@ import com.tinkerpop.bench.cache.Cache;
 import com.tinkerpop.bench.operation.Operation;
 import com.tinkerpop.bench.util.ConsoleUtils;
 import com.tinkerpop.blueprints.Graph;
+import com.tinkerpop.blueprints.extensions.impls.neo4j.Neo4jFGFLoader;
 import com.tinkerpop.blueprints.extensions.io.GraphProgressListener;
 import com.tinkerpop.blueprints.extensions.io.fgf.FGFGraphLoader;
+import com.tinkerpop.blueprints.impls.neo4jbatch.Neo4jBatchGraph;
 
 import edu.harvard.pass.cpl.CPL;
 import edu.harvard.pass.cpl.CPLFile;
@@ -37,7 +39,12 @@ public class OperationLoadFGF extends Operation implements GraphProgressListener
 		Graph graph = getGraph();
 		try {
 			System.out.print(": ");
-			(new FGFGraphLoader(file)).loadTo(graph, GlobalConfig.transactionBufferSize, this);
+			
+			if (graph instanceof Neo4jBatchGraph)
+				Neo4jFGFLoader.load(((Neo4jBatchGraph) graph).getRawGraph(), file, this);
+			else
+				FGFGraphLoader.load(graph, file, GlobalConfig.transactionBufferSize, this);
+			
 			Cache.getInstance(graph).invalidate();
 			setResult("DONE");
 		} catch (Exception e) {
