@@ -16,6 +16,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import com.tinkerpop.bench.Bench;
 import com.tinkerpop.bench.DatabaseEngine;
+import com.tinkerpop.bench.GlobalConfig;
 import com.tinkerpop.bench.Workload;
 import com.tinkerpop.bench.benchmark.BenchmarkMicro;
 
@@ -144,6 +145,7 @@ public class Job {
 		boolean noCachePollution = WebUtils.getBooleanParameter(request, "no_cache_pollution", false);
 		boolean updateDirectly = WebUtils.getBooleanParameter(request, "update_directly", false);
 		String s_javaHeapSize = WebUtils.getStringParameter(request, "java_heap_size");
+		String s_dbBufferPoolSize = WebUtils.getStringParameter(request, "db_buffer_pool_size");
 		
 		boolean ingestAsUndirected = WebUtils.getBooleanParameter(request, "ingest_as_undirected", false);
 		String s_ingestFile = WebUtils.getStringParameter(request, "ingest_file");
@@ -198,6 +200,13 @@ public class Job {
 		if (dbEngine         != null) { arguments.add("--" + dbEngine); }
 		if (dbInstance       != null) { arguments.add("--database"); arguments.add(dbInstance); }
 		if (s_annotation     != null) { arguments.add("--annotation"); arguments.add(s_annotation); }
+		
+		if (s_dbBufferPoolSize != null) {
+			if (!s_dbBufferPoolSize.equals(Bench.getProperty(Bench.DB_BUFFER_POOL_SIZE,
+					"" + GlobalConfig.databaseBufferPoolSize))) {
+				arguments.add("--db-buffer-pool"); arguments.add(s_dbBufferPoolSize);
+			}
+		}
 		
 		if (s_txBuffer != null) {
 			if (!s_txBuffer.equals("" + BenchmarkMicro.DEFAULT_NUM_THREADS)) {

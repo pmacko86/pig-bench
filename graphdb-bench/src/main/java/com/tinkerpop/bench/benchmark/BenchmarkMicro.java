@@ -107,6 +107,7 @@ public class BenchmarkMicro extends Benchmark {
 		System.err.println("");
 		System.err.println("Database engine options:");
 		System.err.println("  --database, -d NAME     Select a specific graph or a database instance");
+		System.err.println("  --db-buffer-pool SIZE   Set or check the buffer pool size (in MB)");
 		System.err.println("  --db-config K=VAL,...   Specify one or more database configuration properties");
 		System.err.println("  --keep-temp-copy        Keep (do not delete) the temp. copy of the instance");
 		System.err.println("  --neo-caches A:B:..     Specify neo4j database cache configuration");
@@ -186,6 +187,7 @@ public class BenchmarkMicro extends Benchmark {
 		
 		parser.accepts("d").withRequiredArg().ofType(String.class);
 		parser.accepts("database").withRequiredArg().ofType(String.class);
+		parser.accepts("db-buffer-pool").withRequiredArg().ofType(Integer.class);
 		parser.accepts("db-config").withRequiredArg().ofType(String.class).withValuesSeparatedBy(',');
 		parser.accepts("dir").withRequiredArg().ofType(String.class);
 		parser.accepts("dumb-terminal");
@@ -361,6 +363,21 @@ public class BenchmarkMicro extends Benchmark {
 		
 		if (options.has("single-db-connection")) {
 			GlobalConfig.oneDbConnectionPerThread = false;
+		}
+		
+		if (options.has("db-buffer-pool")) {
+			GlobalConfig.databaseBufferPoolSize = (Integer) options.valueOf("db-buffer-pool");
+			if (GlobalConfig.databaseBufferPoolSize < 16) {
+				ConsoleUtils.error("The specified database buffer pool is too small -- must be at least 16 MB");
+				return 1;
+			}
+		}
+		else {
+			GlobalConfig.databaseBufferPoolSize = Integer.parseInt(Bench.getProperty(Bench.DB_BUFFER_POOL_SIZE));
+			if (GlobalConfig.databaseBufferPoolSize < 16) {
+				ConsoleUtils.error("The specified database buffer pool is too small -- must be at least 16 MB");
+				return 1;
+			}
 		}
 		
 		if (options.has("threads")) {
@@ -626,6 +643,12 @@ public class BenchmarkMicro extends Benchmark {
 			 */
 
 			if (options.has("neo-caches")) {
+				
+				if (options.has("db-buffer-pool")) {
+					ConsoleUtils.error("Cannot combine the --neo-caches and the --db-buffer-pool options");
+					return 1;
+				}
+				
 				String s = options.valueOf("neo-caches").toString();
 				config = s.split(":");
 				
@@ -636,6 +659,7 @@ public class BenchmarkMicro extends Benchmark {
 						ConsoleUtils.error("Invalid neo-caches; the total size must be at least 16");
 						return 1;
 					}
+					GlobalConfig.databaseBufferPoolSize = t;
 					config = MathUtils.toStringArray(MathUtils.adjustSumApproximate(MathUtils.fromStringArray(s.split(":")), t, 1));
 				}
 			}
@@ -648,14 +672,7 @@ public class BenchmarkMicro extends Benchmark {
 				File dir = new File(dbDir);
 				if (dir.exists() && dir.isDirectory() && !isIngest) {
 					
-					String s = Bench.getProperty(Bench.DB_NEO_CACHES_TOTAL);
-					long persistentCacheSize = Long.valueOf(s);
-					if (!s.equals("" + persistentCacheSize)) {
-						ConsoleUtils.error("Invalid number format of property: " + Bench.DB_NEO_CACHES_TOTAL);
-						return 1;
-					}
-					
-					long[] adjustedSizes = FileUtils.getScaledFileSizesMB(dir, persistentCacheSize,
+					long[] adjustedSizes = FileUtils.getScaledFileSizesMB(dir, GlobalConfig.databaseBufferPoolSize,
 							"neostore.nodestore.db", "neostore.relationshipstore.db", "neostore.propertystore.db",
 							"neostore.propertystore.db.strings", "neostore.propertystore.db.arrays");
  
@@ -663,7 +680,8 @@ public class BenchmarkMicro extends Benchmark {
 				}
 				else {
 					String s = Bench.getProperty(Bench.DB_NEO_CACHES);
-					config = s.split(":");
+					config = MathUtils.toStringArray(MathUtils.adjustSumApproximate(MathUtils.fromStringArray(s.split(":")),
+							GlobalConfig.databaseBufferPoolSize, 1));
 				}
 			}
 			
@@ -688,6 +706,10 @@ public class BenchmarkMicro extends Benchmark {
 			m.put("neostore.propertystore.db.arrays.mapped_memory" , "" + config[4] + "M");
 			warmupDbConfig.putAll(m);
 			dbConfig.putAll(m);
+			
+			int sum = 0;
+			for (String c : config) sum += Integer.parseInt(c);
+			GlobalConfig.databaseBufferPoolSize = sum;
 			
 			
 			/*
@@ -1037,6 +1059,7 @@ public class BenchmarkMicro extends Benchmark {
 		
 		System.out.println("Database    : " + dbShortName);
 		System.out.println("Instance    : " + (dbInstanceName != null && !dbInstanceName.equals("") ? dbInstanceName : "<default>"));
+		System.out.println("Buffer Pool : " + GlobalConfig.databaseBufferPoolSize + " MB");
 		System.out.println("Directory   : " + dirResults);
 		
 		if (logs) {

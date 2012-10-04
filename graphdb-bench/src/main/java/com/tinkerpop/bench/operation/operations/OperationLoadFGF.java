@@ -92,13 +92,13 @@ public class OperationLoadFGF extends Operation implements GraphProgressListener
 		lastProgressObjectCount = objects;
 		
 		if (ConsoleUtils.useEscapeSequences) {
-			String s = String.format(" %d vertices, %d edges (%.2f ops/s)", vertices, edges, d/(dt/1000.0));
+			String s = String.format(" %d vertices, %d edges (%.2f Kops/s)", vertices, edges, d/(double)dt);
 			System.out.print(ConsoleUtils.getBackspaces(lastProgressString.length()));
 			System.out.print(s);
 			lastProgressString = s;
 		}
 		else {
-			String s = String.format(" %d vertices, %d edges (%.2f ops/s)... ", vertices, edges, d/(dt/1000.0));
+			String s = String.format(" %d vertices, %d edges (%.2f Kops/s)... ", vertices, edges, d/(double)dt);
 			System.out.print(s);
 			lastProgressString = s;			
 		}

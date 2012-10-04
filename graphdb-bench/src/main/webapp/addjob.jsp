@@ -1,5 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <%@ page import="com.tinkerpop.bench.Bench"%>
+<%@ page import="com.tinkerpop.bench.GlobalConfig"%>
 <%@ page import="com.tinkerpop.bench.Workload.UpdateCategory"%>
 <%@ page import="com.tinkerpop.bench.Workload"%>
 <%@ page import="com.tinkerpop.bench.DatabaseEngine"%>
@@ -153,6 +154,12 @@
 				<span class="small">Default: 1G</span>
 			</label>
 			<input type="text" name="java_heap_size" id="java_heap_size" value="1G" />
+			
+			<label>Database Buffer Pool Size
+				<span class="small">in MB</span>
+			</label>
+			<input type="text" name="db_buffer_pool_size" id="db_buffer_pool_size" value="<%=
+				Bench.getProperty(Bench.DB_BUFFER_POOL_SIZE, "" + GlobalConfig.databaseBufferPoolSize) %>" />
 		
 			<label class="checkbox">
 				<input class="checkbox" type="checkbox" name="no_provenance"

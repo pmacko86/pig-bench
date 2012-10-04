@@ -25,14 +25,14 @@ public class Bench {
 	public static final String TYPE_DB = "Database";
 	public static final String TYPE_OPERATION = "Operation";
 
-	// DATASETS - GraphML & Databases
+	// DATASETS - Ingest & Databases
 	public static final String DATASETS_DIRECTORY = "bench.datasets.directory";
 	public static final String DB_SQL_ADDR = "bench.db.sql.addr";
 	public static final String DB_SQL_DB_NAME_PREFIX = "bench.db.sql.database_prefix";
 	public static final String DB_SQL_DB_NAME_PREFIX_WARMUP = "bench.db.sql.warmup_database_prefix";
 	
 	// DATABASE ENGINE CACHES
-	public static final String DB_NEO_CACHES_TOTAL = "bench.db.neo.caches.total";
+	public static final String DB_BUFFER_POOL_SIZE = "bench.db.buffer_pool_size";
 	public static final String DB_NEO_CACHES = "bench.db.neo.caches";
 	public static final String DB_NEO_GCR_TOTAL = "bench.db.neo.gcr.total";
 	public static final String DB_NEO_GCR = "bench.db.neo.gcr";

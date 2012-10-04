@@ -5,6 +5,9 @@ package com.tinkerpop.bench;
  */
 public class GlobalConfig {
 
+	/// The size of the database buffer pool in MB
+	public static int databaseBufferPoolSize = 256;
+
 	/// The size of the transaction buffer
 	public static int transactionBufferSize = 100 * 1000;
 	

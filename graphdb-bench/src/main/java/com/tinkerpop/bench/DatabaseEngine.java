@@ -9,10 +9,10 @@ import java.util.TreeMap;
 import com.tinkerpop.bench.util.FileUtils;
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.extensions.impls.dex.ExtendedDexGraph;
+import com.tinkerpop.blueprints.extensions.impls.neo4j.ExtendedNeo4jBatchGraph;
 import com.tinkerpop.blueprints.extensions.impls.neo4j.ExtendedNeo4jGraph;
 import com.tinkerpop.blueprints.extensions.impls.sql.SqlGraph;
 import com.tinkerpop.blueprints.extensions.impls.bdb.BdbGraph;
-import com.tinkerpop.blueprints.impls.neo4jbatch.Neo4jBatchGraph;
 //import com.tinkerpop.blueprints.pgm.impls.hollow.HollowGraph;
 
 import edu.harvard.pass.cpl.CPL;
@@ -280,7 +280,7 @@ public abstract class DatabaseEngine {
 		 */
 		@Override
 		public BdbGraph newInstance(String dbDir, Map<String, String> configuration) {
-			return new BdbGraph(dbDir);
+			return new BdbGraph(dbDir, GlobalConfig.databaseBufferPoolSize);
 		}
 	}
 	
@@ -344,7 +344,7 @@ public abstract class DatabaseEngine {
 		 */
 		@Override
 		public Graph newInstanceForBulkload(String dbDir, Map<String, String> configuration) {
-			return new Neo4jBatchGraph(dbDir, configuration);
+			return new ExtendedNeo4jBatchGraph(dbDir, configuration);
 		}
 	}
 	

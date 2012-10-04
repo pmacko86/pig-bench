@@ -5,7 +5,10 @@ import java.util.Map;
 
 import com.tinkerpop.bench.util.FileUtils;
 import com.tinkerpop.blueprints.Graph;
+import com.tinkerpop.blueprints.extensions.BenchmarkableGraph;
 import com.tinkerpop.blueprints.extensions.impls.sql.SqlGraph;
+import com.tinkerpop.blueprints.impls.neo4j.Neo4jGraph;
+import com.tinkerpop.blueprints.impls.neo4jbatch.Neo4jBatchGraph;
 
 import edu.harvard.pass.cpl.CPL;
 import edu.harvard.pass.cpl.CPLObject;
@@ -92,11 +95,34 @@ public class GraphDescriptor {
 		Graph g = getGraph();
 		if (null != g) return g;
 		
+		
+		// Create a new instance of the graph
+		
 		switch (mode) {
 		case DEFAULT : g = graphEngine.newInstance(graphDir, configuration); break;
 		case BULKLOAD: g = graphEngine.newInstanceForBulkload(graphDir, configuration); break;
 		default      : throw new IllegalArgumentException("Invalid graph open mode");
 		}
+		
+		
+		// Checks
+		
+		if (!(g instanceof BenchmarkableGraph)) {
+			g.shutdown();
+			throw new RuntimeException("The graph is not an instance of BenchmarkableGraph");
+		}
+		
+		if (!(g instanceof Neo4jGraph) && !(g instanceof Neo4jBatchGraph)) {
+			int bufferPoolSize = ((BenchmarkableGraph) g).getBufferPoolSize();
+			if (bufferPoolSize != GlobalConfig.databaseBufferPoolSize) {
+				g.shutdown();
+				throw new RuntimeException("The graph does not have the correct buffer pool size: it has "
+						+ bufferPoolSize + " MB, but " + GlobalConfig.databaseBufferPoolSize + " MB is expected");
+			}
+		}
+		
+		
+		// Internal house-keeping
 		
 		synchronized (this) {
 			lastOpenMode = mode;
@@ -107,6 +133,9 @@ public class GraphDescriptor {
 			threadLocalGraphs.set(g);
 			graphsMap.put(Thread.currentThread().getId(), g);
 		}
+		
+		
+		// Finish
 
 		//if (TransactionalGraph.class.isAssignableFrom(graphType))
 		//	((TransactionalGraph) g).setTransactionMode(TransactionalGraph.Mode.AUTOMATIC);
