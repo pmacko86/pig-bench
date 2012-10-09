@@ -156,8 +156,8 @@
 				TreeMap<String, Job> jobMap = new TreeMap<String, Job>();
 				SimpleDateFormat dateTimeFormatter = new SimpleDateFormat("[yyyy/MM/dd HH:mm:ss]");
 
-				for (Pair<DatabaseEngine, String> p : selectedDatabaseInstances) {
-					for (Job job : JobList.getInstance().getFinishedJobs(p.getFirst().getShortName(), p.getSecond())) {
+				for (DatabaseEngineAndInstance p : selectedDatabaseInstances) {
+					for (Job job : JobList.getInstance().getFinishedJobs(p.getEngine().getShortName(), p.getInstance())) {
 						String prefix = "";
 						if (job.getExecutionTime() != null) {
 							prefix = dateTimeFormatter.format(job.getExecutionTime()) + " ";
