@@ -33,16 +33,16 @@ install.prerequisites <- function() {
 
 
 #
-# Function find.benchmark.results.file
+# Function find.benchmark.results.directory
 #
 # Description:
-#   Finds the name of the result file for the given database engine name,
-#   database instance name, and the workload argument.
+#   Finds the name of the result directory for the given database engine name,
+#   and database instance name
 #
-# Usage:
-#   find.benchmark.results.file(database.name, database.instance, workload.argument)
-#
-find.benchmark.results.file <- function(database.name, database.instance, workload.argument) {
+find.benchmark.results.directory <- function(database.name, database.instance) {
+
+
+	# Initialize
 
 	if (is.null(database.instance)) {
 		subdir <- database.name
@@ -51,6 +51,9 @@ find.benchmark.results.file <- function(database.name, database.instance, worklo
 		subdir <- paste(database.name, "_", database.instance, sep="")
 	}
 
+	
+	# Find the data directory
+	
 	if (grepl(paste("/", subdir, sep=""), getwd(), fixed=TRUE)) {
 		dir <- "."
 	}
@@ -70,6 +73,30 @@ find.benchmark.results.file <- function(database.name, database.instance, worklo
 		}
 	}
 	
+	dir
+}
+
+
+#
+# Function find.benchmark.results.file
+#
+# Description:
+#   Finds the name of the result file for the given database engine name,
+#   database instance name, and the workload argument.
+#
+# Usage:
+#   find.benchmark.results.file(database.name, database.instance, workload.argument)
+#
+find.benchmark.results.file <- function(database.name, database.instance, workload.argument, specialized=NULL) {
+
+	
+	# Find the data directory
+	
+	dir <- find.benchmark.results.directory(database.name, database.instance)
+	
+	
+	# List the files
+	
 	if (is.null(database.instance)) {
 		files <- list.files(dir, paste("^", database.name,
 					"__.*", "__", workload.argument, "__.*\\.csv", sep=""))
@@ -78,6 +105,17 @@ find.benchmark.results.file <- function(database.name, database.instance, worklo
 		files <- list.files(dir, paste("^", database.name, "_", database.instance,
 					"__.*", "__", workload.argument, "__.*\\.csv", sep=""))
 	}
+	
+	
+	# Filters
+	
+	if (!is.null(specialized)) {
+	}
+	
+	
+	# Get the latest file
+	
+	### Do it by time, not file name
 	
 	paste(dir, "/", sort(files, decreasing=TRUE)[1], sep="")
 }
@@ -94,9 +132,9 @@ find.benchmark.results.file <- function(database.name, database.instance, worklo
 # Usage:
 #   load.benchmark.results(database.name, database.instance, workload.argument)
 #
-load.benchmark.results <- function(database.name, database.instance, workload.argument) {
+load.benchmark.results <- function(database.name, database.instance, workload.argument,... ) {
 
-	data <- read.csv(find.benchmark.results.file(database.name, database.instance, workload.argument))
+	data <- read.csv(find.benchmark.results.file(database.name, database.instance, workload.argument,... ))
 	
 	
 	# Convert the time to ms and memory to MB
@@ -124,9 +162,9 @@ load.benchmark.results <- function(database.name, database.instance, workload.ar
 # Usage:
 #   load.benchmark.results.khop(database.name, database.instance)
 #
-load.benchmark.results.khop <- function(database.name, database.instance, keep.outliers=FALSE, directed=TRUE) {
+load.benchmark.results.khop <- function(database.name, database.instance, keep.outliers=FALSE, directed=TRUE,... ) {
 
-	data <- load.benchmark.results(database.name, database.instance, "get-k")
+	data <- load.benchmark.results(database.name, database.instance, "get-k",... )
 
 	
 	# Isolate and parse OperationGetKHopNeighbors
@@ -179,9 +217,9 @@ load.benchmark.results.khop <- function(database.name, database.instance, keep.o
 # Usage:
 #   load.benchmark.results.khop.undirected(database.name, database.instance)
 #
-load.benchmark.results.khop.undirected <- function(database.name, database.instance, keep.outliers=FALSE) {
+load.benchmark.results.khop.undirected <- function(database.name, database.instance, keep.outliers=FALSE,... ) {
 
-	load.benchmark.results.khop(database.name, database.instance, keep.outliers=keep.outliers, directed=FALSE)
+	load.benchmark.results.khop(database.name, database.instance, keep.outliers=keep.outliers, directed=FALSE,... )
 }
 
 
@@ -230,9 +268,9 @@ load.benchmark.results.parse.op.stat <- function(data, start.index=2) {
 # Usage:
 #   load.benchmark.results.global.clustering.coefficient(database.name, database.instance)
 #
-load.benchmark.results.global.clustering.coefficient <- function(database.name, database.instance) {
+load.benchmark.results.global.clustering.coefficient <- function(database.name, database.instance,... ) {
 
-	data <- load.benchmark.results(database.name, database.instance, "clustering-coeff")
+	data <- load.benchmark.results(database.name, database.instance, "clustering-coeff",... )
 
 	
 	# Isolate and parse OperationGlobalClusteringCoefficient
@@ -257,9 +295,9 @@ load.benchmark.results.global.clustering.coefficient <- function(database.name, 
 # Usage:
 #   load.benchmark.results.network.average.clustering.coefficient(database.name, database.instance)
 #
-load.benchmark.results.network.average.clustering.coefficient <- function(database.name, database.instance) {
+load.benchmark.results.network.average.clustering.coefficient <- function(database.name, database.instance,... ) {
 
-	data <- load.benchmark.results(database.name, database.instance, "clustering-coeff")
+	data <- load.benchmark.results(database.name, database.instance, "clustering-coeff",... )
 
 	
 	# Isolate and parse OperationNetworkAverageClusteringCoefficient
@@ -284,9 +322,9 @@ load.benchmark.results.network.average.clustering.coefficient <- function(databa
 # Usage:
 #   load.benchmark.results.all.neighbors(database.name, database.instance)
 #
-load.benchmark.results.all.neighbors <- function(database.name, database.instance, keep.outliers=FALSE) {
+load.benchmark.results.all.neighbors <- function(database.name, database.instance, keep.outliers=FALSE,... ) {
 
-	data <- load.benchmark.results(database.name, database.instance, "get")
+	data <- load.benchmark.results(database.name, database.instance, "get",... )
 
 
 	# Isolate and parse OperationGetAllNeighbors
@@ -311,16 +349,16 @@ load.benchmark.results.all.neighbors <- function(database.name, database.instanc
 # Usage:
 #   load.benchmark.results.shortest.path(database.name, database.instance)
 #
-load.benchmark.results.shortest.path <- function(database.name, database.instance, keep.outliers=FALSE, property=FALSE) {
+load.benchmark.results.shortest.path <- function(database.name, database.instance, keep.outliers=FALSE, property=FALSE,... ) {
 	
 	# Isolate and parse OperationGetShortestPath or OperationGetShortestPathProperty
 	
 	if (property) {
-		data <- load.benchmark.results(database.name, database.instance, "shortest-path-prop")
+		data <- load.benchmark.results(database.name, database.instance, "shortest-path-prop",... )
 		data <- data[data$name == "OperationGetShortestPathProperty", ]
 	}
 	else {
-		data <- load.benchmark.results(database.name, database.instance, "shortest-path")
+		data <- load.benchmark.results(database.name, database.instance, "shortest-path",... )
 		data <- data[data$name == "OperationGetShortestPath", ]
 	}
 	data$directed <- FALSE
@@ -368,16 +406,16 @@ load.benchmark.results.shortest.path <- function(database.name, database.instanc
 # Usage:
 #   load.benchmark.results.sssp(database.name, database.instance)
 #
-load.benchmark.results.sssp <- function(database.name, database.instance, keep.outliers=FALSE, property=FALSE) {
+load.benchmark.results.sssp <- function(database.name, database.instance, keep.outliers=FALSE, property=FALSE,... ) {
 	
 	# Isolate and parse OperationGetShortestPath or OperationGetShortestPathProperty
 	
 	if (property) {
-		data <- load.benchmark.results(database.name, database.instance, "sssp-prop")
+		data <- load.benchmark.results(database.name, database.instance, "sssp-prop",... )
 		data <- data[data$name == "OperationGetSingleSourceShortestPathProperty", ]
 	}
 	else {
-		data <- load.benchmark.results(database.name, database.instance, "sssp")
+		data <- load.benchmark.results(database.name, database.instance, "sssp",... )
 		data <- data[data$name == "OperationGetSingleSourceShortestPath", ]
 	}
 	data$directed <- FALSE

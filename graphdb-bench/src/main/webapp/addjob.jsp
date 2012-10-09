@@ -151,9 +151,9 @@
 			<input type="text" name="tx_buffer" id="tx_buffer" value="1" />
 			
 			<label>Java Heap Size
-				<span class="small">Default: 1G</span>
+				<span class="small">Default: <%= BenchmarkMicro.DEFAULT_JVM_HEAP_SIZE %></span>
 			</label>
-			<input type="text" name="java_heap_size" id="java_heap_size" value="1G" />
+			<input type="text" name="java_heap_size" id="java_heap_size" value="<%= BenchmarkMicro.DEFAULT_JVM_HEAP_SIZE %>" />
 			
 			<label>Database Buffer Pool Size
 				<span class="small">in MB</span>

@@ -8,7 +8,7 @@
 	
 	var padding_left = 100;
 	var padding_right = 300;
-	var padding_top = 50;
+	var padding_top = 75;
 	var padding_bottom = 150;
 	
 	var bar_width = 20;
@@ -47,19 +47,57 @@
 					  .append("g")
 					  	.attr("transform", "translate(" + padding_left + ", " + padding_top + ")");
 		
-		var y = d3.scale.linear()
-				  .domain([0, 1.1 * d3.max(data, function(d) { return d.mean + d.stdev; })])
-				  .range([chart_inner_height, 0]);
+		//var y = d3.scale.linear()
+		//		  .domain([0, 1.1 * d3.max(data, function(d) { return d.mean + d.stdev; })])
+		//		  .range([chart_inner_height, 0]);
 		
 		var x = d3.scale.ordinal()
 				  .domain(labels)
 				  .rangeBands([0, bar_width * data.length]);
+			
+		//
+		// Y Scale
+		//
+		
+		var data_scale = "<%= chartProperties.yscale %>";
+		var y = d3.scale.<%= chartProperties.yscale %>()
+				  .domain([<%= "log".equals(chartProperties.yscale)
+					  ? "0.9 * d3.min(data, function(d) { "
+						+ "  return d.mean + d.stdev;"
+					  	+ "})"
+					  : "0" %>, 
+				  	      1.1 * d3.max(data, function(d) { return d.mean + d.stdev; })])
+				  .range([chart_inner_height, 0])
+				  .nice();
+
+
+
+		//
+		// The vertical ruler (ticks) and the axis
+		//
+		
+		var num_ticks = 10;
+		var ticks = y.ticks(num_ticks);
+		if (data_scale == "log" && ticks.length > num_ticks) {
+			t = new Array();
+			
+			/*for (var i = 0; i < ticks.length; i += Math.floor(ticks.length / num_ticks)) {
+				t.push(ticks[i]);
+			}*/
+			
+			t.push(y.domain()[1]);
+			while (t[t.length - 1] / 10 >= y.domain()[0]) {
+				t.push(t[t.length - 1] / 10);
+			}
+			
+			ticks = t;
+		}
 
 
 		// The vertical ruler (ticks) and the axis
 		
 		chart.selectAll("line")
-			 .data(y.ticks(10))
+			 .data(ticks)
 			 .enter().append("line")
 			 .attr("x1", -bars_margin)
 			 .attr("x2", data.length * bar_width + bars_margin)
@@ -68,7 +106,7 @@
 			 .style("stroke", "#ccc");
 		
 		chart.selectAll(".rule")
-			 .data(y.ticks(10))
+			 .data(ticks)
 			 .enter().append("text")
 			 .attr("class", "rule")
 			 .attr("x", -chart_margin-bars_margin)

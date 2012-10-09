@@ -24,7 +24,7 @@ import edu.harvard.pass.cpl.CPLObject;
  * 
  * @author Peter Macko (pmacko@eecs.harvard.edu)
  */
-public abstract class DatabaseEngine {
+public abstract class DatabaseEngine implements Comparable<DatabaseEngine> {
 	
 	/**
 	 * The set of supported database engines
@@ -123,6 +123,54 @@ public abstract class DatabaseEngine {
 	
 	
 	/**
+	 * Determine whether this database is persistent
+	 * 
+	 * @return true if it is persistent
+	 */
+	public boolean isPersistent() {
+		return persistent;
+	}
+	
+	
+	/**
+	 * Compare two database engines for equality
+	 * 
+	 * @param other the other engine
+	 * @return true if they are equal
+	 */
+	@Override
+	public boolean equals(Object other) {
+		if (!(other instanceof DatabaseEngine)) return false;
+		return ((DatabaseEngine) other).shortName.equals(shortName);
+	}
+	
+	
+	/**
+	 * Compute a hash code
+	 * 
+	 * @return the hash code
+	 */
+	@Override
+	public int hashCode() {
+		return shortName.hashCode();
+	}
+	
+	
+	/**
+	 * Compare two database engines
+	 * 
+	 * @param other the other engine
+	 * @return the result of the comparison
+	 */
+	@Override
+	public int compareTo(DatabaseEngine other) {
+		int r = longName.compareTo(other.longName);
+		if (r != 0) return r;
+		return shortName.compareTo(other.shortName);
+	}
+	
+	
+	/**
 	 * Return the string version of the object
 	 * 
 	 * @return the string version of the object
@@ -130,16 +178,6 @@ public abstract class DatabaseEngine {
 	@Override
 	public String toString() {
 		return longName;
-	}
-	
-	
-	/**
-	 * Determine whether this database is persistent
-	 * 
-	 * @return true if it is persistent
-	 */
-	public boolean isPersistent() {
-		return persistent;
 	}
 	
 	

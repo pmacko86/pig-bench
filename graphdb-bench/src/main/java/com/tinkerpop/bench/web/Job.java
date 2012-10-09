@@ -5,11 +5,13 @@ import java.io.File;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.servlet.http.HttpServletRequest;
@@ -26,7 +28,7 @@ import com.tinkerpop.bench.benchmark.BenchmarkMicro;
  * 
  * @author Peter Macko (pmacko@eecs.harvard.edu)
  */
-public class Job {
+public class Job implements Comparable<Job> {
 	
 	private int id;
 	private List<String> arguments;
@@ -190,7 +192,7 @@ public class Job {
 		arguments.add(Bench.graphdbBenchDir + "/runBenchmarkSuite.sh");
 
 		if (s_javaHeapSize   != null) {
-			if (!s_javaHeapSize.equalsIgnoreCase("1G")) {
+			if (!s_javaHeapSize.equalsIgnoreCase(BenchmarkMicro.DEFAULT_JVM_HEAP_SIZE)) {
 				arguments.add("+memory:" + s_javaHeapSize);
 			}
 		}
@@ -329,7 +331,6 @@ public class Job {
 		boolean first = true;
 		
 		String date = null;
-		@SuppressWarnings("unused")
 		String mem = null;
 		
 		for (String t : tokens) {
@@ -383,7 +384,26 @@ public class Job {
 			}
 		}
 		
-		// TODO Reconstruct the JVM memory size argument
+		
+		// Reconstruct the JVM memory size argument
+		
+		if (mem.endsWith("M") || mem.endsWith("m")) {
+			int mb = Integer.parseInt(mem.substring(0, mem.length() - 1));
+			int gb = mb / 1024;
+			if (gb >= 1 && (mb % 1024) < gb * 24) {
+				mem = "" + gb + "g";
+			}
+		}
+		else if (mem.endsWith("G") || mem.endsWith("g")) {
+			Integer.parseInt(mem.substring(0, mem.length() - 1));	// just check that it parses properly
+		}
+		else {
+			throw new IllegalArgumentException("Invalid _mem_ argument in the file name, must end with \"m\" or \"g\"");
+		}
+		
+		if (!mem.equalsIgnoreCase(BenchmarkMicro.DEFAULT_JVM_HEAP_SIZE)) {
+			arguments.add(1, "+memory:" + mem);
+		}
 	}
 	
 	
@@ -422,6 +442,51 @@ public class Job {
 	 */
 	public Date getExecutionTime() {
 		return executionTime;
+	}
+	
+	
+	/**
+	 * Check two jobs for equality
+	 * 
+	 * @param other the other job
+	 * @return true if they are equal
+	 */
+	@Override
+	public boolean equals(Object other) {
+		if (!(other instanceof Job)) return false;
+		return ((Job) other).id == id;
+	}
+	
+	
+	/**
+	 * Compute the hash code
+	 * 
+	 * @return the hash code
+	 */
+	@Override
+	public int hashCode() {
+		return id;
+	}
+	
+	
+	/**
+	 * Compare two objects -- first by time and then by id
+	 * 
+	 * @param other the other job
+	 * @return the result of the comparison
+	 */
+	@Override
+	public int compareTo(Job other) {
+		
+		if (other.executionTime == null && executionTime != null) return -1;
+		if (other.executionTime != null && executionTime == null) return  1;
+		
+		if (other.executionTime != null && executionTime != null) {
+			int r = executionTime.compareTo(other.executionTime);
+			if (r != 0) return r;
+		}
+		
+		return id - other.id;
 	}
 	
 	
@@ -604,6 +669,7 @@ public class Job {
 	 * @return the log file, or null if not known or if it does not exist
 	 */
 	public File getLogFile() {
+		if (logFile == null) return null;
 		if (!logFile.exists()) return null;
 		return logFile;
 	}
@@ -674,6 +740,101 @@ public class Job {
 		if (f != null && !f.isFile()) f = null;
 		
 		return f;
+	}
+	
+	
+	/**
+	 * Return the job argument tokens
+	 * 
+	 * @return the list of argument tokens
+	 */
+	public List<String> getArgumentTokens() {
+		
+		boolean first = true;
+		List<String> r = new ArrayList<String>();
+		String t = "";
+		
+		
+		// Process each argument
+		
+		for (String s : arguments) {
+			
+			// Handle the program name, arguments, and arguments of arguments differently
+			
+			if (s.startsWith("-") && !first) {
+				if (!"".equals(t)) r.add(t);
+				t = "";
+			}
+			else {
+				if (first) {
+					first = false;
+					continue;
+				}
+				else {
+					t += " ";
+				}
+			}
+			
+			if (s.contains(" ") || s.contains("\n") || s.contains("\r") || s.contains("\t")) {
+				t += ("'" + s + "'");
+			}
+			else {
+				t += s;
+			}
+		}
+		
+		if (!"".equals(t)) r.add(t);
+		return r;
+	}
+	
+	
+	/**
+	 * Find differences in the argument tokens between two or more processes
+	 * 
+	 * @param jobs the jobs
+	 * @param ignoreWorkloads true to ignore workload arguments
+	 * @return the map of difference strings
+	 */
+	public static Map<Job, String> findDiffrenceStrings(Collection<Job> jobs, boolean ignoreWorkloads) {
+		
+		HashMap<Job, List<String>> tokens = new HashMap<Job, List<String>>();
+		for (Job j : jobs) {
+			tokens.put(j, j.getArgumentTokens());
+		}
+		
+		HashMap<Job, String> r = new HashMap<Job, String>();
+		for (Job j : jobs) {
+			String uniqueTokens = "";
+			for (String t : tokens.get(j)) {
+				
+				if (ignoreWorkloads) {
+					String s = t;
+					if (s.startsWith("-")) s = s.substring(1);
+					if (s.startsWith("-")) s = s.substring(1);
+					int space = s.indexOf(' ');
+					if (space > 0) s = s.substring(0, space);
+					if (Workload.WORKLOADS.containsKey(s)) continue;
+				}
+				
+				boolean unique = true;
+				for (Job x : jobs) {
+					if (x == j) continue;
+					if (tokens.get(x).contains(t)) {
+						unique = false;
+						break;
+					}
+				}
+				if (unique) {
+					if (!"".equals(uniqueTokens)) {
+						uniqueTokens += " ";
+					}
+					uniqueTokens += t;
+				}
+			}
+			r.put(j, uniqueTokens);
+		}
+		
+		return r;
 	}
 	
 	

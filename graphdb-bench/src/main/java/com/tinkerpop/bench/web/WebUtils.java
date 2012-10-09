@@ -54,7 +54,7 @@ public class WebUtils {
 	
 	
 	/**
-	 * Get a value from the parameter list
+	 * Get multiple values from the parameter list
 	 */
 	public static String[] getStringParameterValues(HttpServletRequest request, String name) {
 		String[] a = request.getParameterValues(name);

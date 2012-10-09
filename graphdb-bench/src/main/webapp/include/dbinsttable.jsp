@@ -7,7 +7,22 @@
 <%@ page import="java.util.*"%>
 
 <%
+
+/* 
+ * VARIABLE EXPORT LIST
+ */
+
+// A sorted map [database engine name --> database engine] for all available engines
 TreeMap<String, DatabaseEngine> engines = new TreeMap<String, DatabaseEngine>();
+		
+// A sorted set of selected database intances
+TreeSet<DatabaseEngineAndInstance> selectedDatabaseInstances = new TreeSet<DatabaseEngineAndInstance>();
+
+
+/*
+ * Main body
+ */
+
 for (DatabaseEngine e : DatabaseEngine.ENGINES.values()) {
 	engines.put(e.getLongName().toLowerCase(), e);
 }
@@ -60,10 +75,16 @@ else {
 			Collection<Pair<String, String>> instancePairs = WebUtils.getDatabaseInstancePairs();
 			
 			String[] a_selectedDatabaseInstances = WebUtils.getStringParameterValues(request, "database_engine_instance");
-			HashSet<String> selectedDatabaseInstances = new HashSet<String>();
 			if (a_selectedDatabaseInstances != null) {
 				for (String a : a_selectedDatabaseInstances) {
-					selectedDatabaseInstances.add(a);
+					String[] p = a.split("\\|");
+					if (p.length == 1 || p.length == 2) {
+						DatabaseEngine d = DatabaseEngine.ENGINES.get(p[0]);
+						if (d == null) {
+							throw new IllegalArgumentException("Unknown database engine name: " + p[0]);
+						}
+						selectedDatabaseInstances.add(new DatabaseEngineAndInstance(d, p.length == 2 ? p[1] : null));
+					}
 				}
 			}
 			
@@ -94,7 +115,7 @@ else {
 						for (DatabaseEngine e : engines.values()) {
 							String extraClass = "";
 							boolean exists = false;
-							String instanceId = e.getShortName() + "|" + dbi;
+							DatabaseEngineAndInstance instance = new DatabaseEngineAndInstance(e, dbi);
 							if (instancePairs.contains(new Pair<String, String>(e.getShortName(), dbi))) {
 								extraClass += " db_table_available";
 								exists = true;
@@ -105,7 +126,7 @@ else {
 										<%
 											if (exists || dbinst_choose_nonexistent) {
 												String extraTags = "";
-												if (selectedDatabaseInstances.contains(instanceId)) {
+												if (selectedDatabaseInstances.contains(instance)) {
 													extraTags += " checked=\"checked\"";
 												}
 												if (dbinst_onchange != null) {
@@ -115,7 +136,7 @@ else {
 												<input class="db_table_checkbox"
 													type="<%= dbinst_choose_many ? "checkbox" : "radio" %>"
 													name="database_engine_instance" <%= extraTags %>
-													value="<%= instanceId %>"/>
+													value="<%= e.getShortName() + "|" + dbi %>"/>
 										<%
 											}
 										%>

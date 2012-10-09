@@ -155,26 +155,15 @@
 				int numJobs = 0;
 				TreeMap<String, Job> jobMap = new TreeMap<String, Job>();
 				SimpleDateFormat dateTimeFormatter = new SimpleDateFormat("[yyyy/MM/dd HH:mm:ss]");
-				
-				String[] a_selectedDatabaseInstances = WebUtils.getStringParameterValues(request, "database_engine_instance");
-				HashSet<String> selectedDatabaseInstances = new HashSet<String>();
-				if (a_selectedDatabaseInstances != null) {
-					for (String a : a_selectedDatabaseInstances) {
-						selectedDatabaseInstances.add(a);
-					}
-				}
 
-				for (String s : selectedDatabaseInstances) {
-					String[] p = s.split("\\|");
-					if (p.length == 1 || p.length == 2) {
-						for (Job job : JobList.getInstance().getFinishedJobs(p[0], p.length == 2 ? p[1] : null)) {
-							String prefix = "";
-							if (job.getExecutionTime() != null) {
-								prefix = dateTimeFormatter.format(job.getExecutionTime()) + " ";
-							}
-							jobMap.put(prefix + job.toString(), job);
-							numJobs++;
+				for (Pair<DatabaseEngine, String> p : selectedDatabaseInstances) {
+					for (Job job : JobList.getInstance().getFinishedJobs(p.getFirst().getShortName(), p.getSecond())) {
+						String prefix = "";
+						if (job.getExecutionTime() != null) {
+							prefix = dateTimeFormatter.format(job.getExecutionTime()) + " ";
 						}
+						jobMap.put(prefix + job.toString(), job);
+						numJobs++;
 					}
 				}
 				

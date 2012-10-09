@@ -25,6 +25,8 @@
 	
 	<script src="/include/d3.v2.js"></script>
 	<script src="/include/scroll-sneak.js"></script>
+	<script src="/include/BlobBuilder.min.js"></script>
+	<script src="/include/FileSaver.min.js"></script>
 	
 	<script language="JavaScript">
 		<!-- Begin
@@ -77,6 +79,17 @@
 			http_request.send(null);
 		}
 		
+		/*
+		 * Save the contents of an element to file
+		 */
+		function save_svg(element, file)
+		{
+			var bb = new BlobBuilder;
+			bb.append(document.getElementById(element).innerHTML);
+			saveAs(bb.getBlob("image/svg+xml;charset=utf-8"), file);
+		}
+		
+		
 		//  End -->
 	</script>
 	
@@ -84,6 +97,10 @@
 		<form id="form" name="form" method="post" action="/comparedbs.jsp">
 			<h1>Compare Databases</h1>
 			<p class="header">Compare the performance of selected operations across multiple databases</p>
+			
+			
+			<!-- Database Engine / Instance Names -->
+			
 			<p class="header2">1) Select two or more database engine names / instance names:</p>
 			
 			<%
@@ -96,139 +113,35 @@
 				<%@ include file="include/dbinsttable.jsp" %>
 			</div>
 			
+			
+			
+			<!-- Operations -->
+			
 			<%
-				int numJobs = 0;
-				int numOperations = 0;
-				
-				SimpleDateFormat dateTimeFormatter = new SimpleDateFormat("[yyyy/MM/dd HH:mm:ss]");
-				
-				// Map: job string ---> job
-				TreeMap<String, Job> jobMap = new TreeMap<String, Job>();
-
-				// Map: operation name ---> set of relevant database engine/instance pairs 
-				TreeMap<String, TreeSet<String>> operationMap = new TreeMap<String, TreeSet<String>>();
-
-				// Map: operation name ---> map of (job string ---> job)
-				TreeMap<String, TreeMap<String, Job>> operationJobMap = new TreeMap<String, TreeMap<String, Job>>();
-				
-				
-				// Get the set of all selected database engine/instance pairs
-				
-				String[] a_selectedDatabaseInstances = WebUtils.getStringParameterValues(request, "database_engine_instance");
-				TreeMap<String, TreeMap<String, Job>> selectedDatabaseInstances
-					= new TreeMap<String, TreeMap<String, Job>>(new NaturalStringComparator());
-				if (a_selectedDatabaseInstances != null) {
-					for (String a : a_selectedDatabaseInstances) {
-						selectedDatabaseInstances.put(a, new TreeMap<String, Job>());
-					}
-				}
-				
-				
-				// Get the map of all successfully completed jobs and the map of all available operations
-
-				for (String s : selectedDatabaseInstances.keySet()) {
-					String[] p = s.split("\\|");
-					TreeMap<String, Job> m = selectedDatabaseInstances.get(s);
-					if (p.length == 1 || p.length == 2) {
-						for (Job job : JobList.getInstance().getFinishedJobs(p[0], p.length == 2 ? p[1] : null)) {
-							
-							if (job.getExecutionCount() < 0 || job.getLastStatus() != 0 || job.isRunning()) continue;
-							File summaryFile = job.getSummaryFile();
-							if (summaryFile == null) continue;
-							if (job.getExecutionTime() == null) continue;
-							
-							
-							// Jobs
-							
-							String prefix = "";
-							prefix = dateTimeFormatter.format(job.getExecutionTime()) + " ";
-							String jobStr = prefix + job.toString();
-							numJobs++;
-							
-							jobMap.put(jobStr, job);
-							m.put(jobStr, job);
-							
-							
-							// Operation Maps
-							
-							SummaryLogReader reader = new SummaryLogReader(summaryFile);
-							for (SummaryLogEntry e : reader) {
-								String name = e.getName();
-								if (name.equals("OperationOpenGraph")
-										|| name.equals("OperationDoGC")
-										|| name.equals("OperationShutdownGraph")) continue;
-								
-								TreeSet<String> dbis = operationMap.get(name);
-								if (dbis == null) {
-									dbis = new TreeSet<String>();
-									operationMap.put(name, dbis);
-								}
-								
-								TreeMap<String, Job> ojm = operationJobMap.get(name);
-								if (ojm == null) {
-									ojm = new TreeMap<String, Job>();
-									operationJobMap.put(name, ojm);
-								}
-								
-								dbis.add(s);
-								ojm.put(jobStr, job);
-							}
-						}
-					}
-				}
-				
-				for (String n : operationMap.keySet()) {
-					if (operationMap.get(n).size() == selectedDatabaseInstances.size()) numOperations++;
-				}
-				
-				
-				// Get the set of selected operations
-				
-				String[] a_selectedOperations = WebUtils.getStringParameterValues(request, "operations");
-				TreeSet<String> selectedOperations = new TreeSet<String>();
-				if (a_selectedOperations != null) {
-					for (String a : a_selectedOperations) {
-						if (operationMap.containsKey(a)) {
-							if (operationMap.get(a).size() == selectedDatabaseInstances.size()) {
-								selectedOperations.add(a);
-							}
-						}
-					}
-				}
-
-				
 				// Operations
 				
-				if (numOperations > 0) {
+				if (!selectedDatabaseInstances.isEmpty()) {
 					%>
 						<p class="middle">2) Select operations to compare:</p>
 					<%
-					for (String n : operationMap.keySet()) {
-						if (operationMap.get(n).size() != selectedDatabaseInstances.size()) continue;
-						
-						String extraTags = "";
-						if (selectedOperations.contains(n)) {
-							extraTags += " checked=\"checked\"";
-						}
-						
-						String niceName = n;
-						if (niceName.startsWith("Operation")) niceName = niceName.substring(9);
-						
-						%>
-							<label class="checkbox">
-								<input class="checkbox" type="checkbox" name="operations"
-										onchange="form_submit();" <%= extraTags %>
-										value="<%= n %>"/>
-								<%= niceName %>
-							</label>
-						<%
-					}
 				}
+			
+				boolean selectoperations_selectMultiple = true;
+			%>
+			<%@ include file="include/selectoperations.jsp" %>
+
+			
+			
+			<!-- Jobs -->
+		
+			<%
+				SimpleDateFormat dateTimeFormatter = new SimpleDateFormat("[yyyy/MM/dd HH:mm:ss]");
 				
-				
-				// Jobs
-				
-				TreeMap<String, String> selectedJobIds = new TreeMap<String, String>();
+			
+				// A map of selected [[database engine, database instance name], operation name] pairs to a sorted set of selected jobs
+				TreeMap<Pair<DatabaseEngineAndInstance, String>, SortedSet<Job>>
+					selectedDatabaseInstanceAndOperationToSelectedJobsMap
+					= new TreeMap<Pair<DatabaseEngineAndInstance, String>, SortedSet<Job>>();
 				
 				if (!selectedOperations.isEmpty()) {
 					%>
@@ -238,8 +151,8 @@
 						
 						<%
 							for (String operationName : selectedOperations) {
-								TreeMap<String, Job> ojm = operationJobMap.get(operationName);
-								if (ojm == null) continue;
+								Set<Job> ojs = operationToJobsMap.get(operationName);
+								if (ojs == null) continue;
 								String niceOperationName = operationName;
 								if (niceOperationName.startsWith("Operation")) {
 									niceOperationName = niceOperationName.substring(9);
@@ -249,57 +162,65 @@
 									<p class="middle_inner"><%= niceOperationName %></p>
 								<%
 								
-								for (String s : selectedDatabaseInstances.keySet()) {
-									String[] p = s.split("\\|");
-									TreeMap<String, Job> m = selectedDatabaseInstances.get(s);
-									if (m.isEmpty()) continue;
+								for (DatabaseEngineAndInstance p : selectedDatabaseInstances) {
+									Set<Job> jobs = new TreeSet<Job>();
+									for (Job j : selectedDatabaseInstanceToJobsMap.get(p)) {
+										if (ojs.contains(j)) jobs.add(j);
+									}
+									if (jobs.isEmpty()) continue;
 									
-									String inputName = s.replace('|', '-') + "-" + operationName;
+									String inputName = p.getEngine().getShortName()
+											+ "-" + p.getInstanceSafe("")
+											+ "-" + operationName;
 									
-									String param = WebUtils.getStringParameter(request, inputName);
-									if (param != null) selectedJobIds.put(inputName, param);
-									
+									String[] params = WebUtils.getStringParameterValues(request, inputName);
+									TreeSet<Job> selectedJobsForSelectedDatabaseInstanceAndOperation = new TreeSet<Job>();
+									if (params != null) {
+										for (String pm : params) {
+											int jobId = Integer.parseInt(pm);
+											Job job = JobList.getInstance().getFinishedJob(jobId);
+											if (job == null) continue;
+											if (!jobs.contains(job)) continue;
+											selectedJobsForSelectedDatabaseInstanceAndOperation.add(job);
+										}
+									}
+									selectedDatabaseInstanceAndOperationToSelectedJobsMap.put(
+											new Pair<DatabaseEngineAndInstance, String>(p, operationName),
+											selectedJobsForSelectedDatabaseInstanceAndOperation);
+
 									%>
 										<label class="lesser">
-											<%= DatabaseEngine.ENGINES.get(p[0]).getLongName() %>
+											<%= p.getEngine().getLongName() %>
 											<span class="small">
-											<%= p.length == 2 ? ("".equals(p[1]) ? "&lt;default&gt;" : p[1]) : "&lt;default&gt;" %>
+											<%= p.getInstanceSafe("&lt;default&gt;") %>
 											</span>
 										</label>
 										<select name="<%= inputName %>" id="<%= inputName %>"
 												onchange="form_submit();">
 									<%
 									
-									LinkedList<String> jobStrings = new LinkedList<String>();
-									for (String jobString : ojm.keySet()) {
-										if (!m.containsKey(jobString)) continue;
-										jobStrings.add(jobString);
-									}
-									
 									int index = 0;
-									for (String jobString : jobStrings) {
+									for (Job job : jobs) {
 										index++;
 										
-										Job job = jobMap.get(jobString);
 										String extraTags = "";
-										String id = "" + job.getId();
-										
-										if (!m.containsKey(jobString)) continue;
-										
-										if (param == null) {
-											if (index == jobStrings.size()) {
+											
+										if (params == null) {
+											if (index == jobs.size()) {
 												extraTags += " selected=\"selected\"";
-												selectedJobIds.put(inputName, id);
+												selectedJobsForSelectedDatabaseInstanceAndOperation.add(job);
 											}
 										}
 										else {
-											if (param.equals(id)) {
+											if (selectedJobsForSelectedDatabaseInstanceAndOperation.contains(job)) {
 												extraTags += " selected=\"selected\"";
 											}
 										}
 										
+										String prefix = dateTimeFormatter.format(job.getExecutionTime()) + " ";
+										
 										%>
-											<option value="<%= id %>"<%= extraTags %>><%= jobString %></option>
+											<option value="<%= job.getId() %>"<%= extraTags %>><%= prefix + job.toString() %></option>
 										<%
 									}
 									%>
@@ -317,6 +238,7 @@
 				// Display options
 				
 				boolean barGraphs = WebUtils.getBooleanParameter(request, "bargraphs", false);
+				boolean logScale_barGraphs = WebUtils.getBooleanParameter(request, "logscale_bargraphs", false);
 				boolean separateGraphForEachOperation = WebUtils.getBooleanParameter(request, "eachop", false);
 				boolean boxPlots = WebUtils.getBooleanParameter(request, "boxplots", false);
 				boolean logScale = WebUtils.getBooleanParameter(request, "logscale", false);
@@ -373,6 +295,14 @@
 										onchange="form_submit();" <%= separateGraphForEachOperation ? "checked=\"checked\"" : "" %>
 										value="true"/>
 								Display a bar graph and a data table for each operation 
+							</label>
+							
+							<label class="checkbox">
+								<input class="checkbox" type="checkbox"
+										name="logscale_bargraphs" id="logscale_bargraphs"
+										onchange="form_submit();" <%= logScale_barGraphs ? "checked=\"checked\"" : "" %>
+										value="true"/>
+								Use log scale on all bar graphs
 							</label>
 							
 							
@@ -459,6 +389,7 @@
 				else {
 					%>
 						<input type="hidden" name="bargraphs" id="bargraphs" value="<%= "" + barGraphs %>" />
+						<input type="hidden" name="logscale_bargraphs" id="logscale_bargraphs" value="<%= "" + logScale_barGraphs %>" />
 						<input type="hidden" name="boxplots" id="boxplots" value="<%= "" + boxPlots %>" />
 						<input type="hidden" name="logscale" id="logscale" value="<%= "" + logScale %>" />
 						<input type="hidden" name="dropextremes" id="dropextremes" value="<%= "" + dropExtremes %>" />
@@ -481,12 +412,10 @@
 				TreeMap<String, Collection<Job>> operationsToJobs = new TreeMap<String, Collection<Job>>();
 				for (String operationName : selectedOperations) {
 					LinkedList<Job> currentJobs = new LinkedList<Job>();
-					for (String s : selectedDatabaseInstances.keySet()) {
-						String inputName = s.replace('|', '-') + "-" + operationName;
-						String s_id = selectedJobIds.get(inputName);
-						if (s_id == null) continue;
-						Job job = JobList.getInstance().getFinishedJob(Integer.parseInt(s_id));
-						currentJobs.add(job);
+					for (DatabaseEngineAndInstance p : selectedDatabaseInstances) {
+						Collection<Job> jobs = selectedDatabaseInstanceAndOperationToSelectedJobsMap.get(
+								new Pair<DatabaseEngineAndInstance, String>(p, operationName));
+						currentJobs.addAll(jobs);
 					}
 					operationsToJobs.put(operationName, currentJobs);
 				}
@@ -523,14 +452,17 @@
 					chartProperties.attach = "chart_all";
 					chartProperties.yvalue = "d.mean";
 					chartProperties.ylabel = "Execution Time (ms)";
+					if (logScale_barGraphs) chartProperties.yscale = "log";
 					chartProperties.group_by = "operation";
 					chartProperties.group_label_function = "return d.operation.replace(/^Operation/, '')";
 					chartProperties.category_label_function = "return d.dbengine" + (sameDbInstance ? "" : " + ', ' + d.dbinstance");
 					
 					%>
-						<div class="chart_outer"><div class="chart chart_all">
-						<%@ include file="include/d3barchart.jsp" %>
-						</div></div>
+						<div class="chart_outer">
+							<div class="chart chart_all" id="chart_all"></div>
+							<%@ include file="include/d3barchart.jsp" %>
+							<a class="chart_save" href="javascript:save_svg('chart_all', 'summary-bar-chart.svg')">Save</a>
+						</div>
 					<%
 				}
 				
@@ -550,9 +482,11 @@
 					chartProperties.category_label_function = "return d.dbengine" + (sameDbInstance ? "" : " + ', ' + d.dbinstance");
 					
 					%>
-						<div class="chart_outer"><div class="chart chart_all_details">
-						<%@ include file="include/d3boxplot.jsp" %>
-						</div></div>
+						<div class="chart_outer">
+							<div class="chart chart_all_details" id="chart_all_details"></div>
+							<%@ include file="include/d3boxplot.jsp" %>
+							<a class="chart_save" href="javascript:save_svg('chart_all_details', 'plot.svg')">Save</a>
+						</div>
 					<%
 				}
 				
@@ -573,9 +507,11 @@
 					chartProperties.series_label_function = "return d.label.replace(/^Operation/, '')";
 					
 					%>
-						<div class="chart_outer"><div class="chart chart_all_plotTimeVsRetrievedNodes">
-						<%@ include file="include/d3scatterplot.jsp" %>
-						</div></div>
+						<div class="chart_outer">
+							<div class="chart chart_all_plotTimeVsRetrievedNodes" id="chart_all_plotTimeVsRetrievedNodes"></div>
+							<%@ include file="include/d3scatterplot.jsp" %>
+							<a class="chart_save" href="javascript:save_svg('chart_all_plotTimeVsRetrievedNodes', 'plot.svg')">Save</a>
+						</div>
 					<%
 				}
 				
@@ -596,9 +532,11 @@
 					chartProperties.series_label_function = "return d.label.replace(/^Operation/, '')";
 					
 					%>
-						<div class="chart_outer"><div class="chart chart_all_additionalKHopNeighborsPlots_1">
-						<%@ include file="include/d3scatterplot.jsp" %>
-						</div></div>
+						<div class="chart_outer">
+							<div class="chart chart_all_additionalKHopNeighborsPlots_1" id="chart_all_additionalKHopNeighborsPlots_1"></div>
+							<%@ include file="include/d3scatterplot.jsp" %>
+							<a class="chart_save" href="javascript:save_svg('chart_all_additionalKHopNeighborsPlots_1', 'plot.svg')">Save</a>
+						</div>
 					<%
 					
 					chartProperties.attach = "chart_all_additionalKHopNeighborsPlots_2";
@@ -606,9 +544,11 @@
 					chartProperties.xlabel = "Number of Retrieved Neighborhood Nodes";
 					
 					%>
-						<div class="chart_outer"><div class="chart chart_all_additionalKHopNeighborsPlots_2">
-						<%@ include file="include/d3scatterplot.jsp" %>
-						</div></div>
+						<div class="chart_outer">
+							<div class="chart chart_all_additionalKHopNeighborsPlots_2" id="chart_all_additionalKHopNeighborsPlots_2"></div>
+							<%@ include file="include/d3scatterplot.jsp" %>
+							<a class="chart_save" href="javascript:save_svg('chart_all_additionalKHopNeighborsPlots_2', 'plot.svg')">Save</a>
+						</div>
 					<%
 				}
 
@@ -641,17 +581,17 @@
 					LinkedList<Job> currentJobs = new LinkedList<Job>();
 					boolean sameDbInstance = true;
 					Job firstJob = null;
-					for (String s : selectedDatabaseInstances.keySet()) {
-						String inputName = s.replace('|', '-') + "-" + operationName;
-						String s_id = selectedJobIds.get(inputName);
-						if (s_id == null) continue;
-						Job job = JobList.getInstance().getFinishedJob(Integer.parseInt(s_id));
-						currentJobs.add(job);
-						if (firstJob == null) {
-							firstJob = job;
-						}
-						else if (sameDbInstance) {
-							sameDbInstance = firstJob.getDbInstanceSafe().equals(job.getDbInstanceSafe());
+					for (DatabaseEngineAndInstance p : selectedDatabaseInstances) {
+						Collection<Job> jobs = selectedDatabaseInstanceAndOperationToSelectedJobsMap.get(
+								new Pair<DatabaseEngineAndInstance, String>(p, operationName));
+						currentJobs.addAll(jobs);
+						for (Job job : jobs) {
+							if (firstJob == null) {
+								firstJob = job;
+							}
+							else if (sameDbInstance) {
+								sameDbInstance = firstJob.getDbInstanceSafe().equals(job.getDbInstanceSafe());
+							}
 						}
 					}
 					operationsToJobs.put(operationName, currentJobs);
@@ -674,6 +614,7 @@
 					chartProperties.source = link + "&format=csv";
 					chartProperties.attach = "chart_" + operationName;
 					chartProperties.ylabel = "Execution Time (ms)";
+					if (logScale_barGraphs) chartProperties.yscale = "log";
 					chartProperties.group_by = "operation";
 					chartProperties.group_label_function = "return d.operation.replace(/^Operation/, '')";
 					chartProperties.category_label_function = "return d.dbengine" + (sameDbInstance ? "" : " + ', ' + d.dbinstance");

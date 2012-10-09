@@ -161,14 +161,25 @@ public class ShowOperationRunTimes extends HttpServlet {
 		for (String operationName : operationsToJobs.keySet()) {
 			
 			Job firstJob = null;
+			Map<Job, String> differenceStrigns = Job.findDiffrenceStrings(operationsToJobs.get(operationName), true);
 			
 			for (Job job : operationsToJobs.get(operationName)) {
 				
 				SummaryLogReader reader = new SummaryLogReader(job.getSummaryFile());
 				GraphRunTimes g = null;
-				for (SummaryLogEntry e : reader) {
-					if (e.getName().equals(operationName)) {
-						g = e.getDefaultRunTimes();
+				if (operationName.endsWith("*")) {
+					String m = operationName.substring(0, operationName.length() - 1);
+					for (SummaryLogEntry e : reader) {
+						if (e.getName().startsWith(m)) {
+							g = e.getDefaultRunTimes();
+						}
+					}
+				}
+				else {
+					for (SummaryLogEntry e : reader) {
+						if (e.getName().equals(operationName)) {
+							g = e.getDefaultRunTimes();
+						}
 					}
 				}
 				if (g == null) {
@@ -187,12 +198,25 @@ public class ShowOperationRunTimes extends HttpServlet {
 			        writer.println("Available Operation Names:");
 					reader = new SummaryLogReader(job.getSummaryFile());
 					for (SummaryLogEntry e : reader) {
-						writer.println("  " + e.getName().equals(operationName));
+						writer.println("  " + e.getName());
 					}
 					if (response == null && "html".equals(format)) writer.println("</pre>");
 			        return;
 				}
-				operationsJobsRunTimes.add(new Triple<String, Job, GraphRunTimes>(operationName, job, g));
+				
+				// XXX Hack
+				String s = operationName;
+				if ("run".equals(groupBy)) {
+					String d = differenceStrigns.get(job);
+					if ("".equals(d)) d = "<default>";
+					if (operationsToJobs.size() == 1) {
+						s = d;
+					}
+					else {
+						s += " " + d;
+					}
+				}
+				operationsJobsRunTimes.add(new Triple<String, Job, GraphRunTimes>(s, job, g));
 				
 				if (firstJob == null) {
 					firstJob = job;
@@ -206,6 +230,13 @@ public class ShowOperationRunTimes extends HttpServlet {
 					}
 				}
 			}
+		}
+		
+		
+		// XXX Hack
+		
+		if ("run".equals(groupBy)) {
+			sameOperation = false;
 		}
 		
 		
@@ -282,7 +313,7 @@ public class ShowOperationRunTimes extends HttpServlet {
 				 
 				// Group by placeholders
 	        	
-	        	if ("operation".equals(groupBy)) {
+	        	if ("operation".equals(groupBy) || "run".equals(groupBy)) {
 	        		if (lastOperation != null && !operation.equals(lastOperation)) {
 	        			for (int i = 0; i < buffer.length; i++) buffer[i] = "";
 	        			buffer[0] = "----" + lastOperation;
@@ -367,13 +398,26 @@ public class ShowOperationRunTimes extends HttpServlet {
 		for (String operationName : operationsToJobs.keySet()) {
 			
 			Job firstJob = null;
+			Map<Job, String> differenceStrigns = Job.findDiffrenceStrings(operationsToJobs.get(operationName), true);
 			
 			for (Job job : operationsToJobs.get(operationName)) {
 				
 				OperationLogReader reader = new OperationLogReader(job.getLogFile(), operationName);
 				for (OperationLogEntry e : reader) {
 					if (e.getName().equals(operationName)) {
-						operationsJobsRunTimes.add(new Triple<String, Job, OperationLogEntry>(operationName, job, e));
+						// XXX Hack
+						String s = operationName;
+						if ("run".equals(groupBy)) {
+							String d = differenceStrigns.get(job);
+							if ("".equals(d)) d = "<default>";
+							if (operationsToJobs.size() == 1) {
+								s = d;
+							}
+							else {
+								s += " " + d;
+							}
+						}
+						operationsJobsRunTimes.add(new Triple<String, Job, OperationLogEntry>(s, job, e));
 					}
 				}
 				
@@ -391,6 +435,13 @@ public class ShowOperationRunTimes extends HttpServlet {
 			}
 		}
 		
+		
+		// XXX Hack
+		
+		if ("run".equals(groupBy)) {
+			sameOperation = false;
+		}
+
 		
 		
 		// Depending on the format type...
@@ -480,7 +531,7 @@ public class ShowOperationRunTimes extends HttpServlet {
 				 
 				// Group by placeholders
 	        	
-	        	if ("operation".equals(groupBy)) {
+	        	if ("operation".equals(groupBy) || "run".equals(groupBy)) {
 	        		if (lastOperation != null && !operation.equals(lastOperation)) {
 	        			for (int i = 0; i < buffer.length; i++) buffer[i] = "";
 	        			buffer[0] = "----" + lastOperation;

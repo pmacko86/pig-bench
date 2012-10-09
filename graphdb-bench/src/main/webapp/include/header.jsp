@@ -45,6 +45,11 @@
 				<% } else { %>
 					<li><p>Compare Databases</p></li>
 				<% } %>
+				<% if (!jsp_page.equals("compareruns")) { %>
+					<li><a href="compareruns.jsp">Compare Runs</a></li>
+				<% } else { %>
+					<li><p>Compare Runs</p></li>
+				<% } %>
 			</ul>
 		</div>
 	
