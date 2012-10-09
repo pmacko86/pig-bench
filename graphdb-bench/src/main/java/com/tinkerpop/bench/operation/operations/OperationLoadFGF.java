@@ -7,9 +7,11 @@ import com.tinkerpop.bench.cache.Cache;
 import com.tinkerpop.bench.operation.Operation;
 import com.tinkerpop.bench.util.ConsoleUtils;
 import com.tinkerpop.blueprints.Graph;
+import com.tinkerpop.blueprints.extensions.impls.dex.DexCSVLoader;
 import com.tinkerpop.blueprints.extensions.impls.neo4j.Neo4jFGFLoader;
 import com.tinkerpop.blueprints.extensions.io.GraphProgressListener;
 import com.tinkerpop.blueprints.extensions.io.fgf.FGFGraphLoader;
+import com.tinkerpop.blueprints.impls.dex.DexGraph;
 import com.tinkerpop.blueprints.impls.neo4jbatch.Neo4jBatchGraph;
 
 import edu.harvard.pass.cpl.CPL;
@@ -22,6 +24,10 @@ import edu.harvard.pass.cpl.CPLFile;
 public class OperationLoadFGF extends Operation implements GraphProgressListener {
 
 	private File file = null;
+	
+	private File dexCsvDir = null;
+	private String filePrefix = null;
+	
 	private String lastProgressString = "";
 	private long lastProgressTime = 0;
 	private long lastProgressObjectCount = 0;
@@ -31,9 +37,20 @@ public class OperationLoadFGF extends Operation implements GraphProgressListener
 	// -> 0 graphmlDir
 	@Override
 	protected void onInitialize(Object[] args) {
+		
 		this.file = new File((String) args[0]);
+		if (!file.getName().endsWith(".fgf")) {
+			throw new IllegalArgumentException("The file extension has to be .fgf");
+		}
+		
+		
+		// DEX: Require a directory of .csv files for its bulkloader
+		
+		filePrefix = file.getName().substring(0, file.getName().length() - 4);
+		dexCsvDir = new File(file.getParentFile(), file.getName() + "-dex-csvs");
 	}
 
+	
 	@Override
 	protected void onExecute() throws Exception {
 		Graph graph = getGraph();
@@ -42,6 +59,8 @@ public class OperationLoadFGF extends Operation implements GraphProgressListener
 			
 			if (graph instanceof Neo4jBatchGraph)
 				Neo4jFGFLoader.load(((Neo4jBatchGraph) graph).getRawGraph(), file, this);
+			else if (graph instanceof DexGraph)
+				DexCSVLoader.load(((DexGraph) graph).getRawGraph(), dexCsvDir, filePrefix, this);
 			else
 				FGFGraphLoader.load(graph, file, GlobalConfig.transactionBufferSize, this);
 			
