@@ -37,6 +37,7 @@ import com.tinkerpop.bench.util.MathUtils;
 import com.tinkerpop.bench.util.OutputUtils;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Graph;
+import com.tinkerpop.blueprints.extensions.impls.dex.DexCSVLoader;
 import com.tinkerpop.blueprints.extensions.impls.dex.ExtendedDexGraph;
 import com.tinkerpop.blueprints.extensions.impls.sql.SqlGraph;
 
@@ -262,7 +263,12 @@ public class BenchmarkMicro extends Benchmark {
 		
 		parser.accepts("export-graphml").withOptionalArg().ofType(String.class);
 		parser.accepts("export-n-graphml").withOptionalArg().ofType(String.class);
+		
+		
+		// Commands undocumented on purpose
+		
 		parser.accepts("export-dex-csv").withRequiredArg().ofType(String.class);
+		parser.accepts("ingest-dex-csv").withRequiredArg().ofType(String.class);
 		
 		
 		// Parse the options
@@ -1061,6 +1067,29 @@ public class BenchmarkMicro extends Benchmark {
 			}
 			
 			((ExtendedDexGraph) g).exportToCSVs(new File(dir), dbInstanceName == null ? "default" : dbInstanceName);
+			
+			graphDescriptor.shutdownGraph();
+			return 0;
+		}
+		
+		if (options.has("ingest-dex-csv")) {
+			if (!dbEngine.getShortName().equalsIgnoreCase("dex")) {
+				ConsoleUtils.error("The selected database engine is not DEX");
+				return 1;
+			}
+			
+			String dir = options.valueOf("ingest-dex-csv").toString();
+			
+			graphDescriptor = new GraphDescriptor(dbEngine, dbDir, dbConfig);
+			Graph g = graphDescriptor.openGraph(GraphDescriptor.OpenMode.BULKLOAD);
+			
+			if (!(g instanceof ExtendedDexGraph)) {
+				graphDescriptor.shutdownGraph();
+				ConsoleUtils.error("The graph is not an ExtendedDexGraph");
+				return 1;
+			}
+			
+			DexCSVLoader.load(((ExtendedDexGraph) g).getRawGraph(), new File(dir), "a");
 			
 			graphDescriptor.shutdownGraph();
 			return 0;
