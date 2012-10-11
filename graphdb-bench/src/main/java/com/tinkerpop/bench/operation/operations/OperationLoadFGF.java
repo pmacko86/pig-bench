@@ -58,11 +58,11 @@ public class OperationLoadFGF extends Operation implements GraphProgressListener
 			System.out.print(": ");
 			
 			if (graph instanceof Neo4jBatchGraph)
-				Neo4jFGFLoader.load(((Neo4jBatchGraph) graph).getRawGraph(), file, this);
+				Neo4jFGFLoader.load((Neo4jBatchGraph) graph, file, false, this);
 			else if (graph instanceof DexGraph)
-				DexCSVLoader.load(((DexGraph) graph).getRawGraph(), dexCsvDir, filePrefix, this);
+				DexCSVLoader.load(((DexGraph) graph).getRawGraph(), dexCsvDir, filePrefix, false, this);
 			else
-				FGFGraphLoader.load(graph, file, GlobalConfig.transactionBufferSize, this);
+				FGFGraphLoader.load(graph, file, GlobalConfig.transactionBufferSize, false, this);
 			
 			Cache.getInstance(graph).invalidate();
 			setResult("DONE");

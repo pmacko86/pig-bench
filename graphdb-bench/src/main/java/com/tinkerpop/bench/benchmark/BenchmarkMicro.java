@@ -36,7 +36,11 @@ import com.tinkerpop.bench.util.LogUtils;
 import com.tinkerpop.bench.util.MathUtils;
 import com.tinkerpop.bench.util.OutputUtils;
 import com.tinkerpop.blueprints.Direction;
+import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Graph;
+import com.tinkerpop.blueprints.KeyIndexableGraph;
+import com.tinkerpop.blueprints.Vertex;
+import com.tinkerpop.blueprints.extensions.BenchmarkableGraph;
 import com.tinkerpop.blueprints.extensions.impls.dex.DexCSVLoader;
 import com.tinkerpop.blueprints.extensions.impls.dex.ExtendedDexGraph;
 import com.tinkerpop.blueprints.extensions.impls.sql.SqlGraph;
@@ -147,6 +151,8 @@ public class BenchmarkMicro extends Benchmark {
 		System.err.println("Miscellaneous commands:");
 		System.err.println("  --export-graphml FILE   Export the database to a GraphML file");
 		System.err.println("  --export-n-graphml FILE Export the database to a normalized GraphML file");
+		System.err.println("  --stat                  Print statistics about the database");
+		System.err.println("  --warmup-stat           Print statistics about the warmup database");
 	}
 
 	
@@ -263,6 +269,8 @@ public class BenchmarkMicro extends Benchmark {
 		
 		parser.accepts("export-graphml").withOptionalArg().ofType(String.class);
 		parser.accepts("export-n-graphml").withOptionalArg().ofType(String.class);
+		parser.accepts("stat");
+		parser.accepts("warmup-stat");
 		
 		
 		// Commands undocumented on purpose
@@ -1045,6 +1053,63 @@ public class BenchmarkMicro extends Benchmark {
 			finally {
 				if (file != null) out.close();
 			}
+			
+			return 0;
+		}
+		
+		if (options.has("stat") || options.has("warmup-stat")) {
+			
+			boolean warmupStat = options.has("warmup-stat");
+			
+			if (warmupStat)
+				graphDescriptor = new GraphDescriptor(dbEngine, warmupDbDir, warmupDbConfig);
+			else
+				graphDescriptor = new GraphDescriptor(dbEngine, dbDir, dbConfig);
+			Graph g = graphDescriptor.openGraph(GraphDescriptor.OpenMode.DEFAULT);
+			
+			ConsoleUtils.sectionHeader((warmupStat ? "Warmup " : "") + "Database Statistics");
+			
+			ConsoleUtils.header("Basic Information");
+			
+			System.out.println("Database    : " + dbShortName);
+			System.out.println("Instance    : "
+					+ (dbInstanceName != null && !dbInstanceName.equals("") ? dbInstanceName : "<default>")
+					+ (warmupStat ? "-warmup" : ""));
+			System.out.println("Directory   : " + (warmupStat ? warmupDbDir : dbDir));
+			
+			System.out.println();
+			
+			if (g instanceof BenchmarkableGraph) {
+				ConsoleUtils.header("Basic Statistics");
+				BenchmarkableGraph G = (BenchmarkableGraph) g;
+				System.out.println("# Vertices  : " + G.countVertices());
+				System.out.println("# Edges     : " + G.countEdges());				
+				System.out.println();
+			}
+			
+			if (g instanceof KeyIndexableGraph) {
+				ConsoleUtils.header("Indexed Keys");
+				KeyIndexableGraph G = (KeyIndexableGraph) g;
+				System.out.print("Vertices    : ");
+				boolean first = true;
+				for (String s : new TreeSet<String>(G.getIndexedKeys(Vertex.class))) {
+					if (!first) System.out.print(", "); else first = false;
+					System.out.print(s);
+				}
+				if (first) System.out.print("(none)");
+				System.out.println();
+				System.out.print("Edges       : ");
+				first = true;
+				for (String s : new TreeSet<String>(G.getIndexedKeys(Edge.class))) {
+					if (!first) System.out.print(", "); else first = false;
+					System.out.print(s);
+				}
+				if (first) System.out.print("(none)");
+				System.out.println();
+				System.out.println();
+			}
+			
+			graphDescriptor.shutdownGraph();
 			
 			return 0;
 		}
