@@ -1,9 +1,0 @@
-id;name;type;args;time;result;memory;
-0;OperationOpenGraph;com.tinkerpop.bench.operation.OperationOpenGraph;[];1499807192;DONE;24836111;
-1;OperationDeleteGraph;com.tinkerpop.bench.operation.OperationDeleteGraph;[];378056838;DONE;26036159;
-2;OperationShutdownGraph;com.tinkerpop.bench.operation.OperationShutdownGraph;[];2684;DONE;26036159;
-3;OperationDoGC;com.tinkerpop.bench.operation.OperationDoGC;[];3583010206;DONE;19757071;
-4;OperationOpenGraph;com.tinkerpop.bench.operation.OperationOpenGraph;[];1607353343;DONE;24856823;
-5;OperationLoadGraphML-barabasi_1000000_5000000;com.tinkerpop.bench.operation.operations.OperationLoadGraphML;[/home/pmacko/Projects/tinkubator/graphdb-bench/data/datasets/barabasi_1000000_5000000.graphml];1253085446919;DONE;394482583;
-6;OperationShutdownGraph;com.tinkerpop.bench.operation.OperationShutdownGraph;[];6358570507;DONE;386021743;
-7;OperationDoGC;com.tinkerpop.bench.operation.OperationDoGC;[];3771724493;DONE;34444007;

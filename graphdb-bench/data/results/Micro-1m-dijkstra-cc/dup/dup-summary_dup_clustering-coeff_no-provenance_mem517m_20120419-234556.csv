@@ -1,6 +1,0 @@
-operation;dup-mean;dup-stdev;dup-min;dup-max;
-OperationOpenGraph;1404594.0;94266.0;1310328.0;1498860.0;
-OperationGlobalClusteringCoefficient;9.94963115047E11;0.0;9.94963115047E11;9.94963115047E11;
-OperationShutdownGraph;652919.0;5377.0;647542.0;658296.0;
-OperationDoGC;3.428807601E9;2610791.0;3.42619681E9;3.431418392E9;
-OperationNetworkAverageClusteringCoefficient;2.02634706523E11;0.0;2.02634706523E11;2.02634706523E11;

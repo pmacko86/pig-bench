@@ -1,6 +1,0 @@
-operation                               dup-mean (ms)   dup-stdev (ms)  dup-min (ms)    dup-max (ms)    
-OperationOpenGraph                            178.443            5.716       172.727         184.159    
-OperationDeleteGraph                            2.542            0.000         2.542           2.542    
-OperationShutdownGraph                         93.082           93.080         0.002         186.162    
-OperationDoGC                                3438.362           21.412      3416.950        3459.774    
-OperationLoadGraphML-barabasi_1000_5000       356.835            0.000       356.835         356.835    

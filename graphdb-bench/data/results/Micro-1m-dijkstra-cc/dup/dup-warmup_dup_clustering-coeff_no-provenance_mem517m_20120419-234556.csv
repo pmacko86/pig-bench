@@ -1,9 +1,0 @@
-id;name;type;args;time;result;memory;
-0;OperationOpenGraph;com.tinkerpop.bench.operation.OperationOpenGraph;[];72188542;DONE;-46746496;
-1;OperationGlobalClusteringCoefficient;com.tinkerpop.bench.operation.operations.OperationGlobalClusteringCoefficient;[];980367241635;4.499627999797728E-5:getInVertex=178272928:getOutVertex=4999796:getInEdges=1000000:getOutEdges=10999592:getVertices=1:getVerticesNext=1000000:uniqueVertices=1000000;51837207;
-2;OperationShutdownGraph;com.tinkerpop.bench.operation.OperationShutdownGraph;[];815951;DONE;51837207;
-3;OperationDoGC;com.tinkerpop.bench.operation.OperationDoGC;[];3466374053;DONE;19125255;
-4;OperationOpenGraph;com.tinkerpop.bench.operation.OperationOpenGraph;[];1375455;DONE;20200511;
-5;OperationNetworkAverageClusteringCoefficient;com.tinkerpop.bench.operation.operations.OperationNetworkAverageClusteringCoefficient;[];202366032778;1.177136805123433E-6:getInVertex=29945662:getOutVertex=0:getInEdges=0:getOutEdges=5999796:getVertices=0:getVerticesNext=0:uniqueVertices=1000000;38542679;
-6;OperationShutdownGraph;com.tinkerpop.bench.operation.OperationShutdownGraph;[];713522;DONE;38761271;
-7;OperationDoGC;com.tinkerpop.bench.operation.OperationDoGC;[];3420275675;DONE;19125527;
