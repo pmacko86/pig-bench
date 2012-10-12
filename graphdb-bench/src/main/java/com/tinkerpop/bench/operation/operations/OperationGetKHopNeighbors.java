@@ -94,33 +94,34 @@ public class OperationGetKHopNeighbors extends Operation {
 	 */
 	public static class DEX extends OperationGetKHopNeighbors {
 		
+		private EdgesDirection d;
+		private int[] types; 
+		
+		
+		/**
+		 * Initialize the operation
+		 * 
+		 * @param args the operation arguments
+		 */
+		@Override
+		protected void onInitialize(Object[] args) {
+			super.onInitialize(args);
+					
+			// Translate the direction and the edge label
+			
+			d = DexUtils.translateDirection(direction);
+			types = DexUtils.getEdgeTypes(((DexGraph) getGraph()).getRawGraph(), label);
+		}
+
+		
+		/**
+		 * Execute the operation
+		 */
 		@Override
 		protected void onExecute() throws Exception {
 			
 			Graph graph = ((DexGraph) getGraph()).getRawGraph();
 			int real_hops, get_ops = 0, get_vertex = 0;
-			
-			
-			// Translate the direction and the edge label
-			
-			EdgesDirection d = DexUtils.translateDirection(direction);
-			
-			int[] types = null;
-			if (label == null) {
-				com.sparsity.dex.gdb.TypeList tlist = graph.findEdgeTypes();
-				com.sparsity.dex.gdb.TypeListIterator typeItr = tlist.iterator();
-				types = new int[tlist.count()];
-				int ti = 0; while (typeItr.hasNext()) types[ti++] = typeItr.nextType();
-				tlist.delete();
-				tlist = null;
-			}
-			else {
-				types = new int[1];
-				types[0] = graph.findType(label);
-			}
-			
-			
-			// Algorithm
 
 			OIDList curr = new OIDList();
 			OIDList next = new OIDList();
@@ -173,20 +174,33 @@ public class OperationGetKHopNeighbors extends Operation {
 	 */
 	public static class Neo extends OperationGetKHopNeighbors {
 		
+		private org.neo4j.graphdb.Direction d;
+		private DynamicRelationshipType relationshipType; 
+		
+		
+		/**
+		 * Initialize the operation
+		 * 
+		 * @param args the operation arguments
+		 */
+		@Override
+		protected void onInitialize(Object[] args) {
+			super.onInitialize(args);
+			
+			// Translate the direction and the edge label
+			
+			d = Neo4jUtils.translateDirection(direction);
+			relationshipType = label == null ? null : DynamicRelationshipType.withName(label);
+		}
+
+		
+		/**
+		 * Execute the operation
+		 */
 		@Override
 		protected void onExecute() throws Exception {
 			
-			//GraphDatabaseService graph = ((Neo4jGraph) getGraph()).getRawGraph();
 			int real_hops, get_ops = 0, get_vertex = 0;
-			
-			
-			// Translate the direction and the edge label
-
-			org.neo4j.graphdb.Direction d = Neo4jUtils.translateDirection(direction);
-			DynamicRelationshipType relationshipType = label == null ? null : DynamicRelationshipType.withName(label);
-			
-			
-			// Algorithm
 
 			ArrayList<Node> curr = new ArrayList<Node>();
 			ArrayList<Node> next = new ArrayList<Node>();
