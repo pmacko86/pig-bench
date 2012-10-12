@@ -1508,17 +1508,17 @@ public class BenchmarkMicro extends Benchmark {
 			if (options.has("get-k")) {				
 				for (int k : kHops) {
 					operationFactories.add(new OperationFactoryRandomVertex(
-							OperationGetKFirstNeighbors.class, opCount, new Integer[] { k }, "" + k));
+							OperationGetKFirstNeighbors.class, opCount, new Object[] { k, Direction.OUT }, "" + k));
 				}
 				
 				for (int k : kHops) {				
 					operationFactories.add(new OperationFactoryRandomVertex(
-							OperationGetKRandomNeighbors.class, opCount, new Integer[] { k }, "" + k));
+							OperationGetKRandomNeighbors.class, opCount, new Object[] { k, Direction.OUT }, "" + k));
 				}
 				
 				for (int k : kHops) {
 					operationFactories.add(new OperationFactoryRandomVertex(
-							OperationGetKHopNeighbors.class, opCount, new Integer[] { k }, "" + k));
+							OperationGetKHopNeighbors.class, opCount, new Object[] { k, Direction.OUT }, "" + k));
 				}
 				for (int k : kHops) {
 					operationFactories.add(new OperationFactoryRandomVertex(
@@ -1533,6 +1533,35 @@ public class BenchmarkMicro extends Benchmark {
 				for (int k : kHops) {
 					operationFactories.add(new OperationFactoryRandomVertex(
 							OperationGetKHopNeighbors.class, opCount, new Object[] { k, Direction.BOTH }, "" + k + "-undirected"));
+				}
+				
+				for (int k : kHops) {
+					operationFactories.add(new OperationFactoryRandomVertex(
+							OperationGetKFirstNeighbors.class, opCount, new Object[] { k, Direction.OUT, "family" }, "withlabel-" + k));
+				}
+				
+				for (int k : kHops) {				
+					operationFactories.add(new OperationFactoryRandomVertex(
+							OperationGetKRandomNeighbors.class, opCount, new Object[] { k, Direction.OUT, "family" }, "withlabel-" + k));
+				}
+				
+				for (int k : kHops) {
+					operationFactories.add(new OperationFactoryRandomVertex(
+							OperationGetKHopNeighbors.class, opCount, new Object[] { k, Direction.OUT, "family" }, "withlabel-" + k));
+				}
+				for (int k : kHops) {
+					operationFactories.add(new OperationFactoryRandomVertex(
+							OperationGetKFirstNeighbors.class, opCount, new Object[] { k, Direction.BOTH, "family" }, "withlabel-" + k + "-undirected"));
+				}
+				
+				for (int k : kHops) {				
+					operationFactories.add(new OperationFactoryRandomVertex(
+							OperationGetKRandomNeighbors.class, opCount, new Object[] { k, Direction.BOTH, "family" }, "withlabel-" + k + "-undirected"));
+				}
+				
+				for (int k : kHops) {
+					operationFactories.add(new OperationFactoryRandomVertex(
+							OperationGetKHopNeighbors.class, opCount, new Object[] { k, Direction.BOTH, "family" }, "withlabel-" + k + "-undirected"));
 				}
 			}
 			

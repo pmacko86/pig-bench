@@ -15,6 +15,7 @@ public class OperationGetKRandomNeighbors extends Operation {
 	private ArrayList<Vertex> result;
 	private Random random;
 	private Direction direction;
+	private String label;
 	
 	@Override
 	protected void onInitialize(Object[] args) {
@@ -23,6 +24,7 @@ public class OperationGetKRandomNeighbors extends Operation {
 		direction = args.length > 2 ? (Direction) args[2] : Direction.OUT;
 		result = new ArrayList<Vertex>(k + 1);
 		random = new Random();
+		label = args.length > 3 ? (String) args[3] : null;
 	}
 	
 	@Override
@@ -35,7 +37,7 @@ public class OperationGetKRandomNeighbors extends Operation {
 			if (!result.isEmpty()) result.clear();
 						
 			for(int i = 0; i < k; i++) {
-				Iterable<Vertex> vi = curr.getVertices(direction);
+				Iterable<Vertex> vi = label == null ? curr.getVertices(direction) : curr.getVertices(direction, label);
 				for (Vertex v : vi) {
 					vertex_cnt++;
 					next.add(v);

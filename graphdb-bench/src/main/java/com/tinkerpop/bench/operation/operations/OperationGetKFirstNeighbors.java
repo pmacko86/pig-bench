@@ -14,6 +14,7 @@ public class OperationGetKFirstNeighbors extends Operation {
 	private int k;
 	private ArrayList<Vertex> result;
 	private Direction direction;
+	private String label;
 	
 	@Override
 	protected void onInitialize(Object[] args) {
@@ -21,6 +22,7 @@ public class OperationGetKFirstNeighbors extends Operation {
 		k = args.length > 1 ? (Integer) args[1] : 2;
 		direction = args.length > 2 ? (Direction) args[2] : Direction.OUT;
 		result = new ArrayList<Vertex>(k + 1);
+		label = args.length > 3 ? (String) args[3] : null;
 	}
 	
 	@Override
@@ -30,7 +32,7 @@ public class OperationGetKFirstNeighbors extends Operation {
 			Vertex curr = startVertex;
 			
 			for(int i = 0; i < k; i++) {
-				Iterable<Vertex> vi = curr.getVertices(direction);
+				Iterable<Vertex> vi = label == null ? curr.getVertices(direction) : curr.getVertices(direction, label);
 				Iterator<Vertex> iter = vi.iterator();
 				if (iter.hasNext()) {
 					curr = iter.next();

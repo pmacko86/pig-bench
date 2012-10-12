@@ -4,6 +4,8 @@ import java.lang.reflect.Constructor;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.tinkerpop.bench.DatabaseEngine;
+import com.tinkerpop.bench.GlobalConfig;
 import com.tinkerpop.bench.GraphDescriptor;
 import com.tinkerpop.bench.operation.Operation;
 import com.tinkerpop.blueprints.Graph;
@@ -13,6 +15,7 @@ import edu.harvard.pass.cpl.CPLObject;
 /**
  * @author Alex Averbuch (alex.averbuch@gmail.com)
  * @author Martin Neumann (m.neumann.1980@gmail.com)
+ * @author Peter Macko (pmacko@eecs.harvard.edu)
  */
 public abstract class OperationFactory implements Iterator<Operation>,
 		Iterable<Operation> {
@@ -140,8 +143,33 @@ public abstract class OperationFactory implements Iterator<Operation>,
 	protected final Operation createOperation(String type,
 			Object[] args, String name) throws Exception {
 		
-		Constructor<?> operationConstructor = Class.forName(type).getConstructors()[0];
+		Class<?> c = Class.forName(type);
+		
+		
+		// If the class defines a public member class that specializes
+		// the operation for the selected database engine, use it instead
+		// of the generic operation -- but only if the use of specialized
+		// procedures is enabled
+		
+		if (GlobalConfig.useSpecializedProcedures) {
+			DatabaseEngine db = graphDescriptor.getDatabaseEngine();
+			for (Class<?> d : c.getDeclaredClasses()) {
+				if (d.getSimpleName().equalsIgnoreCase(db.getShortName())
+						&& c.isAssignableFrom(d)) {
+					c = d;
+					break;
+				}
+			}
+		}
+		
+		
+		// Instantiate the operation
+		
+		Constructor<?> operationConstructor = c.getConstructors()[0];
 		Operation operation = (Operation) operationConstructor.newInstance(new Object[] {});
+		
+		
+		// Initialize the operation
 		
 		int id = sharedIdCounter.incrementAndGet();
 		currentId = id;
