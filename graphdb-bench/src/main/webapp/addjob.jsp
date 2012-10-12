@@ -70,6 +70,7 @@
 			b_k_hops = false;
 			for (i = 0; i < checked.length; i++) {
 				if (["get-k"].indexOf(checked[i]) >= 0) b_k_hops = true;
+				if (["get-k-label"].indexOf(checked[i]) >= 0) b_k_hops = true;
 			}
 
 			if (b_k_hops) {
@@ -78,6 +79,39 @@
 			}
 			else {
 				document.getElementById("conf_k_hops").style.display = "none";
+			}
+			
+			
+			// Edge labels
+			
+			b_edge_labels = false;
+			for (i = 0; i < checked.length; i++) {
+				if (["get-k-label"].indexOf(checked[i]) >= 0) b_edge_labels = true;
+			}
+
+			if (b_edge_labels) {
+				b_workloads = true;
+				document.getElementById("conf_edge_labels").style.display = "block";
+			}
+			else {
+				document.getElementById("conf_edge_labels").style.display = "none";
+			}
+			
+			
+			// Property keys
+			
+			b_property_keys = false;
+			for (i = 0; i < checked.length; i++) {
+				if (["create-index"].indexOf(checked[i]) >= 0) b_property_keys = true;
+				if (["get-index"].indexOf(checked[i]) >= 0) b_property_keys = true;
+			}
+
+			if (b_property_keys) {
+				b_workloads = true;
+				document.getElementById("conf_property_keys").style.display = "block";
+			}
+			else {
+				document.getElementById("conf_property_keys").style.display = "none";
 			}
 			
 			
@@ -357,6 +391,29 @@
 					<span class="small">A number or a range (e.g. 1:5)</span>
 				</label>
 				<input type="text" name="k_hops" id="k_hops" value="<%= BenchmarkMicro.DEFAULT_K_HOPS %>" />
+
+				<div class="clear"></div>
+			</div>
+			
+			<div id="conf_edge_labels">
+				<label>Edge Labels
+					<span class="small">A comma-separated list</span>
+				</label>
+				<input type="text" name="edge_labels" id="edge_labels" value="<%= BenchmarkMicro.DEFAULT_EDGE_LABELS %>" />
+
+				<div class="clear"></div>
+			</div>
+			
+			<div id="conf_property_keys">
+				<label>Vertex Property Keys
+					<span class="small">A comma-separated list</span>
+				</label>
+				<input type="text" name="vertex_property_keys" id="vertex_property_keys" value="<%= BenchmarkMicro.DEFAULT_PROPERTY_KEYS /* TODO */ %>" />
+
+				<label>Edge Property Keys
+					<span class="small">A comma-separated list</span>
+				</label>
+				<input type="text" name="edge_property_keys" id="edge_property_keys" value="<%= "" /* TODO */ %>" />
 
 				<div class="clear"></div>
 			</div>

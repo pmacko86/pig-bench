@@ -1,6 +1,7 @@
 package com.tinkerpop.bench;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
@@ -296,6 +297,48 @@ public abstract class DatabaseEngine implements Comparable<DatabaseEngine> {
 	
 	
 	/**
+	 * Read the contents of the directory and read all files to warm up the buffer cache
+	 * 
+	 * @param dir the directory
+	 * @param buffer the buffer
+	 * @throws IOException on I/O error
+	 */
+	private void readAllFiles(File dir, byte[] buffer) throws IOException {
+		
+		if (!dir.isDirectory()) return;
+		for (File f : dir.listFiles()) {
+			if (f.isDirectory()) {
+				readAllFiles(f, buffer);
+			}
+			else if (f.isFile()) {
+				FileInputStream fin = new FileInputStream(f);
+				while (fin.read(buffer) > 0);
+				fin.close();
+			}
+		}
+	}
+	
+	
+	/**
+	 * Quickly bring the database into the file system buffer cache
+	 * 
+	 * @param dbDir the database directory
+	 * @param configuration the map of database-specific configuration arguments
+	 * @throws IOException on I/O error
+	 */
+	public void bringToBufferCache(String dbDir, Map<String, String> configuration) throws IOException {
+		
+		if (!isPersistent()) throw new UnsupportedOperationException();
+		
+		File dir = new File(dbDir);
+		if (dir.exists()) {
+			byte[] buffer = new byte[16 * 1048576];
+			readAllFiles(dir, buffer);
+		}
+	}
+	
+	
+	/**
 	 * BerkeleyDB
 	 */
 	public static class BerkeleyDB extends DatabaseEngine {		
@@ -439,6 +482,19 @@ public abstract class DatabaseEngine implements Comparable<DatabaseEngine> {
 		@Override
 		public void deleteDatabase(String dbDir, Map<String, String> configuration) throws IOException {
 			throw new UnsupportedOperationException();
+		}
+		
+		
+		/**
+		 * Quickly bring the database into the file system buffer cache
+		 * 
+		 * @param dbDir the database directory
+		 * @param configuration the map of database-specific configuration arguments
+		 * @throws IOException on I/O error
+		 */
+		@Override
+		public void bringToBufferCache(String dbDir, Map<String, String> configuration) throws IOException {
+			// Nothing to do - need to figure out something better
 		}
 	}
 }

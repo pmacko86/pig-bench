@@ -54,6 +54,8 @@ public class Workload {
 				"Global and network average clustering coefficients", null, false, UpdateCategory.READ_ONLY));
 		m.put("clustering-local", new Workload("clustering-local", "Local clustering coefficients",
 				"Local clustering coefficients", null, false, UpdateCategory.READ_ONLY));
+		m.put("create-index", new Workload("create-index", "Create index",
+				"Create an index", "KEYS", false, UpdateCategory.LOAD_UPDATE));
 		/*m.put("delete-graph", new Workload("delete-graph", "Delete graph",
 				"Delete the entire graph", null, false, UpdateCategory.LOAD_UPDATE));*/
 		m.put("shortest-path", new Workload("shortest-path", "Shortest path",
@@ -70,8 +72,12 @@ public class Workload {
 				"\"Get\" microbenchmarks", null, true, UpdateCategory.READ_ONLY));
 		m.put("get-k", new Workload("get-k", "Get k-hop",
 				"\"Get\" k-hops microbenchmarks", null, true, UpdateCategory.READ_ONLY));
+		m.put("get-k-label", new Workload("get-k-label", "Get k-hop using edge labels",
+				"\"Get\" k-hops microbenchmarks using edge labels", "LABELS", true, UpdateCategory.READ_ONLY));
 		m.put("get-property", new Workload("get-property", "Get properties",
 				"\"Get\" Object store microbenchmarks", null, true, UpdateCategory.READ_ONLY));
+		m.put("get-index", new Workload("get-index", "Get using an index",
+				"\"Get\" objects using indexes", "KEYS", true, UpdateCategory.READ_ONLY));
 		m.put("ingest", new Workload("ingest", "Ingest",
 				"Ingest a file to the database (also delete the graph)", "FILE", false, UpdateCategory.LOAD_UPDATE));
 		WORKLOADS = Collections.unmodifiableMap(m);

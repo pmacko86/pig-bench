@@ -79,6 +79,14 @@ public class GraphDescriptor {
 		return cplObject;
 	}
 	
+	public String getDirectory() {
+		return graphDir;
+	}
+	
+	public Map<String, String> getConfiguration() {
+		return configuration;
+	}
+	
 
 	//
 	// Functionality

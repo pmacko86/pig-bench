@@ -376,8 +376,23 @@ public class BenchRunner {
 						if ((main || GlobalConfig.oneDbConnectionPerThread)
 								&& polluteCache
 								&& GlobalConfig.polluteCache) {
+							
+							if (main) {
+								long readStart = System.currentTimeMillis();
+								if (ConsoleUtils.useEscapeSequences) System.out.print("\r");
+								System.out.printf("[%-" + longestFactoryName + "s %" + longestFactoryStrID + "s] %s",
+										ID_STRING,
+										"",
+										"Warming up the buffer cache");
+								System.out.flush();
+								graphDescriptor.getDatabaseEngine().bringToBufferCache(graphDescriptor.getDirectory(),
+										graphDescriptor.getConfiguration());
+								long t = System.currentTimeMillis() - readStart;
+								System.out.println(" [" + OutputUtils.formatTimeMS(t) + "]");
+							}
 
 							long pollutionStart = 0;
+							
 							if (main) {
 								pollutionStart = System.currentTimeMillis();
 								if (ConsoleUtils.useEscapeSequences) System.out.print("\r");

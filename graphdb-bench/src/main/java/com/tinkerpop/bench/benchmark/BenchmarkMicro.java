@@ -27,8 +27,11 @@ import com.tinkerpop.bench.operation.OperationDeleteGraph;
 import com.tinkerpop.bench.operation.operations.*;
 import com.tinkerpop.bench.operationFactory.OperationFactory;
 import com.tinkerpop.bench.operationFactory.OperationFactoryGeneric;
+import com.tinkerpop.bench.operationFactory.factories.OperationFactoryRandomEdgePropertyValue;
 import com.tinkerpop.bench.operationFactory.factories.OperationFactoryRandomVertex;
+import com.tinkerpop.bench.operationFactory.factories.OperationFactoryRandomVertexOriginalID;
 import com.tinkerpop.bench.operationFactory.factories.OperationFactoryRandomVertexPair;
+import com.tinkerpop.bench.operationFactory.factories.OperationFactoryRandomVertexPropertyValue;
 import com.tinkerpop.bench.util.ConsoleUtils;
 import com.tinkerpop.bench.util.FileUtils;
 import com.tinkerpop.bench.util.GraphUtils;
@@ -44,6 +47,7 @@ import com.tinkerpop.blueprints.extensions.BenchmarkableGraph;
 import com.tinkerpop.blueprints.extensions.impls.dex.DexCSVLoader;
 import com.tinkerpop.blueprints.extensions.impls.dex.ExtendedDexGraph;
 import com.tinkerpop.blueprints.extensions.impls.sql.SqlGraph;
+import com.tinkerpop.blueprints.extensions.io.fgf.FGFGraphLoader;
 
 import edu.harvard.pass.cpl.CPL;
 import edu.harvard.pass.cpl.CPLException;
@@ -71,6 +75,10 @@ public class BenchmarkMicro extends Benchmark {
 	public static final String DEFAULT_K_HOPS = "1:5";
 	public static final int DEFAULT_BARABASI_N = 1000;
 	public static final int DEFAULT_BARABASI_M = 5;
+	public static final String DEFAULT_EDGE_LABELS = "friend";
+	public static final String DEFAULT_PROPERTY_KEYS = "";
+	
+	/// External defaults
 	public static final String DEFAULT_JVM_HEAP_SIZE = "1G";
 	
 	/// The number of threads
@@ -1384,6 +1392,8 @@ public class BenchmarkMicro extends Benchmark {
 	@Override
 	public ArrayList<OperationFactory> createOperationFactories() {
 		ArrayList<OperationFactory> operationFactories = new ArrayList<OperationFactory>();
+		
+		// TODO Escape operation tags if necessary?
 
 		for (String ingestFile : graphmlFilenames) {
 			
@@ -1434,6 +1444,51 @@ public class BenchmarkMicro extends Benchmark {
 				for (GraphGenerator g : graphGenerators) {
 					operationFactories.add(new OperationFactoryGeneric(
 							OperationGenerateGraph.class, 1, new GraphGenerator[] { g }));
+				}
+			}
+
+			// CREATE INDEX benchmarks
+			if (options.has("create-index")) {
+				
+				List<String> vertexKeys = new ArrayList<String>();
+				List<String> edgeKeys = new ArrayList<String>();
+				if (options.hasArgument("create-index")) {
+					for (Object l : options.valuesOf("create-index")) {
+						for (String s : l.toString().split(",")) {
+							if ("".equals(s)) continue;
+							if (s.startsWith(":")) {
+								edgeKeys.add(s.substring(1));
+							}
+							else {
+								vertexKeys.add(s);
+							}
+						}
+					}
+				}
+				else {
+					for (String s : DEFAULT_PROPERTY_KEYS.split(",")) {
+						if ("".equals(s)) continue;
+						if (s.startsWith(":")) {
+							edgeKeys.add(s.substring(1));
+						}
+						else {
+							vertexKeys.add(s);
+						}
+					}
+				}
+				
+				for (String key : vertexKeys) {
+					operationFactories.add(new OperationFactoryGeneric(
+							OperationCreateKeyIndex.class, 1,
+							new Object[] { "vertex", key },
+							"vertex-" + key));
+				}
+				
+				for (String key : edgeKeys) {
+					operationFactories.add(new OperationFactoryGeneric(
+							OperationCreateKeyIndex.class, 1,
+							new Object[] { "edge", key },
+							"edge-" + key));
 				}
 			}
 			
@@ -1505,13 +1560,13 @@ public class BenchmarkMicro extends Benchmark {
             }
 			
 			// GET_K_NEIGHBORS ops and variants
-			if (options.has("get-k")) {				
+			if (options.has("get-k")) {
 				for (int k : kHops) {
 					operationFactories.add(new OperationFactoryRandomVertex(
 							OperationGetKFirstNeighbors.class, opCount, new Object[] { k, Direction.OUT }, "" + k));
 				}
 				
-				for (int k : kHops) {				
+				for (int k : kHops) {
 					operationFactories.add(new OperationFactoryRandomVertex(
 							OperationGetKRandomNeighbors.class, opCount, new Object[] { k, Direction.OUT }, "" + k));
 				}
@@ -1525,7 +1580,7 @@ public class BenchmarkMicro extends Benchmark {
 							OperationGetKFirstNeighbors.class, opCount, new Object[] { k, Direction.BOTH }, "" + k + "-undirected"));
 				}
 				
-				for (int k : kHops) {				
+				for (int k : kHops) {
 					operationFactories.add(new OperationFactoryRandomVertex(
 							OperationGetKRandomNeighbors.class, opCount, new Object[] { k, Direction.BOTH }, "" + k + "-undirected"));
 				}
@@ -1534,36 +1589,102 @@ public class BenchmarkMicro extends Benchmark {
 					operationFactories.add(new OperationFactoryRandomVertex(
 							OperationGetKHopNeighbors.class, opCount, new Object[] { k, Direction.BOTH }, "" + k + "-undirected"));
 				}
+			}
+			
+			if (options.has("get-k-label")) {
 				
-				for (int k : kHops) {
-					operationFactories.add(new OperationFactoryRandomVertex(
-							OperationGetKFirstNeighbors.class, opCount, new Object[] { k, Direction.OUT, "family" }, "withlabel-" + k));
+				List<String> labels = new ArrayList<String>();
+				if (options.hasArgument("get-k-label")) {
+					for (Object l : options.valuesOf("get-k-label")) {
+						for (String s : l.toString().split(",")) {
+							labels.add(s);
+						}
+					}
+				}
+				else {
+					for (String s : DEFAULT_EDGE_LABELS.split(",")) {
+						labels.add(s);
+					}
 				}
 				
-				for (int k : kHops) {				
-					operationFactories.add(new OperationFactoryRandomVertex(
-							OperationGetKRandomNeighbors.class, opCount, new Object[] { k, Direction.OUT, "family" }, "withlabel-" + k));
-				}
-				
-				for (int k : kHops) {
-					operationFactories.add(new OperationFactoryRandomVertex(
-							OperationGetKHopNeighbors.class, opCount, new Object[] { k, Direction.OUT, "family" }, "withlabel-" + k));
-				}
-				for (int k : kHops) {
-					operationFactories.add(new OperationFactoryRandomVertex(
-							OperationGetKFirstNeighbors.class, opCount, new Object[] { k, Direction.BOTH, "family" }, "withlabel-" + k + "-undirected"));
-				}
-				
-				for (int k : kHops) {				
-					operationFactories.add(new OperationFactoryRandomVertex(
-							OperationGetKRandomNeighbors.class, opCount, new Object[] { k, Direction.BOTH, "family" }, "withlabel-" + k + "-undirected"));
-				}
-				
-				for (int k : kHops) {
-					operationFactories.add(new OperationFactoryRandomVertex(
-							OperationGetKHopNeighbors.class, opCount, new Object[] { k, Direction.BOTH, "family" }, "withlabel-" + k + "-undirected"));
+				for (String label : labels) {
+					for (int k : kHops) {
+						operationFactories.add(new OperationFactoryRandomVertex(
+								OperationGetKFirstNeighbors.class, opCount, new Object[] { k, Direction.OUT, label }, "withlabel-" + k));
+					}
+					
+					for (int k : kHops) {
+						operationFactories.add(new OperationFactoryRandomVertex(
+								OperationGetKRandomNeighbors.class, opCount, new Object[] { k, Direction.OUT, label }, "withlabel-" + k));
+					}
+					
+					for (int k : kHops) {
+						operationFactories.add(new OperationFactoryRandomVertex(
+								OperationGetKHopNeighbors.class, opCount, new Object[] { k, Direction.OUT, label }, "withlabel-" + k));
+					}
+					for (int k : kHops) {
+						operationFactories.add(new OperationFactoryRandomVertex(
+								OperationGetKFirstNeighbors.class, opCount, new Object[] { k, Direction.BOTH, label }, "withlabel-" + k + "-undirected"));
+					}
+					
+					for (int k : kHops) {
+						operationFactories.add(new OperationFactoryRandomVertex(
+								OperationGetKRandomNeighbors.class, opCount, new Object[] { k, Direction.BOTH, label }, "withlabel-" + k + "-undirected"));
+					}
+					
+					for (int k : kHops) {
+						operationFactories.add(new OperationFactoryRandomVertex(
+								OperationGetKHopNeighbors.class, opCount, new Object[] { k, Direction.BOTH, label }, "withlabel-" + k + "-undirected"));
+					}
 				}
 			}
+			
+			
+			// GET INDEX
+			
+			if (options.has("get-index")) {
+				
+				operationFactories.add(new OperationFactoryRandomVertexOriginalID(
+						OperationGetVerticesUsingKeyIndex.class, opCount, new Object[] { FGFGraphLoader.KEY_ORIGINAL_ID }, FGFGraphLoader.KEY_ORIGINAL_ID));
+				
+				List<String> vertexKeys = new ArrayList<String>();
+				List<String> edgeKeys = new ArrayList<String>();
+				if (options.hasArgument("get-index")) {
+					for (Object l : options.valuesOf("get-index")) {
+						for (String s : l.toString().split(",")) {
+							if ("".equals(s)) continue;
+							if (s.startsWith(":")) {
+								edgeKeys.add(s.substring(1));
+							}
+							else {
+								vertexKeys.add(s);
+							}
+						}
+					}
+				}
+				else {
+					for (String s : DEFAULT_PROPERTY_KEYS.split(",")) {
+						if ("".equals(s)) continue;
+						if (s.startsWith(":")) {
+							edgeKeys.add(s.substring(1));
+						}
+						else {
+							vertexKeys.add(s);
+						}
+					}
+				}
+				
+				for (String key : vertexKeys) {
+					operationFactories.add(new OperationFactoryRandomVertexPropertyValue(
+							OperationGetVerticesUsingKeyIndex.class, opCount, key, new Object[] {}, key));
+				}
+				
+				for (String key : edgeKeys) {
+					operationFactories.add(new OperationFactoryRandomEdgePropertyValue(
+							OperationGetEdgesUsingKeyIndex.class, opCount, key, new Object[] {}, key));
+				}
+			}
+			
 			
 			// SHORTEST PATH
 			if (options.has("shortest-path")) {

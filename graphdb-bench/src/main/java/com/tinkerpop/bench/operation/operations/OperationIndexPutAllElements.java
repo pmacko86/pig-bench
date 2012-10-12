@@ -101,4 +101,8 @@ public class OperationIndexPutAllElements extends Operation {
 		return elementCount;
 	}
 
+	@Override
+	public boolean isUpdate() {
+		return true;
+	}
 }

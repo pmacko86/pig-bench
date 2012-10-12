@@ -156,6 +156,13 @@ public class Job implements Comparable<Job> {
 		String s_generateModel = WebUtils.getStringParameter(request, "generate_model");
 		String s_generateBarabasiN = WebUtils.getStringParameter(request, "generate_barabasi_n");
 		String s_generateBarabasiM = WebUtils.getStringParameter(request, "generate_barabasi_m");
+		
+		String s_vertexPropertyKeys = WebUtils.getStringParameter(request, "vertex_property_keys");
+		String s_edgePropertyKeys = WebUtils.getStringParameter(request, "edge_property_keys");
+		String s_propertyKeys = combinePropertyKeys(s_vertexPropertyKeys, s_edgePropertyKeys);
+		
+		String s_edgeLabels = WebUtils.getStringParameter(request, "edge_labels");
+		String s_edgeLabelsNormalized = combinePropertyKeys(s_edgeLabels, null);
 
 		
 		// Get the workloads
@@ -249,6 +256,18 @@ public class Job implements Comparable<Job> {
 				if ("generate".equals(s) && s_generateModel != null) {
 					arguments.add(s_generateModel);
 				}
+				if ("create-index".equals(s) && s_propertyKeys != null
+						&& !BenchmarkMicro.DEFAULT_PROPERTY_KEYS.equals(s_propertyKeys)) {
+					arguments.add(s_propertyKeys);
+				}
+				if ("get-index".equals(s) && s_propertyKeys != null
+						&& !BenchmarkMicro.DEFAULT_PROPERTY_KEYS.equals(s_propertyKeys)) {
+					arguments.add(s_propertyKeys);
+				}
+				if ("get-k-label".equals(s) && s_edgeLabelsNormalized != null
+						&& !BenchmarkMicro.DEFAULT_EDGE_LABELS.equals(s_edgeLabelsNormalized)) {
+					arguments.add(s_edgeLabelsNormalized);
+				}
 			}
 		}
 		
@@ -298,6 +317,35 @@ public class Job implements Comparable<Job> {
 				}
 			}
 		}
+	}
+	
+	
+	/**
+	 * Combine and normalize property keys
+	 * 
+	 * @param firstKeys the first set of keys
+	 * @param secondKeys the second set of keys (will be added a prefix)
+	 * @return a combined normalized string
+	 */
+	private String combinePropertyKeys(String firstKeys, String secondKeys) {
+		StringBuilder r = new StringBuilder();
+		
+		if (firstKeys != null) {
+			for (String s : firstKeys.split(",")) {
+				if (r.length() > 0) r.append(',');
+				r.append(s.trim());
+			}
+		}
+		
+		if (secondKeys != null) {
+			for (String s : secondKeys.split(",")) {
+				if (r.length() > 0) r.append(',');
+				r.append(':');
+				r.append(s.trim());
+			}
+		}
+		
+		return r.length() == 0 ? null : r.toString();
 	}
 	
 	
