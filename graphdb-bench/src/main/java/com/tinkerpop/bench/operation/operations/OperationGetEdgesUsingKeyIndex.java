@@ -22,7 +22,7 @@ public class OperationGetEdgesUsingKeyIndex extends Operation {
 			throw new IllegalArgumentException("Invalid arguments - usage: { key, value }");
 		
 		key = (String) args[0];
-		value = (Object[]) args[1];
+		value = (Object) args[1];
 	}
 	
 	@Override

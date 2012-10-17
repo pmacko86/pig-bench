@@ -208,10 +208,10 @@
 			</label>
 		
 			<label class="checkbox">
-				<input class="checkbox" type="checkbox" name="use_specialized"
+				<input class="checkbox" type="checkbox" name="force_blueprints"
 						value="true"/>
-				Enable the use of specialized routines expressed in the database engine's native API
-				instead of the Blueprints API (if available) 
+				Use the Blueprints API even if there are specialized routines expressed in the database
+				engine's native API
 			</label>
 		
 			<label class="checkbox">

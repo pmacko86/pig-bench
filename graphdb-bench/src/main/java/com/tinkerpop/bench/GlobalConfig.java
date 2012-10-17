@@ -17,8 +17,8 @@ public class GlobalConfig {
 	/// Whether databases should use stored procedures if they are available
 	public static boolean useStoredProcedures = false;
 	
-	/// Whether we should use specialized non-Blueprints routines if they are availavle
-	public static boolean useSpecializedProcedures = false;
+	/// Whether we should use specialized non-Blueprints routines if they are available
+	public static boolean useSpecializedProcedures = true;
 
 	/// Whether to pollute cache before a new benchmark run
 	public static boolean polluteCache = true;

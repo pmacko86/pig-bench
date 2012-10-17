@@ -1,10 +1,15 @@
 package com.tinkerpop.bench.operation.operations;
 
+import org.neo4j.graphdb.Transaction;
+
 import com.tinkerpop.bench.operation.Operation;
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.KeyIndexableGraph;
 import com.tinkerpop.blueprints.Vertex;
+import com.tinkerpop.blueprints.extensions.impls.dex.DexUtils;
+import com.tinkerpop.blueprints.extensions.impls.neo4j.ExtendedNeo4jGraph;
+import com.tinkerpop.blueprints.impls.dex.DexGraph;
 
 public class OperationCreateKeyIndex extends Operation {
 
@@ -38,7 +43,26 @@ public class OperationCreateKeyIndex extends Operation {
 			throw new UnsupportedOperationException("The graph is not a KeyIndexableGraph");
 		}
 		
-		((KeyIndexableGraph) g).createKeyIndex(key, vertexType ? Vertex.class : Edge.class);
+		if (g instanceof DexGraph) {
+			String[] labels = vertexType ? DexUtils.getNodeLabels(((DexGraph) g).getRawGraph())
+					: DexUtils.getEdgeLabels(((DexGraph) g).getRawGraph());
+			
+			try {
+				for (String l : labels) {
+					((DexGraph) g).label.set(l);
+					((KeyIndexableGraph) g).createKeyIndex(key, vertexType ? Vertex.class : Edge.class);
+				}
+			}
+			finally {
+				((DexGraph) g).label.set(null);
+			}
+		}
+		else if (g instanceof ExtendedNeo4jGraph) {
+			((KeyIndexableGraph) g).createKeyIndex(key, vertexType ? Vertex.class : Edge.class);
+		}
+		else {
+			((KeyIndexableGraph) g).createKeyIndex(key, vertexType ? Vertex.class : Edge.class);
+		}
 		
 		setResult("DONE");
 	}

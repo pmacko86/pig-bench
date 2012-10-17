@@ -82,13 +82,6 @@
 			<version>2.1.0</version>
 		</dependency>
 
-        <!-- BLUEPRINTS -->
-		<dependency>
-			<groupId>com.tinkerpop.blueprints</groupId>
-			<artifactId>blueprints-core</artifactId>
-			<version>2.1.0</version>
-		</dependency>
-
         <!-- BLUEPRINTS EXTENSIONS -->
 		<dependency>
 		   <groupId>com.tinkerpop.blueprints.extensions</groupId>
@@ -109,11 +102,6 @@
 		   <groupId>com.tinkerpop.blueprints.extensions</groupId>
 		   <artifactId>blueprints-sql-graph</artifactId>
 		   <version>1.0-SNAPSHOT</version>
-		</dependency>
- 		<dependency>
-			<groupId>com.tinkerpop.blueprints</groupId>
-			<artifactId>blueprints-neo4jbatch-graph</artifactId>
-			<version>2.1.0</version>
 		</dependency>
         <!--<dependency>
           <groupId>com.tinkerpop.blueprints</groupId>

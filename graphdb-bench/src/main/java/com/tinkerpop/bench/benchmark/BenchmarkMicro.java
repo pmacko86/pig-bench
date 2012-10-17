@@ -139,13 +139,13 @@ public class BenchmarkMicro extends Benchmark {
 		}
 		System.err.println("");
 		System.err.println("Benchmark and workload options:");
+		System.err.println("  --force-blueprints      Use Blueprints even if the native API procedure is available");
 		System.err.println("  --ingest-as-undirected  Ingest a graph as undirected by " +
 										"doubling-up the edges");
 		System.err.println("  --k-hops K              Set the number of k-hops");
 		System.err.println("  --k-hops K1:K2          Set a range of k-hops");
 		System.err.println("  --op-count N            Set the number of operations");
 		System.err.println("  --update-directly       Run non-load updates directly, not on a temp. copy");
-		System.err.println("  --use-specialized       Enable the use of specialized routines");
 		System.err.println("  --use-stored-procedures Enable the use of stored procedures");
 		System.err.println("  --warmup-ingest FILE    Set a different file for ingest during " +
 										"the warmup");
@@ -257,12 +257,12 @@ public class BenchmarkMicro extends Benchmark {
 		
 		// Benchmark and workload modifiers
 		
+		parser.accepts("force-blueprints");
 		parser.accepts("ingest-as-undirected");
 		parser.accepts("k-hops").withRequiredArg().ofType(String.class);
 		parser.accepts("op-count").withRequiredArg().ofType(Integer.class);
 		parser.accepts("update-directly");
 		parser.accepts("use-stored-procedures");
-		parser.accepts("use-specialized");
 		parser.accepts("warmup-op-count").withRequiredArg().ofType(Integer.class);
 		parser.accepts("warmup-ingest").withRequiredArg().ofType(String.class);
 		
@@ -378,8 +378,8 @@ public class BenchmarkMicro extends Benchmark {
 			updateDirectly = true;
 		}
 		
-		if (options.has("use-specialized")) {
-			GlobalConfig.useSpecializedProcedures = true;
+		if (options.has("force-blueprints")) {
+			GlobalConfig.useSpecializedProcedures = false;
 		}
 		
 		if (options.has("use-stored-procedures")) {
