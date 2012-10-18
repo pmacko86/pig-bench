@@ -1,7 +1,5 @@
 package com.tinkerpop.bench.operation.operations;
 
-import org.neo4j.graphdb.Transaction;
-
 import com.tinkerpop.bench.operation.Operation;
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Graph;

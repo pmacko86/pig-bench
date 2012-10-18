@@ -82,7 +82,7 @@ public class OperationLogWriter {
 		buffer[2] = op.getType();
 		buffer[3] = Arrays.toString(op.getArgs());
 		buffer[4] = Long.toString(op.getTime());
-		buffer[5] = op.getResult().toString();
+		buffer[5] = op.getResult() == null ? "null" : op.getResult().toString();
 		buffer[6] = Long.toString(op.getMemory());
 		buffer[7] = Long.toString(op.getGCCount());
 		buffer[8] = Long.toString(op.getGCTimeMS());

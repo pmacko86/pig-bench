@@ -256,19 +256,15 @@
 				// XXX Further sanitize boxPlotYValue!
 				boxPlotYValue = boxPlotYValue.replace(';', ' ');
 				
-				boolean plotTimeVsRetrievedNodes_enabled = true;
+				boolean allGetNeighborsBenchmarks = true;
 				for (String s : selectedOperations) {
 					if (!s.startsWith("OperationGetAllNeighbors")
-							&& !s.startsWith("OperationGetKHopNeighbors")) {
-						plotTimeVsRetrievedNodes_enabled = false;
-						break;
-					}
-				}
-				
-				boolean additionalKHopNeighborsPlots_enabled = true;
-				for (String s : selectedOperations) {
-					if (!s.startsWith("OperationGetKHopNeighbors")) {
-						additionalKHopNeighborsPlots_enabled = false;
+							&& !s.startsWith("OperationGetFirstNeighbor")
+							&& !s.startsWith("OperationGetRandomNeighbor")
+							&& !s.startsWith("OperationGetKFirstNeighbors")
+							&& !s.startsWith("OperationGetKHopNeighbors")
+							&& !s.startsWith("OperationGetKRandomNeighbors")) {
+						allGetNeighborsBenchmarks = false;
 						break;
 					}
 				}
@@ -367,18 +363,20 @@
 								<input class="checkbox" type="checkbox"
 										name="plotTimeVsRetrievedNodes" id="plotTimeVsRetrievedNodes"
 										onchange="form_submit();" <%= plotTimeVsRetrievedNodes ? "checked=\"checked\"" : "" %>
-										<%= !plotTimeVsRetrievedNodes_enabled ? "disabled=\"disabled\"" : ""  %>
+										<%= !allGetNeighborsBenchmarks ? "disabled=\"disabled\"" : ""  %>
 										value="true"/>
-								Execution Time vs. Number of Returned Unique Nodes (GetAllNeighbors and GetKHopNeighbors only)
+								Execution Time vs. Number of Returned Unique Nodes
+								(Get*Neighbors workloads only)
 							</label>
 							
 							<label class="checkbox">
 								<input class="checkbox" type="checkbox"
 										name="additionalKHopNeighborsPlots" id="additionalKHopNeighborsPlots"
 										onchange="form_submit();" <%= additionalKHopNeighborsPlots ? "checked=\"checked\"" : "" %>
-										<%= !additionalKHopNeighborsPlots_enabled ? "disabled=\"disabled\"" : ""  %>
+										<%= !allGetNeighborsBenchmarks ? "disabled=\"disabled\"" : ""  %>
 										value="true"/>
-								Additional GetKHopNeighbors plots
+								Execution Time vs. Number of Retrieved Unique Neighborhoods and Neighborhood Nodes
+								(Get*Neighbors workloads only)
 							</label>
 				
 							<p class="middle"></p>
@@ -490,7 +488,7 @@
 					<%
 				}
 				
-				if (plotTimeVsRetrievedNodes && plotTimeVsRetrievedNodes_enabled) {
+				if (plotTimeVsRetrievedNodes && allGetNeighborsBenchmarks) {
 					ChartProperties chartProperties = new ChartProperties();
 					
 					chartProperties.source = link + "&show=details&format=csv";
@@ -515,7 +513,7 @@
 					<%
 				}
 				
-				if (additionalKHopNeighborsPlots && additionalKHopNeighborsPlots_enabled) {
+				if (additionalKHopNeighborsPlots && allGetNeighborsBenchmarks) {
 					ChartProperties chartProperties = new ChartProperties();
 					
 					chartProperties.source = link + "&show=details&format=csv";

@@ -76,7 +76,7 @@ public class BenchmarkMicro extends Benchmark {
 	public static final int DEFAULT_BARABASI_N = 1000;
 	public static final int DEFAULT_BARABASI_M = 5;
 	public static final String DEFAULT_EDGE_LABELS = "friend";
-	public static final String DEFAULT_PROPERTY_KEYS = "";
+	public static final String DEFAULT_PROPERTY_KEYS = "name,age,:time";
 	
 	/// External defaults
 	public static final String DEFAULT_JVM_HEAP_SIZE = "1G";
@@ -1550,13 +1550,69 @@ public class BenchmarkMicro extends Benchmark {
 
             // GET-PROPERTY microbenchmarks
             if (options.has("get-property")) {
-				operationFactories.add(new OperationFactoryGeneric(
-						OperationGetManyVertexProperties.class, 1,
-						new Object[] { PROPERTY_KEY, opCount }));
+				
+				List<String> vertexKeys = new ArrayList<String>();
+				List<String> edgeKeys = new ArrayList<String>();
+				if (options.hasArgument("get-property")) {
+					for (Object l : options.valuesOf("get-property")) {
+						for (String s : l.toString().split(",")) {
+							if ("".equals(s)) continue;
+							if (s.startsWith(":")) {
+								edgeKeys.add(s.substring(1));
+							}
+							else {
+								vertexKeys.add(s);
+							}
+						}
+					}
+				}
+				else {
+					for (String s : DEFAULT_PROPERTY_KEYS.split(",")) {
+						if ("".equals(s)) continue;
+						if (s.startsWith(":")) {
+							edgeKeys.add(s.substring(1));
+						}
+						else {
+							vertexKeys.add(s);
+						}
+					}
+				}
+				
+				for (String key : vertexKeys) {
+					operationFactories.add(new OperationFactoryGeneric(
+							OperationGetManyVertexProperties.class, 1,
+							new Object[] { key, opCount }, key));
+				}
 
-				operationFactories.add(new OperationFactoryGeneric(
-						OperationGetManyEdgeProperties.class, 1,
-						new Object[] { PROPERTY_KEY, opCount }));
+				for (String key : edgeKeys) {
+					operationFactories.add(new OperationFactoryGeneric(
+							OperationGetManyEdgeProperties.class, 1,
+							new Object[] { key, opCount }, key));
+				}
+				
+				if (!vertexKeys.isEmpty()) {
+					operationFactories.add(new OperationFactoryGeneric(
+							OperationGetManyVertexPropertySets.class, 1,
+							new Object[] { vertexKeys, opCount }));
+				}
+				
+				if (!edgeKeys.isEmpty()) {
+					operationFactories.add(new OperationFactoryGeneric(
+							OperationGetManyEdgePropertySets.class, 1,
+							new Object[] { edgeKeys, opCount }));
+				}
+				
+				/*for (String key : vertexKeys) {
+					operationFactories.add(new OperationFactoryRandomVertex(
+							OperationGetVertexProperty.class, opCount,
+							new Object[] { key }, key));
+				}
+
+				for (String key : edgeKeys) {
+					operationFactories.add(new OperationFactoryRandomEdge(
+							OperationGetEdgeProperty.class, opCount,
+							new Object[] { key }, key));
+				}*/
             }
 			
 			// GET_K_NEIGHBORS ops and variants

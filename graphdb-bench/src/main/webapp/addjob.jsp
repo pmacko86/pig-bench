@@ -104,6 +104,7 @@
 			for (i = 0; i < checked.length; i++) {
 				if (["create-index"].indexOf(checked[i]) >= 0) b_property_keys = true;
 				if (["get-index"].indexOf(checked[i]) >= 0) b_property_keys = true;
+				if (["get-property"].indexOf(checked[i]) >= 0) b_property_keys = true;
 			}
 
 			if (b_property_keys) {
@@ -405,15 +406,31 @@
 			</div>
 			
 			<div id="conf_property_keys">
+				<%
+					String defaultVertexProperties = "";
+					String defaultEdgeProperties = "";
+					
+					for (String s : BenchmarkMicro.DEFAULT_PROPERTY_KEYS.split(",")) {
+						if ("".equals(s)) continue;
+						if (s.startsWith(":")) {
+							if (!"".equals(defaultEdgeProperties)) defaultEdgeProperties += ", ";
+							defaultEdgeProperties += s.substring(1);
+						}
+						else {
+							if (!"".equals(defaultVertexProperties)) defaultVertexProperties += ", ";
+							defaultVertexProperties += s;
+						}
+					}
+				%>
 				<label>Vertex Property Keys
 					<span class="small">A comma-separated list</span>
 				</label>
-				<input type="text" name="vertex_property_keys" id="vertex_property_keys" value="<%= BenchmarkMicro.DEFAULT_PROPERTY_KEYS /* TODO */ %>" />
+				<input type="text" name="vertex_property_keys" id="vertex_property_keys" value="<%= defaultVertexProperties %>" />
 
 				<label>Edge Property Keys
 					<span class="small">A comma-separated list</span>
 				</label>
-				<input type="text" name="edge_property_keys" id="edge_property_keys" value="<%= "" /* TODO */ %>" />
+				<input type="text" name="edge_property_keys" id="edge_property_keys" value="<%= defaultEdgeProperties %>" />
 
 				<div class="clear"></div>
 			</div>

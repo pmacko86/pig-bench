@@ -13,17 +13,19 @@ public class OperationFactoryRandomEdge extends OperationFactoryBase implements 
 	private int opCount;
 	private Object[] args;
 	private ArrayList<Object> edgeSamples = null;
+	private String tag = null;
 	private boolean update;
 	
 	public OperationFactoryRandomEdge(Class<?> opType, int opCount) {
-		this(opType, opCount, new Object[] {});
+		this(opType, opCount, new Object[] {}, null);
 	}
 	
-	public OperationFactoryRandomEdge(Class<?> opType, int opCount, Object[] args) {
+	public OperationFactoryRandomEdge(Class<?> opType, int opCount, Object[] args, String tag) {
 		super();
 		this.opType = opType;
 		this.opCount = opCount;
 		this.args = args;
+		this.tag = tag;
 		this.update = isUpdateOperation(opType);
 	}
 
@@ -43,7 +45,7 @@ public class OperationFactoryRandomEdge extends OperationFactoryBase implements 
 		Object[] myArgs = new Object[1 + args.length];
 		myArgs[0] = edgeSamples.remove(0);
 		System.arraycopy(args, 0, myArgs, 1, args.length);
-		return new OperationArgs(myArgs, opType);
+		return new OperationArgs(myArgs, opType, tag);
 	}
 	
 	/**

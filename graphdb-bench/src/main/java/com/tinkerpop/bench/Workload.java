@@ -75,7 +75,7 @@ public class Workload {
 		m.put("get-k-label", new Workload("get-k-label", "Get k-hop using edge labels",
 				"\"Get\" k-hops microbenchmarks using edge labels", "LABELS", true, UpdateCategory.READ_ONLY));
 		m.put("get-property", new Workload("get-property", "Get properties",
-				"\"Get\" Object store microbenchmarks", null, true, UpdateCategory.READ_ONLY));
+				"\"Get\" Object store microbenchmarks", "KEYS", true, UpdateCategory.READ_ONLY));
 		m.put("get-index", new Workload("get-index", "Get using an index",
 				"\"Get\" objects using indexes", "KEYS", true, UpdateCategory.READ_ONLY));
 		m.put("ingest", new Workload("ingest", "Ingest",

@@ -264,6 +264,10 @@ public class Job implements Comparable<Job> {
 						&& !BenchmarkMicro.DEFAULT_PROPERTY_KEYS.equals(s_propertyKeys)) {
 					arguments.add(s_propertyKeys);
 				}
+				if ("get-property".equals(s) && s_propertyKeys != null
+						&& !BenchmarkMicro.DEFAULT_PROPERTY_KEYS.equals(s_propertyKeys)) {
+					arguments.add(s_propertyKeys);
+				}
 				if ("get-k-label".equals(s) && s_edgeLabelsNormalized != null
 						&& !BenchmarkMicro.DEFAULT_EDGE_LABELS.equals(s_edgeLabelsNormalized)) {
 					arguments.add(s_edgeLabelsNormalized);
