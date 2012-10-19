@@ -121,11 +121,11 @@ public class GraphDescriptor {
 		}
 		
 		if (!(g instanceof Neo4jGraph) && !(g instanceof Neo4jBatchGraph)) {
-			int bufferPoolSize = ((BenchmarkableGraph) g).getBufferPoolSize();
-			if (bufferPoolSize != GlobalConfig.databaseBufferPoolSize) {
+			int cacheSize = ((BenchmarkableGraph) g).getTotalCacheSize();
+			if (cacheSize != GlobalConfig.databaseCacheSize) {
 				g.shutdown();
-				throw new RuntimeException("The graph does not have the correct buffer pool size: it has "
-						+ bufferPoolSize + " MB, but " + GlobalConfig.databaseBufferPoolSize + " MB is expected");
+				throw new RuntimeException("The graph database does not have the correct cache size: it has "
+						+ cacheSize + " MB, but " + GlobalConfig.databaseCacheSize + " MB is expected");
 			}
 		}
 		

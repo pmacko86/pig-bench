@@ -190,11 +190,11 @@
 			</label>
 			<input type="text" name="java_heap_size" id="java_heap_size" value="<%= BenchmarkMicro.DEFAULT_JVM_HEAP_SIZE %>" />
 			
-			<label>Database Buffer Pool Size
-				<span class="small">in MB</span>
+			<label>Database Cache Size
+				<span class="small">The sum of all cache sizes (in MB)</span>
 			</label>
-			<input type="text" name="db_buffer_pool_size" id="db_buffer_pool_size" value="<%=
-				Bench.getProperty(Bench.DB_BUFFER_POOL_SIZE, "" + GlobalConfig.databaseBufferPoolSize) %>" />
+			<input type="text" name="db_cache_size" id="db_cache_size" value="<%=
+				Bench.getProperty(Bench.DB_CACHE_SIZE, "" + GlobalConfig.databaseCacheSize) %>" />
 		
 			<label class="checkbox">
 				<input class="checkbox" type="checkbox" name="no_provenance"

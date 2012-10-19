@@ -5,8 +5,12 @@ package com.tinkerpop.bench;
  */
 public class GlobalConfig {
 
-	/// The size of the database buffer pool in MB
-	public static int databaseBufferPoolSize = 256;
+	/// The size of the database cache size in MB
+	public static int databaseCacheSize = 1024;
+
+	/// The fraction of the database cache size that should be used as the buffer pool,
+	/// if the database engine requires us to make this decision
+	public static double preferredBufferPoolRatio = 0.75;
 
 	/// The size of the transaction buffer
 	public static int transactionBufferSize = 100 * 1000;

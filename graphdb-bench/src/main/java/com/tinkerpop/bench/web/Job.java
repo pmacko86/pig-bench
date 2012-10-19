@@ -147,7 +147,7 @@ public class Job implements Comparable<Job> {
 		boolean noCachePollution = WebUtils.getBooleanParameter(request, "no_cache_pollution", false);
 		boolean updateDirectly = WebUtils.getBooleanParameter(request, "update_directly", false);
 		String s_javaHeapSize = WebUtils.getStringParameter(request, "java_heap_size");
-		String s_dbBufferPoolSize = WebUtils.getStringParameter(request, "db_buffer_pool_size");
+		String s_dbCacheSize = WebUtils.getStringParameter(request, "db_cache_size");
 		
 		boolean ingestAsUndirected = WebUtils.getBooleanParameter(request, "ingest_as_undirected", false);
 		String s_ingestFile = WebUtils.getStringParameter(request, "ingest_file");
@@ -210,10 +210,10 @@ public class Job implements Comparable<Job> {
 		if (dbInstance       != null) { arguments.add("--database"); arguments.add(dbInstance); }
 		if (s_annotation     != null) { arguments.add("--annotation"); arguments.add(s_annotation); }
 		
-		if (s_dbBufferPoolSize != null) {
-			if (!s_dbBufferPoolSize.equals(Bench.getProperty(Bench.DB_BUFFER_POOL_SIZE,
-					"" + GlobalConfig.databaseBufferPoolSize))) {
-				arguments.add("--db-buffer-pool"); arguments.add(s_dbBufferPoolSize);
+		if (s_dbCacheSize != null) {
+			if (!s_dbCacheSize.equals(Bench.getProperty(Bench.DB_CACHE_SIZE,
+					"" + GlobalConfig.databaseCacheSize))) {
+				arguments.add("--db-cache-size"); arguments.add(s_dbCacheSize);
 			}
 		}
 		

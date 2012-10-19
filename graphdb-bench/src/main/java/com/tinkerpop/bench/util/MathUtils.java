@@ -189,4 +189,42 @@ public class MathUtils {
 	public static double log(double x, double b) {
 		return Math.log(x) / Math.log(b);
 	}
+	
+	
+	/**
+	 * Round to the nearest integer
+	 * 
+	 * @param v the value
+	 */
+	public static int round(double v) {
+		return (int) Math.round(v);
+	}
+	
+	
+	/**
+	 * Sub array
+	 * 
+	 * @param a the array
+	 * @param start the start offset
+	 * @param end the end offset (exclusive)
+	 */
+	public static int[] subarray(int[] a, int start, int end) {
+		int[] r = new int[end - start];
+		System.arraycopy(a, start, r, 0, end - start);
+		return r;
+	}
+	
+	
+	/**
+	 * Sub array
+	 * 
+	 * @param a the array
+	 * @param start the start offset
+	 * @param end the end offset (exclusive)
+	 */
+	public static String[] subarray(String[] a, int start, int end) {
+		String[] r = new String[end - start];
+		System.arraycopy(a, start, r, 0, end - start);
+		return r;
+	}
 }

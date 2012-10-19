@@ -361,7 +361,7 @@ public abstract class DatabaseEngine implements Comparable<DatabaseEngine> {
 		 */
 		@Override
 		public BdbGraph newInstance(String dbDir, Map<String, String> configuration) {
-			return new BdbGraph(dbDir, GlobalConfig.databaseBufferPoolSize);
+			return new BdbGraph(dbDir, GlobalConfig.databaseCacheSize);
 		}
 	}
 	

@@ -122,7 +122,7 @@ public class BenchmarkMicro extends Benchmark {
 		System.err.println("");
 		System.err.println("Database engine options:");
 		System.err.println("  --database, -d NAME     Select a specific graph or a database instance");
-		System.err.println("  --db-buffer-pool SIZE   Set or check the buffer pool size (in MB)");
+		System.err.println("  --db-cache-size SIZE    Set or check the database cache size (in MB)");
 		System.err.println("  --db-config K=VAL,...   Specify one or more database configuration properties");
 		System.err.println("  --keep-temp-copy        Keep (do not delete) the temp. copy of the instance");
 		System.err.println("  --neo-caches A:B:..     Specify neo4j database cache configuration");
@@ -204,7 +204,7 @@ public class BenchmarkMicro extends Benchmark {
 		
 		parser.accepts("d").withRequiredArg().ofType(String.class);
 		parser.accepts("database").withRequiredArg().ofType(String.class);
-		parser.accepts("db-buffer-pool").withRequiredArg().ofType(Integer.class);
+		parser.accepts("db-cache-size").withRequiredArg().ofType(Integer.class);
 		parser.accepts("db-config").withRequiredArg().ofType(String.class).withValuesSeparatedBy(',');
 		parser.accepts("dir").withRequiredArg().ofType(String.class);
 		parser.accepts("dumb-terminal");
@@ -390,17 +390,17 @@ public class BenchmarkMicro extends Benchmark {
 			GlobalConfig.oneDbConnectionPerThread = false;
 		}
 		
-		if (options.has("db-buffer-pool")) {
-			GlobalConfig.databaseBufferPoolSize = (Integer) options.valueOf("db-buffer-pool");
-			if (GlobalConfig.databaseBufferPoolSize < 16) {
-				ConsoleUtils.error("The specified database buffer pool is too small -- must be at least 16 MB");
+		if (options.has("db-cache-size")) {
+			GlobalConfig.databaseCacheSize = (Integer) options.valueOf("db-cache-size");
+			if (GlobalConfig.databaseCacheSize < 16) {
+				ConsoleUtils.error("The specified database cache size is too small -- must be at least 16 MB");
 				return 1;
 			}
 		}
 		else {
-			GlobalConfig.databaseBufferPoolSize = Integer.parseInt(Bench.getProperty(Bench.DB_BUFFER_POOL_SIZE));
-			if (GlobalConfig.databaseBufferPoolSize < 16) {
-				ConsoleUtils.error("The specified database buffer pool is too small -- must be at least 16 MB");
+			GlobalConfig.databaseCacheSize = Integer.parseInt(Bench.getProperty(Bench.DB_CACHE_SIZE));
+			if (GlobalConfig.databaseCacheSize < 16) {
+				ConsoleUtils.error("The specified database cache size is too small -- must be at least 16 MB");
 				return 1;
 			}
 		}
@@ -662,6 +662,20 @@ public class BenchmarkMicro extends Benchmark {
 			
 			String[] config;
 			
+			String s_preferredBufferPoolRatio = Bench.getProperty(Bench.DB_PREFERRED_BUFFER_POOL_RATIO);
+			double preferredBufferPoolRatio = Double.parseDouble(s_preferredBufferPoolRatio);
+			if (preferredBufferPoolRatio < 0.5 || preferredBufferPoolRatio > 1) {
+				ConsoleUtils.error("Invalid" + Bench.DB_PREFERRED_BUFFER_POOL_RATIO);
+				return 1;
+			}
+			
+			String s_defaultCacheSize = Bench.getProperty(Bench.DB_CACHE_SIZE);
+			int defaultCacheSize = Integer.parseInt(s_defaultCacheSize);
+			if (defaultCacheSize < 16) {
+				ConsoleUtils.error("Invalid" + Bench.DB_CACHE_SIZE + "; the size must be at least 16");
+				return 1;
+			}
+			
 			
 			/*
 			 * Neo4j buffer pool caches
@@ -669,24 +683,13 @@ public class BenchmarkMicro extends Benchmark {
 
 			if (options.has("neo-caches")) {
 				
-				if (options.has("db-buffer-pool")) {
-					ConsoleUtils.error("Cannot combine the --neo-caches and the --db-buffer-pool options");
+				if (options.has("db-cache-size")) {
+					ConsoleUtils.error("Cannot combine the --neo-caches and the --db-cache-size options");
 					return 1;
 				}
 				
 				String s = options.valueOf("neo-caches").toString();
 				config = s.split(":");
-				
-				if (config.length == 1) {
-					s = Bench.getProperty(Bench.DB_NEO_CACHES);
-					int t = Integer.parseInt(config[0]);
-					if (t < 16) {
-						ConsoleUtils.error("Invalid neo-caches; the total size must be at least 16");
-						return 1;
-					}
-					GlobalConfig.databaseBufferPoolSize = t;
-					config = MathUtils.toStringArray(MathUtils.adjustSumApproximate(MathUtils.fromStringArray(s.split(":")), t, 1));
-				}
 			}
 			else {
 				
@@ -697,7 +700,8 @@ public class BenchmarkMicro extends Benchmark {
 				File dir = new File(dbDir);
 				if (dir.exists() && dir.isDirectory() && !isIngest) {
 					
-					long[] adjustedSizes = FileUtils.getScaledFileSizesMB(dir, GlobalConfig.databaseBufferPoolSize,
+					long[] adjustedSizes = FileUtils.getScaledFileSizesMB(dir,
+							MathUtils.round(preferredBufferPoolRatio * GlobalConfig.databaseCacheSize),
 							"neostore.nodestore.db", "neostore.relationshipstore.db", "neostore.propertystore.db",
 							"neostore.propertystore.db.strings", "neostore.propertystore.db.arrays");
  
@@ -706,7 +710,7 @@ public class BenchmarkMicro extends Benchmark {
 				else {
 					String s = Bench.getProperty(Bench.DB_NEO_CACHES);
 					config = MathUtils.toStringArray(MathUtils.adjustSumApproximate(MathUtils.fromStringArray(s.split(":")),
-							GlobalConfig.databaseBufferPoolSize, 1));
+							MathUtils.round(preferredBufferPoolRatio * GlobalConfig.databaseCacheSize), 1));
 				}
 			}
 			
@@ -732,15 +736,14 @@ public class BenchmarkMicro extends Benchmark {
 			warmupDbConfig.putAll(m);
 			dbConfig.putAll(m);
 			
-			int sum = 0;
-			for (String c : config) sum += Integer.parseInt(c);
-			GlobalConfig.databaseBufferPoolSize = sum;
+			int bufferPoolSize = 0;
+			for (String c : config) bufferPoolSize += Integer.parseInt(c);
 			
 			
 			/*
 			 * Neo4j GCR caches
 			 */
-
+			
 			if (options.has("neo-gcr")) {
 				String s = options.valueOf("neo-gcr").toString();
 				config = s.split(":");
@@ -753,13 +756,6 @@ public class BenchmarkMicro extends Benchmark {
 				
 				File dir = new File(dbDir);
 				if (dir.exists() && dir.isDirectory() && !isIngest) {
-										
-					String s = Bench.getProperty(Bench.DB_NEO_GCR_TOTAL);
-					long gcrCacheSize = Long.valueOf(s);
-					if (!s.equals("" + gcrCacheSize)) {
-						ConsoleUtils.error("Invalid number format of property: " + Bench.DB_NEO_GCR_TOTAL);
-						return 1;
-					}
 					
 					long[] onDiskSizes = FileUtils.getFileSizesB(dir, "neostore.nodestore.db", "neostore.relationshipstore.db");
 					
@@ -771,11 +767,13 @@ public class BenchmarkMicro extends Benchmark {
 						Math.round(Math.ceil((208.0 * onDiskSizes[1] / 33.0) / 10485767.0))
 					};
 					
-					config = MathUtils.toStringArray(MathUtils.adjustSumApproximate(inMemSizesMB, gcrCacheSize, 1));
+					config = MathUtils.toStringArray(MathUtils.adjustSumApproximate(inMemSizesMB,
+							MathUtils.round((1 - preferredBufferPoolRatio) * GlobalConfig.databaseCacheSize), 1));
 				}
 				else {
 					String s = Bench.getProperty(Bench.DB_NEO_GCR);
-					config = s.split(":");
+					config = MathUtils.toStringArray(MathUtils.adjustSumApproximate(MathUtils.fromStringArray(s.split(":")),
+							MathUtils.round((1 - preferredBufferPoolRatio) * GlobalConfig.databaseCacheSize), 1));
 				}
 			}
 			
@@ -795,6 +793,11 @@ public class BenchmarkMicro extends Benchmark {
 			m.put("relationship_cache_size"    , "" + config[1] + "M");
 			warmupDbConfig.putAll(m);
 			dbConfig.putAll(m);
+			
+			int gcrCacheSize = 0;
+			for (String c : config) gcrCacheSize += Integer.parseInt(c);
+			
+			GlobalConfig.databaseCacheSize = bufferPoolSize + gcrCacheSize;
 		}
 		
 		
@@ -1187,7 +1190,7 @@ public class BenchmarkMicro extends Benchmark {
 		
 		System.out.println("Database    : " + dbShortName);
 		System.out.println("Instance    : " + (dbInstanceName != null && !dbInstanceName.equals("") ? dbInstanceName : "<default>"));
-		System.out.println("Buffer Pool : " + GlobalConfig.databaseBufferPoolSize + " MB");
+		System.out.println("Cache Size  : " + GlobalConfig.databaseCacheSize + " MB");
 		System.out.println("Directory   : " + dirResults);
 		
 		if (logs) {
