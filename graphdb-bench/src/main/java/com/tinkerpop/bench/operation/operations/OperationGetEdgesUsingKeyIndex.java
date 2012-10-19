@@ -1,14 +1,26 @@
 package com.tinkerpop.bench.operation.operations;
 
+import java.util.Iterator;
+
+import org.neo4j.graphdb.Relationship;
+import org.neo4j.graphdb.index.AutoIndexer;
+import org.neo4j.graphdb.index.IndexHits;
+
+import com.sparsity.dex.gdb.AttributeKind;
+import com.sparsity.dex.gdb.ObjectType;
 import com.tinkerpop.bench.operation.Operation;
 import com.tinkerpop.bench.util.GraphUtils;
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Graph;
+import com.tinkerpop.blueprints.extensions.impls.dex.DexUtils;
+import com.tinkerpop.blueprints.impls.dex.DexGraph;
+import com.tinkerpop.blueprints.impls.neo4j.Neo4jGraph;
+import com.tinkerpop.blueprints.util.StringFactory;
 
 public class OperationGetEdgesUsingKeyIndex extends Operation {
 
-	private String key;
-	private Object value;
+	protected String key;
+	protected Object value;
 	
 	@Override
 	protected void onInitialize(Object[] args) {
@@ -34,6 +46,146 @@ public class OperationGetEdgesUsingKeyIndex extends Operation {
 		for (@SuppressWarnings("unused") Edge e : itr) count++;
 		GraphUtils.close(itr);
 		
-		setResult("" + count);
+		setResult(count);
+	}
+	
+	
+	/**
+	 * The operation specialized for DEX
+	 */
+	public static class DEX extends OperationGetEdgesUsingKeyIndex {
+		
+		private int[] types;
+		
+		
+		/**
+		 * Initialize the operation
+		 * 
+		 * @param args the operation arguments
+		 */
+		@Override
+		protected void onInitialize(Object[] args) {
+			super.onInitialize(args);
+			types = DexUtils.getEdgeTypes(((DexGraph) getGraph()).getRawGraph());
+		}
+
+		
+		/**
+		 * Execute the operation
+		 */
+		@Override
+		protected void onExecute() throws Exception {
+
+			int count = 0;
+			com.sparsity.dex.gdb.Graph graph = ((DexGraph) getGraph()).getRawGraph();
+			
+			
+			// Get by label
+
+			if (key.compareTo(StringFactory.LABEL) == 0) { // label is "indexed"
+
+				int type = graph.findType(value.toString());
+				if (type != com.sparsity.dex.gdb.Type.InvalidType) {
+					com.sparsity.dex.gdb.Type tdata = graph.getType(type);
+					if (tdata.getObjectType() == ObjectType.Edge) {
+						com.sparsity.dex.gdb.Objects objs = graph.select(type);
+						com.sparsity.dex.gdb.ObjectsIterator objsItr = objs.iterator();
+
+						while (objsItr.hasNext()) {
+							@SuppressWarnings("unused")
+							long v = objsItr.nextObject();
+							count++;
+						}
+
+						objsItr.close();
+						objs.close();
+					}
+				}
+			}
+			else {
+				
+				// Get by a different property
+			
+				for (int type : types) {
+					int attr = graph.findAttribute(type, key);
+					if (com.sparsity.dex.gdb.Attribute.InvalidAttribute != attr) {
+						com.sparsity.dex.gdb.Attribute adata = graph.getAttribute(attr);
+						
+						if (adata.getKind() == AttributeKind.Basic) {
+							throw new RuntimeException("Key " + key + " is not indexed");
+						}
+						else { // use the index
+							com.sparsity.dex.gdb.Objects objs = DexUtils.getUsingIndex(graph, adata, value);
+							com.sparsity.dex.gdb.ObjectsIterator objsItr = objs.iterator();
+	
+							while (objsItr.hasNext()) {
+								@SuppressWarnings("unused")
+								long v = objsItr.nextObject();
+								count++;
+							}
+	
+							objsItr.close();
+							objs.close();
+						}
+					}
+				}
+			}
+			
+			setResult(count);
+		}
+	}
+	
+	
+	/**
+	 * The operation specialized for Neo4j
+	 */
+	public static class Neo extends OperationGetEdgesUsingKeyIndex {
+		
+		private boolean haveIndexer;
+		
+		
+		/**
+		 * Initialize the operation
+		 * 
+		 * @param args the operation arguments
+		 */
+		@Override
+		protected void onInitialize(Object[] args) {
+			super.onInitialize(args);
+			
+			@SuppressWarnings("rawtypes")
+			final AutoIndexer indexer = ((Neo4jGraph) getGraph()).getRawGraph().index().getRelationshipAutoIndexer();
+			haveIndexer = indexer.isEnabled() && indexer.getAutoIndexedProperties().contains(key);
+			
+			if (!haveIndexer) {
+				throw new RuntimeException("AutoIndexer is not enabled for key " + key);
+			}
+		}
+
+		
+		/**
+		 * Execute the operation
+		 */
+		@SuppressWarnings({ "unchecked", "rawtypes" })
+		@Override
+		protected void onExecute() throws Exception {
+			
+			final AutoIndexer indexer = ((Neo4jGraph) getGraph()).getRawGraph().index().getRelationshipAutoIndexer();
+			Iterable<Relationship> iterable = indexer.getAutoIndex().get(key, value);
+			
+			Iterator<Relationship> i = iterable.iterator();
+			int count = 0;
+			
+			while (i.hasNext()) {
+				i.next();
+				count++;
+			}
+			
+			if (iterable instanceof IndexHits) {
+	            ((IndexHits) iterable).close();
+	        }
+			
+			setResult(count);
+		}
 	}
 }

@@ -28,15 +28,11 @@ public class OperationGetManyVertexPropertySets extends Operation {
 	
 	@Override
 	protected void onExecute() throws Exception {
-		try {
-			for (int i = 0; i < opCount; i++)
-				for (String k : propertyKeys)
-					vertexSamples[i].getProperty(k);
+		for (int i = 0; i < opCount; i++)
+			for (String k : propertyKeys)
+				vertexSamples[i].getProperty(k);
 			
-			setResult(opCount);
-		} catch (Exception e) {
-			throw e;
-		}
+		setResult(opCount);
 	}
 	
 	
