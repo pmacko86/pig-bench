@@ -253,6 +253,9 @@ public class Job implements Comparable<Job> {
 				if ("ingest".equals(s) && s_ingestFile != null) {
 					arguments.add(s_ingestFile);
 				}
+				if ("incr-ingest".equals(s) && s_ingestFile != null) {
+					arguments.add(s_ingestFile);
+				}
 				if ("generate".equals(s) && s_generateModel != null) {
 					arguments.add(s_generateModel);
 				}

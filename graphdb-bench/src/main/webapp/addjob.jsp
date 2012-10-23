@@ -121,6 +121,7 @@
 			b_ingest = false;
 			for (i = 0; i < checked.length; i++) {
 				if (["ingest"].indexOf(checked[i]) >= 0) b_ingest = true;
+				if (["incr-ingest"].indexOf(checked[i]) >= 0) b_ingest = true;
 			}
 
 			if (b_ingest) {
