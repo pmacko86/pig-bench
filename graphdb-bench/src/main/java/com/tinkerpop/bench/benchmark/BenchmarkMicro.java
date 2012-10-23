@@ -97,8 +97,7 @@ public class BenchmarkMicro extends Benchmark {
 		System.err.println("Usage: runBenchmarkSuite.sh OPTIONS");
 		System.err.println("");
 		System.err.println("General options:");
-		System.err.println("  --annotation TEXT       Include an annotation in the " +
-										"disclosed provenance");
+		System.err.println("  --annotation TEXT       Include an annotation in the disclosed provenance");
 		System.err.println("  --dir DIR               Set the database and results directory");
 		System.err.println("  --dumb-terminal         Use the dumb terminal settings");
 		System.err.println("  --help                  Print this help message");
@@ -107,8 +106,7 @@ public class BenchmarkMicro extends Benchmark {
 		System.err.println("  --no-logs               Disable logs");
 		System.err.println("  --no-provenance         Disable provenance collection");
 		System.err.println("  --no-warmup             Disable the initial warmup run");
-		System.err.println("  --single-db-connection  Use one shared database connection " +
-										"for all threads");
+		System.err.println("  --single-db-connection  Use one shared database connection for all threads");
 		System.err.println("  --threads N             Run N copies of the benchmark concurrently");
 		System.err.println("  --tx-buffer N           Set the size of the transaction buffer");
 		System.err.println("");
@@ -123,7 +121,7 @@ public class BenchmarkMicro extends Benchmark {
 		System.err.println("Database engine options:");
 		System.err.println("  --database, -d NAME     Select a specific graph or a database instance");
 		System.err.println("  --db-cache-size SIZE    Set or check the database cache size (in MB)");
-		System.err.println("  --db-config K=VAL,...   Specify one or more database configuration properties");
+		System.err.println("  --db-config K=VAL,...   Specify database configuration properties");
 		System.err.println("  --keep-temp-copy        Keep (do not delete) the temp. copy of the instance");
 		System.err.println("  --neo-caches A:B:..     Specify neo4j database cache configuration");
 		System.err.println("  --neo-gcr A:B           Specify neo4j GCR cache configuration");
@@ -139,16 +137,14 @@ public class BenchmarkMicro extends Benchmark {
 		}
 		System.err.println("");
 		System.err.println("Benchmark and workload options:");
-		System.err.println("  --force-blueprints      Use Blueprints even if the native API procedure is available");
-		System.err.println("  --ingest-as-undirected  Ingest a graph as undirected by " +
-										"doubling-up the edges");
+		System.err.println("  --force-blueprints      Use Blueprints even if the native API can be used");
+		System.err.println("  --ingest-as-undirected  Ingest a graph as undirected by doubling-up edges");
 		System.err.println("  --k-hops K              Set the number of k-hops");
 		System.err.println("  --k-hops K1:K2          Set a range of k-hops");
 		System.err.println("  --op-count N            Set the number of operations");
 		System.err.println("  --update-directly       Run non-load updates directly, not on a temp. copy");
 		System.err.println("  --use-stored-procedures Enable the use of stored procedures");
-		System.err.println("  --warmup-ingest FILE    Set a different file for ingest during " +
-										"the warmup");
+		System.err.println("  --warmup-ingest FILE    Set a different file for ingest during the warmup");
 		System.err.println("  --warmup-op-count N     Set the number of warmup operations");
 		System.err.println("");
 		System.err.println("Options for model \"Barabasi\":");
@@ -328,9 +324,12 @@ public class BenchmarkMicro extends Benchmark {
 		if (options.has("f") || options.has("file")) {
 			ingestFile = options.valueOf(options.has("f") ? "f" : "file").toString();
 		}
-		if (options.has("ingest")) {
-			if (options.hasArgument("ingest")) {
+		if (options.has("ingest") || options.has("incr-ingest")) {
+			if (options.has("ingest") && options.hasArgument("ingest")) {
 				ingestFile = options.valueOf("ingest").toString();
+			}
+			else if (options.has("incr-ingest") && options.hasArgument("incr-ingest")) {
+				ingestFile = options.valueOf("incr-ingest").toString();
 			}
 		}
 		
@@ -939,7 +938,7 @@ public class BenchmarkMicro extends Benchmark {
 		 * Get the name of the ingest file (if necessary)
 		 */
 		
-		if (options.has("ingest")) {
+		if (options.has("ingest") || options.has("incr-ingest")) {
 			if (!(new File(ingestFile)).exists()) {
 				String dirGraphML = Bench.getProperty(Bench.DATASETS_DIRECTORY);
 				if (dirGraphML == null) {
@@ -1086,7 +1085,7 @@ public class BenchmarkMicro extends Benchmark {
 			System.out.println("Instance    : "
 					+ (dbInstanceName != null && !dbInstanceName.equals("") ? dbInstanceName : "<default>")
 					+ (warmupStat ? "-warmup" : ""));
-			System.out.println("Directory   : " + (warmupStat ? warmupDbDir : dbDir));
+			System.out.println("Directory   : " + OutputUtils.simplifyFileName(warmupStat ? warmupDbDir : dbDir));
 			
 			System.out.println();
 			
@@ -1191,12 +1190,15 @@ public class BenchmarkMicro extends Benchmark {
 		System.out.println("Database    : " + dbShortName);
 		System.out.println("Instance    : " + (dbInstanceName != null && !dbInstanceName.equals("") ? dbInstanceName : "<default>"));
 		System.out.println("Cache Size  : " + GlobalConfig.databaseCacheSize + " MB");
-		System.out.println("Directory   : " + dirResults);
+		if (warmup) {
+			System.out.println("Warmup Dir  : " + OutputUtils.simplifyFileName(warmupDbDir));
+		}
+		System.out.println("Database Dir: " + OutputUtils.simplifyFileName(dbDir));
 		
 		if (logs) {
-			System.out.println("Log File    : " + logFile);
-			System.out.println("Summary Log : " + summaryLogFile);
-			System.out.println("Summary File: " + summaryLogFileText);
+			System.out.println("Log File    : " + OutputUtils.simplifyFileName(logFile));
+			System.out.println("Summary Log : " + OutputUtils.simplifyFileName(summaryLogFile));
+			System.out.println("Summary File: " + OutputUtils.simplifyFileName(summaryLogFileText));
 		}
 		
 		if (dbConfig.size() > 0) {
@@ -1417,21 +1419,25 @@ public class BenchmarkMicro extends Benchmark {
 			}
 
 			// INGEST benchmarks
-			if (options.has("ingest")) {
+			if (options.has("ingest") || options.has("incr-ingest")) {
 				if (ingestFile.endsWith(".graphml")) {
+					if (options.has("incr-ingest")) {
+						throw new UnsupportedOperationException("--incr-ingest is not supported by the .graphml loader");
+					}
 					operationFactories.add(new OperationFactoryGeneric(
 							OperationLoadGraphML.class, 1,
 							new Object[] { ingestFile, ingestAsUndirected },
-							LogUtils.pathToName(ingestFile)));
+							"bulkload-" + LogUtils.pathToName(ingestFile)));
 				}
 				else if (ingestFile.endsWith(".fgf")) {
+					boolean bulkload = options.has("ingest");
 					if (ingestAsUndirected) {
 						throw new UnsupportedOperationException("--ingest-as-undirected is not supported by the .fgf loader");
 					}
 					operationFactories.add(new OperationFactoryGeneric(
 							OperationLoadFGF.class, 1,
-							new Object[] { ingestFile },
-							LogUtils.pathToName(ingestFile)));
+							new Object[] { ingestFile, bulkload },
+							(bulkload ? "bulkload-" : "incremental-") + LogUtils.pathToName(ingestFile)));
 				}
 				else {
 					throw new IllegalArgumentException("Unknown ingest file type");

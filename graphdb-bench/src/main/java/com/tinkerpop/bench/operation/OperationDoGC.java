@@ -24,13 +24,7 @@ public class OperationDoGC extends Operation {
 				Thread.sleep(500);
 			} catch (InterruptedException e) {
 			}
-			System.gc();
-			System.gc();
-			try {
-				Thread.sleep(500);
-			} catch (InterruptedException e) {
-			}
-			System.gc();
+			/*System.gc();
 			System.gc();
 			try {
 				Thread.sleep(500);
@@ -42,6 +36,12 @@ public class OperationDoGC extends Operation {
 				Thread.sleep(500);
 			} catch (InterruptedException e) {
 			}
+			System.gc();
+			System.gc();
+			try {
+				Thread.sleep(500);
+			} catch (InterruptedException e) {
+			}*/
 			setResult("DONE");
 		} catch (Exception e) {
 			throw e;

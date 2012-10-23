@@ -1,5 +1,7 @@
 package com.tinkerpop.bench.util;
 
+import com.tinkerpop.bench.Bench;
+
 
 /**
  * A collection of miscellaneous utilities for file and console output
@@ -62,5 +64,27 @@ public class OutputUtils {
 		double s = t / 1000.0;
 		int m = (int) (s / 60); s -= m * 60;
 		return String.format("%d minute%s %.3f seconds", m, m == 1 ? "" : "s", s);
+	}
+	
+	
+	/**
+	 * Format and simplify a file name, such as by removing the current directory prefix
+	 * 
+	 * @param name the file or directory name
+	 * @return a simplified file name
+	 */
+	public static String simplifyFileName(String name) {
+		
+		String s = name;
+		
+		
+		// Remove the GraphDB directory prefix
+		
+		String p = Bench.graphdbBenchDir;
+		if (!"".equals(p) && !p.endsWith("/")) p += "/";
+		if (s.startsWith(p)) s = s.substring(p.length());
+		
+		
+		return s;
 	}
 }

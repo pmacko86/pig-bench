@@ -67,7 +67,7 @@ public class Workload {
 		m.put("sssp-prop", new Workload("sssp-prop", "Single source shortest path with properties",
 				"Single source shortest path with in-DB marking", null, true, UpdateCategory.TEMPORARY_UPDATE));
 		m.put("generate", new Workload("generate", "Generate",
-				"Generate (or grow) the graph based on the given model", "MODEL", false, UpdateCategory.LOAD_UPDATE));
+				"Generate or grow the graph based on the given model", "MODEL", false, UpdateCategory.LOAD_UPDATE));
 		m.put("get", new Workload("get", "Get",
 				"\"Get\" microbenchmarks", null, true, UpdateCategory.READ_ONLY));
 		m.put("get-k", new Workload("get-k", "Get k-hop",
@@ -78,6 +78,8 @@ public class Workload {
 				"\"Get\" Object store microbenchmarks", "KEYS", true, UpdateCategory.READ_ONLY));
 		m.put("get-index", new Workload("get-index", "Get using an index",
 				"\"Get\" objects using indexes", "KEYS", true, UpdateCategory.READ_ONLY));
+		m.put("incr-ingest", new Workload("incr-ingest", "Incremental Ingest",
+				"Incrementally load data from a file to the database", "FILE", false, UpdateCategory.LOAD_UPDATE));
 		m.put("ingest", new Workload("ingest", "Ingest",
 				"Ingest a file to the database (also delete the graph)", "FILE", false, UpdateCategory.LOAD_UPDATE));
 		WORKLOADS = Collections.unmodifiableMap(m);
