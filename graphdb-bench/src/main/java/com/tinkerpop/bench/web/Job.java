@@ -299,7 +299,7 @@ public class Job implements Comparable<Job> {
 			}
 		}
 		
-		if (workloads.containsKey("ingest")) {
+		if (workloads.containsKey("ingest") || workloads.containsKey("incr-ingest")) {
 			if (ingestAsUndirected) {
 				arguments.add("--ingest-as-undirected");
 			}
