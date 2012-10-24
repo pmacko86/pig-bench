@@ -1,6 +1,7 @@
 package com.tinkerpop.bench.util;
 
 import com.tinkerpop.bench.Bench;
+import com.tinkerpop.blueprints.Direction;
 
 
 /**
@@ -86,5 +87,22 @@ public class OutputUtils {
 		
 		
 		return s;
+	}
+	
+	
+	/**
+	 * Convert a Blueprints Direction to a tag string
+	 * 
+	 * @param d the direction
+	 * @return the tag string
+	 */
+	public static String toTag(Direction d) {
+		
+		switch (d) {
+		case IN  : return "in";
+		case OUT : return "out";
+		case BOTH: return "both";
+		default: throw new IllegalArgumentException("Invalid direction");
+		}
 	}
 }

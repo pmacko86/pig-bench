@@ -146,7 +146,7 @@ public class WebUtils {
 	 */
 	public static File getResultsDirectory() {
 
-		String dirName = Bench.getProperty(Bench.RESULTS_DIRECTORY) + "/Micro"; /* TODO Do this for real */
+		String dirName = Bench.getProperty(Bench.RESULTS_DIRECTORY); /* TODO Do this for real */
 
 		File dir = new File(dirName);
 		if (!dir.exists())

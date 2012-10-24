@@ -359,6 +359,9 @@ public class BenchRunner {
 										&& !op.getClass().equals(OperationLoadGraphML.class)) {
 									polluteCache = true;
 								}
+								if (op.getClass().equals(OperationLoadFGF.class)) {
+									polluteCache = op.getName().indexOf("incremental") >= 0;
+								}
 							}
 							
 							if (main) System.out.println();

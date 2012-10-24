@@ -16,6 +16,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.servlet.http.HttpServletRequest;
 
+import scala.actors.threadpool.Arrays;
+
 import com.tinkerpop.bench.Bench;
 import com.tinkerpop.bench.DatabaseEngine;
 import com.tinkerpop.bench.GlobalConfig;
@@ -51,8 +53,13 @@ public class Job implements Comparable<Job> {
 	 * Create an instance of a Job
 	 */
 	protected Job() {
-		arguments = null;
+
 		id = lastId.incrementAndGet();
+		
+		arguments = null;
+		dbEngine = null;
+		dbInstance = null;
+		
 		status = -1;
 		executionCount = 0;
 		executionTime = null;
@@ -93,6 +100,77 @@ public class Job implements Comparable<Job> {
 	public Job(File file, String dbEngine, String dbInstance) {
 		this();
 		loadFromLogFile(file, dbEngine, dbInstance);
+	}
+	
+	
+	/**
+	 * Create an instance of a Job from a list of arguments
+	 * 
+	 * @param arguments the arguments
+	 */
+	public Job(final List<String> arguments) {
+		this();
+		
+		this.arguments = new ArrayList<String>();
+		this.arguments.add(Bench.graphdbBenchDir + "/runBenchmarkSuite.sh");
+		
+		
+		// Copy the + arguments first 
+		
+		for (int i = 0; i < arguments.size(); i++) {
+			String a = arguments.get(i);
+			if (a.startsWith("+")) this.arguments.add(a);
+		}
+		
+		
+		// Further arguments that we need to run the job through the web interface
+
+		this.arguments.add("--dumb-terminal");
+		
+		
+		// Copy the arguments and extract the database engine and instance names
+		
+		for (int i = 0; i < arguments.size(); i++) {
+			String a = arguments.get(i);
+			if (a.startsWith("+")) continue;
+			
+			if (a.startsWith("--")) {
+				if (DatabaseEngine.ENGINES.containsKey(a.substring(2))) {
+					if (dbEngine != null) {
+						throw new IllegalArgumentException("Cannot specify more than one database engine");
+					}
+					dbEngine = a.substring(2);
+				}
+			}
+			
+			if (a.equals("--database") || a.equals("-d")) {
+				if (i + 1 >= arguments.size() || arguments.get(i + 1).startsWith("-")) {
+					throw new IllegalArgumentException("The " + a + " option requires an argument");
+				}
+				if (dbInstance != null) {
+					throw new IllegalArgumentException("Cannot specify more than one database instance");
+				}
+				dbInstance = arguments.get(i + 1);
+				WebUtils.asssertDatabaseInstanceNameValidity(dbInstance);
+			}
+			
+			this.arguments.add(a);
+		}
+		
+		if (dbEngine == null) {
+			throw new IllegalArgumentException("No database engine is specified");
+		}
+	}
+	
+	
+	/**
+	 * Create an instance of a Job from an array of arguments
+	 * 
+	 * @param arguments the arguments
+	 */
+	@SuppressWarnings("unchecked")
+	public Job(final String... arguments) {
+		this(Arrays.asList(arguments));
 	}
 	
 	
@@ -270,6 +348,10 @@ public class Job implements Comparable<Job> {
 				if ("get-property".equals(s) && s_propertyKeys != null
 						&& !BenchmarkMicro.DEFAULT_PROPERTY_KEYS.equals(s_propertyKeys)) {
 					arguments.add(s_propertyKeys);
+				}
+				if ("get-label".equals(s) && s_edgeLabelsNormalized != null
+						&& !BenchmarkMicro.DEFAULT_EDGE_LABELS.equals(s_edgeLabelsNormalized)) {
+					arguments.add(s_edgeLabelsNormalized);
 				}
 				if ("get-k-label".equals(s) && s_edgeLabelsNormalized != null
 						&& !BenchmarkMicro.DEFAULT_EDGE_LABELS.equals(s_edgeLabelsNormalized)) {

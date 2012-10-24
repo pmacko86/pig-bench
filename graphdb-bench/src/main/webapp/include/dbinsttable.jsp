@@ -63,14 +63,34 @@ else {
 			%>
 		</tr>
 		<%
+			// Get the available instances
+			
 			TreeSet<String> instanceSet = new TreeSet<String>(new NaturalStringComparator());
-			for (String __s : WebUtils.getAllDatabaseInstanceNames()) instanceSet.add(__s);
-			for (Job job : JobList.getInstance().getJobs()) {
-				if (job.getDbInstance() != null) instanceSet.add(job.getDbInstance());
+		
+			if (dbinst_choose_based_on_available_datasets) {
+				for (String __s : WebUtils.getDatasets()) {
+					try {
+						instanceSet.add(AddPredefinedJobs.computeInstanceName(__s));
+					}
+					catch (Exception e) {
+						// Silently ignore (at least for now) -- the most likely reason we are here
+						// is that the dataset is currently unsupported by the servlet
+					}
+				}
 			}
+			else {
+				for (String __s : WebUtils.getAllDatabaseInstanceNames()) instanceSet.add(__s);
+				for (Job job : JobList.getInstance().getJobs()) {
+					if (job.getDbInstance() != null) instanceSet.add(job.getDbInstance());
+				}
+			}
+			
 			LinkedList<String> instances = new LinkedList<String>(instanceSet);
-			instances.addFirst("");
-			if (dbinst_choose_nonexistent) instances.addLast("<new>");
+			if (!dbinst_choose_based_on_available_datasets) instances.addFirst("");
+			if (dbinst_choose_nonexistent && !dbinst_choose_based_on_available_datasets) instances.addLast("<new>");
+			
+			
+			// Get the selected database engine/instance paits
 			
 			Collection<Pair<String, String>> instancePairs = WebUtils.getDatabaseInstancePairs();
 			
@@ -87,6 +107,9 @@ else {
 					}
 				}
 			}
+			
+			
+			// Render the table
 			
 			for (String dbi : instances) {
 				%>

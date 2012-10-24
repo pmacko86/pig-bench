@@ -50,6 +50,7 @@
 				boolean dbinst_simple = false;
 				boolean dbinst_choose_many = true;
 				boolean dbinst_choose_nonexistent = false;
+				boolean dbinst_choose_based_on_available_datasets = false;
 				String dbinst_onchange = null;
 			%>
 			<div class="db_table_div">

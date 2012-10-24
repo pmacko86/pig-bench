@@ -30,6 +30,11 @@
 				<% } else { %>
 					<li><p>Add a Job</p></li>
 				<% } %>
+				<% if (!jsp_page.equals("addpredefinedloadjobs")) { %>
+					<li><a href="addpredefinedloadjobs.jsp">Add Predefined Load Jobs</a></li>
+				<% } else { %>
+					<li><p>Add Predefined Jobs</p></li>
+				<% } %>
 				<% if (!jsp_page.equals("viewresults")) { %>
 					<li><a href="viewresults.jsp">View Results</a></li>
 				<% } else { %>

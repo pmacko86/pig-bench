@@ -80,6 +80,7 @@ public class OperationLoadFGF extends Operation implements GraphProgressListener
 				if (!(graph instanceof Neo4jGraph)) {
 					throw new IllegalStateException("Bulk-load must be enabled for a Neo4jBatchGraph");
 				}
+				//FGFGraphLoader.load(graph, file, GlobalConfig.transactionBufferSize, indexAllProperties, bulkLoad, this);
 				Neo4jFGFIncrementalLoader.load((Neo4jGraph) graph, file, GlobalConfig.transactionBufferSize,
 						                       indexAllProperties, this);
 			}

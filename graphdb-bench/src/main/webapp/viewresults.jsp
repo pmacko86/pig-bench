@@ -145,6 +145,7 @@
 				boolean dbinst_simple = false;
 				boolean dbinst_choose_many = false;
 				boolean dbinst_choose_nonexistent = false;
+				boolean dbinst_choose_based_on_available_datasets = false;
 				String dbinst_onchange = "form_submit();";
 			%>
 			<div class="db_table_div">

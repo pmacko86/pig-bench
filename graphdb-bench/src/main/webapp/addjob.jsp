@@ -86,6 +86,7 @@
 			
 			b_edge_labels = false;
 			for (i = 0; i < checked.length; i++) {
+				if (["get-label"].indexOf(checked[i]) >= 0) b_edge_labels = true;
 				if (["get-k-label"].indexOf(checked[i]) >= 0) b_edge_labels = true;
 			}
 
@@ -170,6 +171,7 @@
 				boolean dbinst_simple = false;
 				boolean dbinst_choose_many = true;
 				boolean dbinst_choose_nonexistent = true;
+				boolean dbinst_choose_based_on_available_datasets = false;
 				String dbinst_onchange = null;
 			%>	
 			<%@ include file="include/dbinsttable.jsp" %>			
