@@ -3,7 +3,6 @@ package com.tinkerpop.bench.operation.operations;
 import java.io.File;
 
 import com.tinkerpop.bench.GlobalConfig;
-import com.tinkerpop.bench.cache.Cache;
 import com.tinkerpop.bench.operation.Operation;
 import com.tinkerpop.bench.util.ConsoleUtils;
 import com.tinkerpop.blueprints.Graph;
@@ -114,7 +113,6 @@ public class OperationLoadFGF extends Operation implements GraphProgressListener
 		// Finish
 		//
 		
-		Cache.getInstance(graph).invalidate();
 		setResult("DONE-" + (bulkLoad ? "Bulkload" : "Incremental"));
 	}
 

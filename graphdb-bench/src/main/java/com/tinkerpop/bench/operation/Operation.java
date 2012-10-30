@@ -14,6 +14,7 @@ import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.TransactionalGraph;
 import com.tinkerpop.blueprints.TransactionalGraph.Conclusion;
 import com.tinkerpop.blueprints.extensions.AutoTransactionalGraph;
+import com.tinkerpop.blueprints.extensions.impls.neo4j.ExtendedNeo4jGraph;
 
 import edu.harvard.pass.cpl.CPL;
 import edu.harvard.pass.cpl.CPLObject;
@@ -310,6 +311,11 @@ public abstract class Operation {
 		            g.setMaxBufferSize(GlobalConfig.transactionBufferSize);
 	        	}
 	        }
+	        if (graph instanceof ExtendedNeo4jGraph) {
+	        	if (!isUsingCustomTransactions()) {
+	        		((ExtendedNeo4jGraph) graph).startTransaction();
+	        	}
+	        }
 		}
 		
 		try {
@@ -326,8 +332,12 @@ public abstract class Operation {
 		        	}
 		        }
 		        if (graph instanceof TransactionalGraph) {
-		        	TransactionalGraph g = (TransactionalGraph) graph;
-		        	g.stopTransaction(Conclusion.SUCCESS);
+		        	// Make sure the transaction completes even if the operation
+		        	// uses custom transactions (in which case the following call
+		        	// should translate to a NO-OP, assuming that there is no
+		        	// running transaction).
+			        TransactionalGraph g = (TransactionalGraph) graph;
+			        g.stopTransaction(Conclusion.SUCCESS);
 		        }
 			}
 		}

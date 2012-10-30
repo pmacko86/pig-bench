@@ -3,6 +3,8 @@ package com.tinkerpop.bench.web;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -105,7 +107,8 @@ public class DownloadResults extends HttpServlet {
 		InputStream input = p.getInputStream();
 		OutputStream output = response.getOutputStream();
 		response.setContentType("application/gzip");
-		response.setHeader("Content-disposition", "attachment;filename=results.tar.gz");
+		response.setHeader("Content-disposition", "attachment;filename="
+				+ "results-" + (new SimpleDateFormat("yyyyMMdd")).format(new Date()) + ".tar.gz");
 		
 		byte[] buffer = new byte[10240];
 		

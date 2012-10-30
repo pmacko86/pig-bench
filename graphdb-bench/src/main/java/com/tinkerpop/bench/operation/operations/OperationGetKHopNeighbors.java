@@ -2,11 +2,20 @@ package com.tinkerpop.bench.operation.operations;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 
 import org.neo4j.graphdb.DynamicRelationshipType;
 import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Path;
 import org.neo4j.graphdb.Relationship;
+import org.neo4j.graphdb.RelationshipType;
+import org.neo4j.graphdb.traversal.Evaluators;
+import org.neo4j.graphdb.traversal.TraversalDescription;
+import org.neo4j.graphdb.traversal.Traverser;
+import org.neo4j.kernel.Traversal;
 
+import com.sparsity.dex.algorithms.TraversalBFS;
 import com.sparsity.dex.gdb.EdgesDirection;
 import com.sparsity.dex.gdb.Graph;
 import com.sparsity.dex.gdb.OIDList;
@@ -17,9 +26,12 @@ import com.tinkerpop.bench.util.GraphUtils;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.blueprints.extensions.impls.dex.DexUtils;
+import com.tinkerpop.blueprints.extensions.impls.dex.ExtendedDexGraph;
 import com.tinkerpop.blueprints.extensions.impls.neo4j.Neo4jUtils;
 import com.tinkerpop.blueprints.impls.dex.DexGraph;
+import com.tinkerpop.blueprints.impls.neo4j.Neo4jGraph;
 import com.tinkerpop.blueprints.impls.neo4j.Neo4jVertex;
+
 
 public class OperationGetKHopNeighbors extends Operation {
 
@@ -164,6 +176,125 @@ public class OperationGetKHopNeighbors extends Operation {
 				next = tmp;
 			}
 			
+			curr.delete();
+			next.delete();
+			
+		
+			/*ArrayList<com.sparsity.dex.gdb.Objects> curr = new ArrayList<com.sparsity.dex.gdb.Objects>();
+			ArrayList<com.sparsity.dex.gdb.Objects> next = new ArrayList<com.sparsity.dex.gdb.Objects>();
+			
+			long start = ((Long) startVertex.getId()).longValue();
+			get_ops++;
+			for (int t : types) {
+				com.sparsity.dex.gdb.Objects objs = graph.neighbors(start, t, d);
+				com.sparsity.dex.gdb.ObjectsIterator objsItr = objs.iterator();
+				
+				while (objsItr.hasNext()) {
+					get_vertex++;
+					long v = objsItr.nextObject();
+					result.add(v);
+				}
+				
+				objsItr.close();
+				curr.add(objs);
+			}
+			
+			for (real_hops = 1; real_hops < k; real_hops++) {
+
+				int nextSize = 0;
+				
+				for (int t : types) {
+					for (com.sparsity.dex.gdb.Objects c : curr) {
+					
+						com.sparsity.dex.gdb.Objects objs = graph.neighbors(c, t, d);
+						com.sparsity.dex.gdb.ObjectsIterator objsItr = objs.iterator();
+						
+						while (objsItr.hasNext()) {
+							get_vertex++;
+							long v = objsItr.nextObject();
+							if (result.add(v)) {
+								nextSize++;
+							}
+						}
+						
+						objsItr.close();
+						next.add(objs);
+					}
+				}
+				
+				for (com.sparsity.dex.gdb.Objects c : curr) {
+					get_ops += c.count();
+					c.close();
+				}
+
+				if (nextSize == 0) break;
+				
+				ArrayList<com.sparsity.dex.gdb.Objects> tmp = curr;
+				curr = next;
+				tmp.clear();
+				next = tmp;
+			}
+			
+			for (com.sparsity.dex.gdb.Objects c : curr) {
+				c.close();
+			}*/
+			
+			
+			setResult(result.size() + ":" + real_hops + ":" + get_ops + ":" + get_vertex);
+		}
+	}
+	
+	
+	/**
+	 * The operation specialized for DEX using its stored procedure
+	 */
+	public static class DEX_StoredProcedure extends OperationGetKHopNeighbors {
+		
+		private EdgesDirection d;
+		private int[] types; 
+		
+		
+		/**
+		 * Initialize the operation
+		 * 
+		 * @param args the operation arguments
+		 */
+		@Override
+		protected void onInitialize(Object[] args) {
+			super.onInitialize(args);
+					
+			// Translate the direction and the edge label
+			
+			d = DexUtils.translateDirection(direction);
+			types = DexUtils.getEdgeTypes(((DexGraph) getGraph()).getRawGraph(), label);
+		}
+
+		
+		/**
+		 * Execute the operation
+		 */
+		@Override
+		protected void onExecute() throws Exception {
+			
+			TraversalBFS t = new TraversalBFS(((ExtendedDexGraph) getGraph()).getSession(),
+					DexUtils.translateVertex(startVertex));
+			t.addAllNodeTypes();
+			if (label == null) t.addAllEdgeTypes(d); else t.addEdgeType(types[0], d);
+			t.setMaximumHops(k);
+			
+			int real_hops = 0, get_ops = -1, get_vertex = 0;
+			
+			while (t.hasNext()) {
+				long v = t.next();
+				get_vertex++;
+				result.add(v);
+				
+				int d = t.getCurrentDepth();
+				if (d > real_hops) real_hops = d;
+			}
+			
+			t.close();
+			
 			setResult(result.size() + ":" + real_hops + ":" + get_ops + ":" + get_vertex);
 		}
 	}
@@ -236,6 +367,73 @@ public class OperationGetKHopNeighbors extends Operation {
 			}
 
 			setResult(result.size() + ":" + real_hops + ":" + get_ops + ":" + get_vertex);		
+		}
+	}
+	
+	
+	/**
+	 * The operation specialized for Neo4j using its stored procedure
+	 */
+	public static class Neo_StoredProcedure extends OperationGetKHopNeighbors {
+		
+		private org.neo4j.graphdb.Direction d;
+		private List<RelationshipType> relationshipTypes; 
+		
+		
+		/**
+		 * Initialize the operation
+		 * 
+		 * @param args the operation arguments
+		 */
+		@Override
+		protected void onInitialize(Object[] args) {
+			super.onInitialize(args);
+					
+			// Translate the direction and the edge label
+			
+			d = Neo4jUtils.translateDirection(direction);
+			
+			relationshipTypes = new ArrayList<RelationshipType>();
+			if (label == null) {
+				@SuppressWarnings("deprecation")
+				Iterable<RelationshipType> itr = ((Neo4jGraph) getGraph()).getRawGraph().getRelationshipTypes();
+				Iterator<RelationshipType> i = itr.iterator();
+				while (i.hasNext()) relationshipTypes.add(i.next());
+			}
+			else {
+				relationshipTypes.add(DynamicRelationshipType.withName(label));
+			}	
+		}
+
+		
+		/**
+		 * Execute the operation
+		 */
+		@Override
+		protected void onExecute() throws Exception {
+			
+			int real_hops = 0, get_ops = -1, get_vertex = 0;
+			
+			TraversalDescription td = Traversal.description()
+		            .breadthFirst()
+		            .evaluator(Evaluators.toDepth(k));
+		    
+			for (RelationshipType t : relationshipTypes) {
+				td = td.relationships(t, d);
+			}
+			
+			Traverser t = td.traverse(Neo4jUtils.translateVertex(startVertex));
+			
+			for (Path p : t) {
+				Node v = p.endNode();
+				get_vertex++;
+				result.add(v);
+				
+				int d = p.length();
+				if (d > real_hops) real_hops = d;
+			}
+			
+			setResult(result.size() + ":" + real_hops + ":" + get_ops + ":" + get_vertex);
 		}
 	}
 }

@@ -8,6 +8,7 @@ import com.tinkerpop.blueprints.Vertex;
 import edu.harvard.pass.cpl.CPL;
 import edu.harvard.pass.cpl.CPLObject;
 
+@Deprecated
 public class OperationSetVertexProperty extends Operation {
 
 	private Vertex vertex;

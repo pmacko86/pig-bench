@@ -19,7 +19,6 @@ import com.tinkerpop.bench.DatabaseEngine;
 import com.tinkerpop.bench.GlobalConfig;
 import com.tinkerpop.bench.GraphDescriptor;
 import com.tinkerpop.bench.Workload;
-import com.tinkerpop.bench.cache.Cache;
 import com.tinkerpop.bench.generator.GraphGenerator;
 import com.tinkerpop.bench.generator.SimpleBarabasiGenerator;
 import com.tinkerpop.bench.log.SummaryLogWriter;
@@ -48,6 +47,7 @@ import com.tinkerpop.blueprints.extensions.BenchmarkableGraph;
 import com.tinkerpop.blueprints.extensions.impls.dex.DexCSVLoader;
 import com.tinkerpop.blueprints.extensions.impls.dex.ExtendedDexGraph;
 import com.tinkerpop.blueprints.extensions.impls.sql.SqlGraph;
+import com.tinkerpop.blueprints.extensions.io.fgf.FGFGraphExporter;
 import com.tinkerpop.blueprints.extensions.io.fgf.FGFGraphLoader;
 
 import edu.harvard.pass.cpl.CPL;
@@ -156,6 +156,7 @@ public class BenchmarkMicro extends Benchmark {
 										"at each new vertex");
 		System.err.println("");
 		System.err.println("Miscellaneous commands:");
+		System.err.println("  --export-fgf FILE       Export the database to a FGF file");
 		System.err.println("  --export-graphml FILE   Export the database to a GraphML file");
 		System.err.println("  --export-n-graphml FILE Export the database to a normalized GraphML file");
 		System.err.println("  --stat                  Print statistics about the database");
@@ -274,6 +275,7 @@ public class BenchmarkMicro extends Benchmark {
 		
 		// Miscellaneous commands
 		
+		parser.accepts("export-fgf").withRequiredArg().ofType(String.class);
 		parser.accepts("export-graphml").withOptionalArg().ofType(String.class);
 		parser.accepts("export-n-graphml").withOptionalArg().ofType(String.class);
 		parser.accepts("stat");
@@ -1070,6 +1072,25 @@ public class BenchmarkMicro extends Benchmark {
 			return 0;
 		}
 		
+		if (options.has("export-fgf")) {
+			
+			String file = options.hasArgument("export-fgf") ? "" + options.valueOf("export-fgf") : "graph.fgf";
+			
+			try {
+				File f = new File(file);
+				graphDescriptor = new GraphDescriptor(dbEngine, dbDir, dbConfig);
+				Graph g = graphDescriptor.openGraph(GraphDescriptor.OpenMode.DEFAULT);
+				FGFGraphExporter.export(g, f);
+				graphDescriptor.shutdownGraph();
+			}
+			catch (IOException e) {
+				ConsoleUtils.error("Cannot write to the specified file: " + file);
+				return 1;
+			}
+			
+			return 0;
+		}
+		
 		if (options.has("stat") || options.has("warmup-stat")) {
 			
 			boolean warmupStat = options.has("warmup-stat");
@@ -1204,6 +1225,10 @@ public class BenchmarkMicro extends Benchmark {
 			System.out.println("Summary File: " + OutputUtils.simplifyFileName(summaryLogFileText));
 		}
 		
+		if (options.has("annotation")) {
+			System.out.println("Annotation  : " + options.valueOf("annotation").toString());
+		}
+		
 		if (dbConfig.size() > 0) {
 			System.out.println("");
 			System.out.println("Database Configuration:");
@@ -1275,8 +1300,6 @@ public class BenchmarkMicro extends Benchmark {
 				long t = System.currentTimeMillis() - start;
 				System.out.println("done [" + OutputUtils.formatTimeMS(t) + "]");
 			}
-			
-			Cache.dropAll();
 		}
 		
 		
@@ -1378,7 +1401,8 @@ public class BenchmarkMicro extends Benchmark {
 	 */
 	
 	private int opCount = DEFAULT_OP_COUNT;
-	private String PROPERTY_KEY = "_id";
+	private String ADD_PROPERTY_KEY = "_property";				// XXX Should not be hard-coded
+	private String EDGE_CONDITIONAL_PROPERTY_KEY = "time";		// XXX Should not be hard-coded
 	private int[] kHops;
 	private boolean ingestAsUndirected;
 
@@ -1567,7 +1591,7 @@ public class BenchmarkMicro extends Benchmark {
 				
 				operationFactories.add(new OperationFactoryGeneric(
 						OperationSetManyVertexProperties.class, 1,
-						new Object[] { PROPERTY_KEY, opCount }));
+						new Object[] { ADD_PROPERTY_KEY, opCount }));
 				
 				operationFactories.add(new OperationFactoryGeneric(
 						OperationAddManyEdges.class, 1,
@@ -1575,7 +1599,7 @@ public class BenchmarkMicro extends Benchmark {
 				
 				operationFactories.add(new OperationFactoryGeneric(
 						OperationSetManyEdgeProperties.class, 1,
-						new Object[] { PROPERTY_KEY, opCount }));
+						new Object[] { ADD_PROPERTY_KEY, opCount }));
 			}
 			
 			
@@ -1602,7 +1626,8 @@ public class BenchmarkMicro extends Benchmark {
 							new Object[] { d }, OutputUtils.toTag(d)));
 					operationFactories.add(new OperationFactoryRandomVertex(
 							OperationGetNeighborEdgeConditional.class, opCount,
-							new Object[] { d, "time" }, OutputUtils.toTag(d)));		// XXX Should not be hard-coded
+							new Object[] { d, EDGE_CONDITIONAL_PROPERTY_KEY },
+							OutputUtils.toTag(d)));
 				}
 			}
 			
@@ -1620,7 +1645,8 @@ public class BenchmarkMicro extends Benchmark {
 								new Object[] { d, label }, OutputUtils.toTag(d) + "-withlabel"));
 						operationFactories.add(new OperationFactoryRandomVertex(
 								OperationGetNeighborEdgeConditional.class, opCount,
-								new Object[] { d, "time", label }, OutputUtils.toTag(d) + "-withlabel"));	// XXX Should not be hard-coded
+								new Object[] { d, EDGE_CONDITIONAL_PROPERTY_KEY, label },
+								OutputUtils.toTag(d) + "-withlabel"));
 					}
 				}
 			}
@@ -1637,7 +1663,8 @@ public class BenchmarkMicro extends Benchmark {
 								new Object[] { k, d }, OutputUtils.toTag(d) + "-" + k));
 						operationFactories.add(new OperationFactoryRandomVertex(
 								OperationGetKHopNeighborsEdgeConditional.class, opCount,
-								new Object[] { k, d, "time" }, OutputUtils.toTag(d) + "-" + k));		// XXX Should not be hard-coded
+								new Object[] { k, d, EDGE_CONDITIONAL_PROPERTY_KEY },
+								OutputUtils.toTag(d) + "-" + k));
 					}
 				}
 			}
@@ -1655,7 +1682,8 @@ public class BenchmarkMicro extends Benchmark {
 									new Object[] { k, d, label }, OutputUtils.toTag(d) + "-withlabel-" + k));
 							operationFactories.add(new OperationFactoryRandomVertex(
 									OperationGetKHopNeighborsEdgeConditional.class, opCount,
-									new Object[] { k, d, "time", label }, OutputUtils.toTag(d) + "-withlabel-" + k));	// XXX Should not be hard-coded
+									new Object[] { k, d, EDGE_CONDITIONAL_PROPERTY_KEY, label },
+									OutputUtils.toTag(d) + "-withlabel-" + k));
 						}
 					}
 				}

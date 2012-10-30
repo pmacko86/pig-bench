@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileInputStream;
 
 import com.tinkerpop.bench.GlobalConfig;
-import com.tinkerpop.bench.cache.Cache;
 import com.tinkerpop.bench.operation.Operation;
 import com.tinkerpop.bench.util.ConsoleUtils;
 import com.tinkerpop.blueprints.Graph;
@@ -45,7 +44,6 @@ public class OperationLoadGraphML extends Operation implements GraphProgressList
 					null, null, null, this, ingestAsUndirected);
 			/*com.tinkerpop.blueprints.util.io.graphml.GraphMLReader.inputGraph(graph,
 					fin, GlobalConfig.transactionBufferSize, null, null, null);*/
-			Cache.getInstance(getGraph()).invalidate();
 			setResult("DONE");
 		} catch (Exception e) {
 			throw e;

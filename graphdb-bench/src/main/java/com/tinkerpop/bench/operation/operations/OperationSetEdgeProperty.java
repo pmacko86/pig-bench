@@ -8,6 +8,7 @@ import com.tinkerpop.blueprints.Edge;
 import edu.harvard.pass.cpl.CPL;
 import edu.harvard.pass.cpl.CPLObject;
 
+@Deprecated
 public class OperationSetEdgeProperty extends Operation {
 
 	private Edge edge;

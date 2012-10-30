@@ -5,6 +5,7 @@ import com.tinkerpop.blueprints.impls.dex.DexGraph;
 import com.tinkerpop.blueprints.impls.neo4j.Neo4jGraph;
 
 
+@Deprecated
 public class OperationGetEdge extends Operation {
 
 	protected Object id;

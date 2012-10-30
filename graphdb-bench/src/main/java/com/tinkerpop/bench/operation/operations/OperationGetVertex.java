@@ -4,6 +4,7 @@ import com.tinkerpop.bench.operation.Operation;
 import com.tinkerpop.blueprints.impls.dex.DexGraph;
 import com.tinkerpop.blueprints.impls.neo4j.Neo4jGraph;
 
+@Deprecated
 public class OperationGetVertex extends Operation {
 
 	protected Object id;

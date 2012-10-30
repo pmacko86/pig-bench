@@ -2,10 +2,6 @@ package com.tinkerpop.bench.util;
 
 import java.util.Random;
 
-import com.tinkerpop.bench.DatabaseEngine;
-import com.tinkerpop.bench.cache.Cache;
-import com.tinkerpop.bench.evaluators.EdgeEvaluator;
-import com.tinkerpop.bench.evaluators.Evaluator;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Graph;
@@ -201,129 +197,7 @@ public class StatisticsHelper {
 		Object[] samples = new Object[sampleSize];
 		for (int i = 0; i < sampleSize; i++) samples[i] = vertices[i].getId();
 		return samples;
-	}
-
-	
-	/**
-	 * Randomly pick vertex IDs from the database without replacement using
-	 * a distribution specified by the given evaluator function.
-	 * 
-	 * @param db the graph database
-	 * @param evaluator the vertex evaluator function
-	 * @param sampleSize the number of samples to return
-	 * @return an array of vertices
-	 */
-	@Deprecated
-	public static Object[] getSampleVertexIds(Graph db, Evaluator evaluator,
-			int sampleSize) {
-
-		Object[] samples = new Object[sampleSize];
-		if (DatabaseEngine.isHollowGraph(db)) {
-			for (int i = 0; i < samples.length; i++) {
-				samples[i] = new Long(0);
-			}
-			return samples;
-		}
-		
-		Double[] sampleVals = new Double[sampleSize];
-
-		double totalVal = evaluator.evaluateTotal(db);
-
-		for (int i = 0; i < sampleVals.length; i++) {
-			sampleVals[i] = rand.nextDouble() * totalVal;
-			samples[i] = null;
-		}
-
-		boolean finished = true;
-		Cache cache = Cache.getInstance(db);
-		int max = cache.getVertexIndexRange();
-		
-		for (int index = 0; index < max; index++) {
-
-			Object id = cache.getVertexID(index);
-			if (id == null) continue;
-			
-			double currentVal = evaluator.evaluate(cache, index);
-
-			finished = true;
-
-			for (int i = 0; i < sampleVals.length; i++) {
-				if (samples[i] == null) {
-					sampleVals[i] -= currentVal;
-					if (sampleVals[i] <= 0)
-						samples[i] = id;
-					else
-						finished = false;
-				}
-			}
-
-			if (finished == true)
-				break;
-		}
-		
-		if (!finished) throw new RuntimeException("getSampleVertexIds() did not finish");
-		for (int i = 0; i < sampleVals.length; i++) {
-			if (samples[i] == null)
-				throw new RuntimeException("getSampleVertexIds() did not finish - some elements are null");
-		}
-
-		return samples;
-	}
-	
-
-	/**
-	 * Randomly pick edge IDs from the database without replacement using
-	 * a distribution specified by the given evaluator function.
-	 * 
-	 * @param db the graph database
-	 * @param evaluator the edge evaluator function
-	 * @param sampleSize the number of samples to return
-	 * @return an array of vertices
-	 */
-	@Deprecated
-	public static Object[] getSampleEdgeIds(Graph db, EdgeEvaluator evaluator,
-			int sampleSize) {
-
-		Object[] samples = new Object[sampleSize];
-		Double[] sampleVals = new Double[sampleSize];
-
-		double totalVal = evaluator.evaluateTotal(db);
-
-		for (int i = 0; i < sampleVals.length; i++) {
-			sampleVals[i] = rand.nextDouble() * totalVal;
-			samples[i] = null;
-		}
-
-		boolean finished = true;
-		Cache cache = Cache.getInstance(db);
-		int max = cache.getEdgeIndexRange();
-
-		for (int index = 0; index < max; index++) {
-
-			Object id = cache.getEdgeID(index);
-			if (id == null) continue;
-			
-			double currentVal = evaluator.evaluate(cache, index);
-
-			finished = true;
-
-			for (int i = 0; i < sampleVals.length; i++) {
-				if (samples[i] == null) {
-					sampleVals[i] -= currentVal;
-					if (sampleVals[i] <= 0)
-						samples[i] = id;
-					else
-						finished = false;
-				}
-			}
-
-			if (finished == true)
-				break;
-		}
-
-		return samples;
-	}
-	
+	}	
 
 	
 	/**

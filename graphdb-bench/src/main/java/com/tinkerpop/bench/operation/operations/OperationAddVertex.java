@@ -1,12 +1,12 @@
 package com.tinkerpop.bench.operation.operations;
 
-import com.tinkerpop.bench.cache.Cache;
 import com.tinkerpop.bench.operation.Operation;
 import com.tinkerpop.blueprints.Vertex;
 
 import edu.harvard.pass.cpl.CPL;
 import edu.harvard.pass.cpl.CPLObject;
 
+@Deprecated
 public class OperationAddVertex extends Operation {
 	
 	private Object id;
@@ -21,7 +21,6 @@ public class OperationAddVertex extends Operation {
 		try {
 			Vertex vertex = getGraph().addVertex(id);
 			setResult(vertex.toString());
-			Cache.getInstance(getGraph()).addVertex(vertex);
 		} catch (Exception e) {
 			throw e;
 		}

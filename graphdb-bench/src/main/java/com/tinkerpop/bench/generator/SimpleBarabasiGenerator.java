@@ -1,7 +1,6 @@
 package com.tinkerpop.bench.generator;
 
 import com.tinkerpop.bench.Bench;
-import com.tinkerpop.bench.cache.Cache;
 import com.tinkerpop.bench.util.ConsoleUtils;
 import com.tinkerpop.bench.util.GraphUtils;
 import com.tinkerpop.bench.util.Pair;
@@ -90,12 +89,9 @@ public class SimpleBarabasiGenerator extends GraphGenerator {
 		}
 		GraphUtils.close(vi);
 		
-		Cache c = Cache.getInstance(graph);
-		
 		if (empty) {
 			Object v = new TemporaryObject(0);
 			newVertices[0] = v;
-			c.addVertexID(v);
 		}
 
 		
@@ -147,14 +143,12 @@ public class SimpleBarabasiGenerator extends GraphGenerator {
 			
 			Object v = new TemporaryObject(i);
 			newVertices[i] = v;
-			c.addVertexID(v);
 			
 			for (Object o : otherVertices) {
 				Pair<Object, Object> e = new Pair<Object, Object>(o /* out/source */, v /* in/target */);
 				TemporaryObject t = new TemporaryObject(edge_i);
 				newEdges[edge_i] = e;
 				newEdgeIDs[edge_i] = t;
-				c.addEdgeByID(t, v, o);
 				edge_i++;
 			}
 			
@@ -165,7 +159,6 @@ public class SimpleBarabasiGenerator extends GraphGenerator {
 		
 		// Now actually create the vertices
 		
-		Object[] oldVertices = newVertices;
 		newVertices = new Object[n];
 
 		long start = System.nanoTime(); 
@@ -180,10 +173,6 @@ public class SimpleBarabasiGenerator extends GraphGenerator {
 		time_addVertices = System.nanoTime() - start;
 		num_addVertex = newVertices.length;
 		
-		for (int i = 0; i < n; i++) {
-			c.replaceVertexID(oldVertices[i], ((Vertex) newVertices[i]).getId());
-		}
-
 		
 		// Now actually get the other vertices
 		
@@ -228,8 +217,8 @@ public class SimpleBarabasiGenerator extends GraphGenerator {
 			Object a = newEdges[i].getFirst();
 			Object b = newEdges[i].getSecond();
 			
+			@SuppressWarnings("unused")
 			Edge e = graph.addEdge(null, (Vertex) a, (Vertex) b, "");
-			c.replaceEdgeID(newEdgeIDs[i], e.getId());
 			
 			if ((i & 127) == 0 || i == newEdges.length-1) {
 				ConsoleUtils.printProgressIndicator(i+1, newEdges.length, "Pass 4/4");

@@ -8,6 +8,12 @@ import com.tinkerpop.bench.DatabaseEngine;
 import com.tinkerpop.bench.GlobalConfig;
 import com.tinkerpop.bench.GraphDescriptor;
 import com.tinkerpop.bench.operation.Operation;
+import com.tinkerpop.bench.operation.OperationDoGC;
+import com.tinkerpop.bench.operation.OperationOpenGraph;
+import com.tinkerpop.bench.operation.OperationShutdownGraph;
+import com.tinkerpop.bench.operation.operations.OperationLoadFGF;
+import com.tinkerpop.bench.operation.operations.OperationLoadGraphML;
+import com.tinkerpop.bench.util.ConsoleUtils;
 import com.tinkerpop.blueprints.Graph;
 
 import edu.harvard.pass.cpl.CPLObject;
@@ -151,13 +157,45 @@ public abstract class OperationFactory implements Iterator<Operation>,
 		// of the generic operation -- but only if the use of specialized
 		// procedures is enabled
 		
+		if (GlobalConfig.useStoredProcedures) {
+			DatabaseEngine db = graphDescriptor.getDatabaseEngine();
+			boolean found = false;
+			for (Class<?> d : c.getDeclaredClasses()) {
+				if (d.getSimpleName().equalsIgnoreCase(db.getShortName() + "_StoredProcedure")) {
+					if (c.isAssignableFrom(d)) {
+						c = d;
+						found = true;
+						break;
+					}
+					else {
+						throw new IllegalStateException(c.getSimpleName() + "$" + d.getSimpleName() + " found, but "
+								+ "it does not extend " + c.getSimpleName());
+					}
+				}
+			}
+			
+			if (!(OperationOpenGraph.class.isAssignableFrom(c)
+					|| OperationLoadFGF.class.isAssignableFrom(c)
+					|| OperationLoadGraphML.class.isAssignableFrom(c)
+					|| OperationDoGC.class.isAssignableFrom(c)
+					|| OperationShutdownGraph.class.isAssignableFrom(c))
+					&& !found) {
+				//ConsoleUtils.warn("Cannot find a stored procedure for " + c.getSimpleName());
+			}
+		}
+		
 		if (GlobalConfig.useSpecializedProcedures) {
 			DatabaseEngine db = graphDescriptor.getDatabaseEngine();
 			for (Class<?> d : c.getDeclaredClasses()) {
-				if (d.getSimpleName().equalsIgnoreCase(db.getShortName())
-						&& c.isAssignableFrom(d)) {
-					c = d;
-					break;
+				if (d.getSimpleName().equalsIgnoreCase(db.getShortName())) {
+					if (c.isAssignableFrom(d)) {
+						c = d;
+						break;
+					}
+					else {
+						throw new IllegalStateException(c.getSimpleName() + "$" + d.getSimpleName() + " found, but "
+								+ "it does not extend " + c.getSimpleName());
+					}
 				}
 			}
 		}

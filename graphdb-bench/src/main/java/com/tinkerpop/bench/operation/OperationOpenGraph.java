@@ -1,7 +1,6 @@
 package com.tinkerpop.bench.operation;
 
 import com.tinkerpop.bench.GraphDescriptor;
-import com.tinkerpop.bench.cache.Cache;
 import com.tinkerpop.blueprints.Graph;
 
 /**
@@ -20,8 +19,8 @@ public class OperationOpenGraph extends Operation {
 	@Override
 	protected void onExecute() throws Exception {
 		try {
+			@SuppressWarnings("unused")
 			Graph graph = getGraphDescriptor().openGraph(mode);
-			Cache.getInstance(graph);
 			setResult("DONE");
 		} catch (Exception e) {
 			throw e;
