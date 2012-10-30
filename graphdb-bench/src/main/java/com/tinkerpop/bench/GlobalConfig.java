@@ -21,6 +21,9 @@ public class GlobalConfig {
 	/// Whether databases should use stored procedures if they are available
 	public static boolean useStoredProcedures = false;
 	
+	/// Whether databases should skip an operation if the given stored procedure is not available
+	public static boolean useStoredProceduresOnly = true;
+	
 	/// Whether we should use specialized non-Blueprints routines if they are available
 	public static boolean useSpecializedProcedures = true;
 

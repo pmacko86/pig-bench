@@ -534,7 +534,7 @@ public class BenchRunner {
 					
 					// Finalize the operation factory
 					
-					if (main) {
+					if (main && !operations.isEmpty()) {
 						long t = System.currentTimeMillis() - operationsStart;
 						System.out.println(" [" + OutputUtils.formatTimeMS(t) + "]");
 					}
@@ -684,6 +684,7 @@ public class BenchRunner {
 
 			factory.initialize(graphDescriptor, operationId);
 			for (Operation operation : factory) {
+				if (operation == null) continue;
 				operations.add(operation);
 				if (operation.isUpdate() && !update) {
 					throw new IllegalStateException("Found an update operation in a factory " +

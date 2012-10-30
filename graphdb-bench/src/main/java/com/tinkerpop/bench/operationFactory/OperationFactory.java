@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import com.tinkerpop.bench.DatabaseEngine;
 import com.tinkerpop.bench.GlobalConfig;
 import com.tinkerpop.bench.GraphDescriptor;
+import com.tinkerpop.bench.log.OperationLogEntry;
 import com.tinkerpop.bench.operation.Operation;
 import com.tinkerpop.bench.operation.OperationDoGC;
 import com.tinkerpop.bench.operation.OperationOpenGraph;
@@ -178,9 +179,11 @@ public abstract class OperationFactory implements Iterator<Operation>,
 					|| OperationLoadFGF.class.isAssignableFrom(c)
 					|| OperationLoadGraphML.class.isAssignableFrom(c)
 					|| OperationDoGC.class.isAssignableFrom(c)
+					|| OperationLogEntry.class.isAssignableFrom(c)
 					|| OperationShutdownGraph.class.isAssignableFrom(c))
 					&& !found) {
 				//ConsoleUtils.warn("Cannot find a stored procedure for " + c.getSimpleName());
+				if (GlobalConfig.useStoredProceduresOnly) return null;
 			}
 		}
 		
