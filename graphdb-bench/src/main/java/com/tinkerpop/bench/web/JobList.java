@@ -267,6 +267,17 @@ public class JobList {
 			return Collections.<Job>emptyList();
 		}
 	}
+	
+	
+	/**
+	 * Get a collection of previously executed jobs
+	 * 
+	 * @param dbEI the database engine and instance name
+	 * @return the collection of previously executed jobs
+	 */
+	public List<Job> getFinishedJobs(DatabaseEngineAndInstance dbEI) {
+		return getFinishedJobs(dbEI.getEngine().getShortName(), dbEI.getInstance());
+	}
 
 	
 	/**

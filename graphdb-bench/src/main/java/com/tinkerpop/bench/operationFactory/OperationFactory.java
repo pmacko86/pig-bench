@@ -14,7 +14,6 @@ import com.tinkerpop.bench.operation.OperationOpenGraph;
 import com.tinkerpop.bench.operation.OperationShutdownGraph;
 import com.tinkerpop.bench.operation.operations.OperationLoadFGF;
 import com.tinkerpop.bench.operation.operations.OperationLoadGraphML;
-import com.tinkerpop.bench.util.ConsoleUtils;
 import com.tinkerpop.blueprints.Graph;
 
 import edu.harvard.pass.cpl.CPLObject;

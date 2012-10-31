@@ -19,6 +19,7 @@ import com.tinkerpop.bench.DatabaseEngine;
 import com.tinkerpop.bench.GlobalConfig;
 import com.tinkerpop.bench.GraphDescriptor;
 import com.tinkerpop.bench.Workload;
+import com.tinkerpop.bench.analysis.ModelAnalysis;
 import com.tinkerpop.bench.generator.GraphGenerator;
 import com.tinkerpop.bench.generator.SimpleBarabasiGenerator;
 import com.tinkerpop.bench.log.SummaryLogWriter;
@@ -38,6 +39,7 @@ import com.tinkerpop.bench.util.LogUtils;
 import com.tinkerpop.bench.util.MathUtils;
 import com.tinkerpop.bench.util.OutputUtils;
 import com.tinkerpop.bench.util.Pair;
+import com.tinkerpop.bench.web.DatabaseEngineAndInstance;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Graph;
@@ -275,6 +277,7 @@ public class BenchmarkMicro extends Benchmark {
 		
 		// Miscellaneous commands
 		
+		parser.accepts("analysis");
 		parser.accepts("export-fgf").withRequiredArg().ofType(String.class);
 		parser.accepts("export-graphml").withOptionalArg().ofType(String.class);
 		parser.accepts("export-n-graphml").withOptionalArg().ofType(String.class);
@@ -1040,6 +1043,16 @@ public class BenchmarkMicro extends Benchmark {
 		 */
 		
 		// TODO Ensure that there is only a single command specified or that there is only benchmark workload specified
+		
+		if (options.has("analysis")) {
+			
+			DatabaseEngineAndInstance dbEI = new DatabaseEngineAndInstance(dbEngine, dbInstanceName);
+			ModelAnalysis ic = new ModelAnalysis(dbEI);
+			
+			ic.printAnalysis();
+			
+			return 0;
+		}
 		
 		if (options.has("export-graphml") || options.has("export-n-graphml")) {
 			

@@ -227,4 +227,60 @@ public class MathUtils {
 		System.arraycopy(a, start, r, 0, end - start);
 		return r;
 	}
+	
+	
+	/**
+	 * Average of Doubles, ignoring nulls
+	 * 
+	 * @param values the values
+	 * @return the average, or null if none
+	 */
+	public static Double averageIgnoreNulls(Double... values) {
+		double sum = 0;
+		int count = 0;
+		for (Double d : values) {
+			if (d != null) {
+				sum += d.doubleValue();
+				count++;
+			}
+		}
+		if (count == 0) return null;
+		return sum / count;
+	}
+	
+	
+	/**
+	 * Sum of Doubles, accounting for nulls
+	 * 
+	 * @param values the values
+	 * @return the result, or null if at least one of the values is null
+	 */
+	public static Double sum(Double... values) {
+		double sum = 0;
+		for (Double d : values) {
+			if (d != null) {
+				sum += d.doubleValue();
+			}
+			else {
+				return null;
+			}
+		}
+		return sum;
+	}
+	
+	
+	/**
+	 * Return the given array of Doubles, but only if none of them is null
+	 * 
+	 * @param values the values
+	 * @return the values, or null if at least one of the values is null
+	 */
+	public static Double[] ifNeitherIsNull(Double... values) {
+		for (Double d : values) {
+			if (d == null) {
+				return null;
+			}
+		}
+		return values;
+	}
 }

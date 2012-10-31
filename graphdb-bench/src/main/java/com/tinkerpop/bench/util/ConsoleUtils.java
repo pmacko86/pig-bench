@@ -189,4 +189,31 @@ public class ConsoleUtils {
 	public static void printProgressIndicator(long value, long max) {
 		printProgressIndicator(value, max, null);
 	}
+	
+	
+	/**
+	 * Print values in multiple columns
+	 * 
+	 * @param width the column width
+	 * @param values the values
+	 */
+	public static void printColumns(int width, String... values) {
+		
+		for (int i = 0; i < values.length; i++) {
+			String v = values[i];
+			
+			System.out.print(v);
+			
+			if (i + 1 < values.length) {
+				if (v.length() >= width) {
+					System.out.print(" ");
+				}
+				else {
+					System.out.print(getSpaces(width - v.length()));
+				}
+			}
+		}
+		
+		System.out.println();
+	}
 }
