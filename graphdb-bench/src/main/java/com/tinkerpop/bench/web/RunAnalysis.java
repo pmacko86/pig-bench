@@ -79,8 +79,8 @@ public class RunAnalysis extends HttpServlet {
 		// Run
 		
 		Job j = dbEI.getInstance() == null
-				? new Job("+quiet", "--analysis", "--" + dbEI.getEngine().getShortName())
-				: new Job("+quiet", "--analysis", "--" + dbEI.getEngine().getShortName(), "--database", dbEI.getInstance());
+				? new Job("+quiet", "+memory:192M", "--analysis", "--" + dbEI.getEngine().getShortName())
+				: new Job("+quiet", "+memory:192M", "--analysis", "--" + dbEI.getEngine().getShortName(), "--database", dbEI.getInstance());
 		
 		j.setUnlisted(true);
 		j.start();
