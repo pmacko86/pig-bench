@@ -55,6 +55,11 @@
 				<% } else { %>
 					<li><p>Compare Runs</p></li>
 				<% } %>
+				<% if (!jsp_page.equals("runanalysis")) { %>
+					<li><a href="runanalysis.jsp">Simple Model Analysis</a></li>
+				<% } else { %>
+					<li><p>Simple Model Analysis</p></li>
+				<% } %>
 			</ul>
 		</div>
 	

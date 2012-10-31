@@ -36,6 +36,7 @@ public class Job implements Comparable<Job> {
 	private List<String> arguments;
 	private String dbEngine;
 	private String dbInstance;
+	private boolean unlisted;
 	
 	protected File logFile;
 	protected int status;
@@ -59,6 +60,8 @@ public class Job implements Comparable<Job> {
 		arguments = null;
 		dbEngine = null;
 		dbInstance = null;
+		
+		unlisted = false;
 		
 		status = -1;
 		executionCount = 0;
@@ -704,6 +707,26 @@ public class Job implements Comparable<Job> {
 	 */
 	public int getId() {
 		return id;
+	}
+	
+	
+	/**
+	 * Set whether the job should be unlisted
+	 * 
+	 * @param unlisted true to be unlisted
+	 */
+	public void setUnlisted(boolean unlisted) {
+		this.unlisted = unlisted;
+	}
+	
+	
+	/**
+	 * Determine whether the job is unlisted
+	 * 
+	 * @return true if it is unlisted
+	 */
+	public boolean isUnlisted() {
+		return unlisted;
 	}
 	
 	

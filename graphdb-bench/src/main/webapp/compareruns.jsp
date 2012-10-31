@@ -248,7 +248,7 @@
 				boolean boxPlots = true;
 				String boxPlotFilter = "true";
 				String boxPlotYValue = "d.time";
-				boolean logScale = false;
+				boolean logScale = true;
 				boolean dropExtremes = true;
 				
 				if (boxPlots) {

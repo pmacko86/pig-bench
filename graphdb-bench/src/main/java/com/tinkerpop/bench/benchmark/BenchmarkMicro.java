@@ -158,6 +158,7 @@ public class BenchmarkMicro extends Benchmark {
 										"at each new vertex");
 		System.err.println("");
 		System.err.println("Miscellaneous commands:");
+		System.err.println("  --analysis              Perform simple model analysis");
 		System.err.println("  --export-fgf FILE       Export the database to a FGF file");
 		System.err.println("  --export-graphml FILE   Export the database to a GraphML file");
 		System.err.println("  --export-n-graphml FILE Export the database to a normalized GraphML file");

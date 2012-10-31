@@ -234,25 +234,25 @@ public class ModelAnalysis {
 		 * Pull out the get all K-hop neighbors operations
 		 */
 		
-		Ko = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighbors.class, "out-3");
-		Ki = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighbors.class, "in-3");
-		Kb = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighbors.class, "both-3");
+		Ko = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighbors.class, "out-1", "out-2", "out-3", "out-4", "out-5");
+		Ki = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighbors.class, "in-1", "in-2", "in-3", "in-4", "in-5");
+		Kb = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighbors.class, "both-1", "both-2", "both-3", "both-4", "both-5");
 		
-		Ko_prediction = MathUtils.ifNeitherIsNull(new Double(0), To);
-		Ki_prediction = MathUtils.ifNeitherIsNull(new Double(0), Ti);
-		Kb_prediction = MathUtils.ifNeitherIsNull(new Double(0), Tb);
+		Ko_prediction = No;
+		Ki_prediction = Ni;
+		Kb_prediction = Nb;
 		
-		Klo = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighbors.class, "out-3");
-		Kli = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighbors.class, "in-3");
-		Klb = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighbors.class, "both-3");
+		Klo = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighbors.class, "out-withlabel-1", "out-withlabel-2", "out-withlabel-3", "out-withlabel-4", "out-withlabel-5");
+		Kli = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighbors.class, "in-withlabel-1", "in-withlabel-2", "in-withlabel-3", "in-withlabel-4", "in-withlabel-5");
+		Klb = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighbors.class, "both-withlabel-1", "both-withlabel-2", "both-withlabel-3", "both-withlabel-4", "both-withlabel-5");
 		
-		Klo_prediction = MathUtils.ifNeitherIsNull(new Double(0), Tlo);
-		Kli_prediction = MathUtils.ifNeitherIsNull(new Double(0), Tli);
-		Klb_prediction = MathUtils.ifNeitherIsNull(new Double(0), Tlb);
+		Klo_prediction = Nlo;
+		Kli_prediction = Nli;
+		Klb_prediction = Nlb;
 		
-		Kpo = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighborsEdgeConditional.class, "out-3");
-		Kpi = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighborsEdgeConditional.class, "in-3");
-		Kpb = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighborsEdgeConditional.class, "both-3");
+		Kpo = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighborsEdgeConditional.class, "out-1", "out-2", "out-3", "out-4", "out-5");
+		Kpi = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighborsEdgeConditional.class, "in-1", "in-2", "in-3", "in-4", "in-5");
+		Kpb = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighborsEdgeConditional.class, "both-1", "both-2", "both-3", "both-4", "both-5");
 		
 		Kpo_prediction = Tpo;
 		Kpi_prediction = Tpi;
@@ -268,12 +268,38 @@ public class ModelAnalysis {
 	
 	
 	/**
+	 * Print two columns
+	 * 
+	 * @param cw the column width
+	 * @param variable the variable name
+	 * @param model the model string
+	 * @param value the actual value
+	 * @param predicted the predicted value
+	 */
+	private void print(int cw, String variable, String model, Object value, Object predicted) {
+		
+		if (value instanceof Double && predicted instanceof Double) {
+			ConsoleUtils.printColumns(cw, variable + " = " + OutputUtils.format((Double) value),
+					variable + "_prediction = " + model + " = " + OutputUtils.format((Double) predicted));
+			return;
+		}
+		
+		if (value instanceof Double[] && predicted instanceof Double[]) {
+			ConsoleUtils.printColumns(cw, variable + " = " + OutputUtils.formatLinearCombination((Double[]) value, "n"),
+					variable + "_prediction = " + model + " = " + OutputUtils.formatLinearCombination((Double[]) predicted, "n"));
+			return;
+		}
+		
+		throw new IllegalArgumentException("Illegal types for the observed value and the predicted value");
+	}
+	
+	
+	/**
 	 * Print the analysis
 	 */
 	public void printAnalysis() {
 		
-		int CW = 35;
-		
+		int CW = 30;
 		
 		ConsoleUtils.sectionHeader("Model Analysis");
 		
@@ -293,48 +319,48 @@ public class ModelAnalysis {
 		ConsoleUtils.header("Micro Operations");
 		System.out.println();
 		
-		ConsoleUtils.printColumns(CW, "To = " + OutputUtils.format(To), "To_prediction = " + OutputUtils.format(To_prediction));
-		ConsoleUtils.printColumns(CW, "Ti = " + OutputUtils.format(Ti), "Ti_prediction = " + OutputUtils.format(Ti_prediction));
-		ConsoleUtils.printColumns(CW, "Tb = " + OutputUtils.format(Tb), "Tb_prediction = " + OutputUtils.format(Tb_prediction));
+		print(CW, "To", "Re + Rv", To, To_prediction);
+		print(CW, "Ti", "Re + Rv", Ti, Ti_prediction);
+		print(CW, "Tb", "Re + Rv", Tb, Tb_prediction);
 		System.out.println();
 		
-		ConsoleUtils.printColumns(CW, "Tlo = " + OutputUtils.format(Tlo), "Tlo_prediction = " + OutputUtils.format(Tlo_prediction));
-		ConsoleUtils.printColumns(CW, "Tli = " + OutputUtils.format(Tli), "Tli_prediction = " + OutputUtils.format(Tli_prediction));
-		ConsoleUtils.printColumns(CW, "Tlb = " + OutputUtils.format(Tlb), "Tlb_prediction = " + OutputUtils.format(Tlb_prediction));
+		print(CW, "Tlo", "Re + Rv", Tlo, Tlo_prediction);
+		print(CW, "Tli", "Re + Rv", Tli, Tli_prediction);
+		print(CW, "Tlb", "Re + Rv", Tlb, Tlb_prediction);
 		System.out.println();
 		
-		ConsoleUtils.printColumns(CW, "Tpo = " + OutputUtils.formatLinearCombination(Tpo, "n"), "Tpo_prediction = " + OutputUtils.formatLinearCombination(Tpo_prediction, "n"));
-		ConsoleUtils.printColumns(CW, "Tpi = " + OutputUtils.formatLinearCombination(Tpi, "n"), "Tpi_prediction = " + OutputUtils.formatLinearCombination(Tpi_prediction, "n"));
-		ConsoleUtils.printColumns(CW, "Tpb = " + OutputUtils.formatLinearCombination(Tpb, "n"), "Tpb_prediction = " + OutputUtils.formatLinearCombination(Tpb_prediction, "n"));
+		print(CW, "Tpo", "Rp + (Re+Rv)*n", Tpo, Tpo_prediction);
+		print(CW, "Tpi", "Rp + (Re+Rv)*n", Tpi, Tpi_prediction);
+		print(CW, "Tpb", "Rp + (Re+Rv)*n", Tpb, Tpb_prediction);
 		System.out.println();
 		
 		System.out.println();
 		ConsoleUtils.header("Graph Operations");
 		System.out.println();
 		
-		ConsoleUtils.printColumns(CW, "No = " + OutputUtils.formatLinearCombination(No, "n"), "No_prediction = " + OutputUtils.formatLinearCombination(No_prediction, "n"));
-		ConsoleUtils.printColumns(CW, "Ni = " + OutputUtils.formatLinearCombination(Ni, "n"), "Ni_prediction = " + OutputUtils.formatLinearCombination(Ni_prediction, "n"));
-		ConsoleUtils.printColumns(CW, "Nb = " + OutputUtils.formatLinearCombination(Nb, "n"), "Nb_prediction = " + OutputUtils.formatLinearCombination(Nb_prediction, "n"));
+		print(CW, "No", "0 + To*n", No, No_prediction);
+		print(CW, "Ni", "0 + Ti*n", Ni, Ni_prediction);
+		print(CW, "Nb", "0 + Tb*n", Nb, Nb_prediction);
 		System.out.println();
 		
-		ConsoleUtils.printColumns(CW, "Nlo = " + OutputUtils.formatLinearCombination(Nlo, "n"), "Nlo_prediction = " + OutputUtils.formatLinearCombination(Nlo_prediction, "n"));
-		ConsoleUtils.printColumns(CW, "Nli = " + OutputUtils.formatLinearCombination(Nli, "n"), "Nli_prediction = " + OutputUtils.formatLinearCombination(Nli_prediction, "n"));
-		ConsoleUtils.printColumns(CW, "Nlb = " + OutputUtils.formatLinearCombination(Nlb, "n"), "Nlb_prediction = " + OutputUtils.formatLinearCombination(Nlb_prediction, "n"));
+		print(CW, "Nlo", "0 + Tlo*n", Nlo, Nlo_prediction);
+		print(CW, "Nli", "0 + Tli*n", Nli, Nli_prediction);
+		print(CW, "Nlb", "0 + Tlb*n", Nlb, Nlb_prediction);
 		System.out.println();
 		
-		ConsoleUtils.printColumns(CW, "Ko = " + OutputUtils.formatLinearCombination(Ko, "n"), "Ko_prediction = " + OutputUtils.formatLinearCombination(Ko_prediction, "n"));
-		ConsoleUtils.printColumns(CW, "Ki = " + OutputUtils.formatLinearCombination(Ki, "n"), "Ki_prediction = " + OutputUtils.formatLinearCombination(Ki_prediction, "n"));
-		ConsoleUtils.printColumns(CW, "Kb = " + OutputUtils.formatLinearCombination(Kb, "n"), "Kb_prediction = " + OutputUtils.formatLinearCombination(Kb_prediction, "n"));
+		print(CW, "Ko", "No", Ko, Ko_prediction);
+		print(CW, "Ki", "Ni", Ki, Ki_prediction);
+		print(CW, "Kb", "Nb", Kb, Kb_prediction);
 		System.out.println();
 		
-		ConsoleUtils.printColumns(CW, "Klo = " + OutputUtils.formatLinearCombination(Klo, "n"), "Klo_prediction = " + OutputUtils.formatLinearCombination(Klo_prediction, "n"));
-		ConsoleUtils.printColumns(CW, "Kli = " + OutputUtils.formatLinearCombination(Kli, "n"), "Kli_prediction = " + OutputUtils.formatLinearCombination(Kli_prediction, "n"));
-		ConsoleUtils.printColumns(CW, "Klb = " + OutputUtils.formatLinearCombination(Klb, "n"), "Klb_prediction = " + OutputUtils.formatLinearCombination(Klb_prediction, "n"));
+		print(CW, "Klo", "Nlo", Klo, Klo_prediction);
+		print(CW, "Kli", "Nli", Kli, Kli_prediction);
+		print(CW, "Klb", "Nlb", Klb, Klb_prediction);
 		System.out.println();
 		
-		ConsoleUtils.printColumns(CW, "Kpo = " + OutputUtils.formatLinearCombination(Kpo, "n"), "Kpo_prediction = " + OutputUtils.formatLinearCombination(Kpo_prediction, "n"));
-		ConsoleUtils.printColumns(CW, "Kpi = " + OutputUtils.formatLinearCombination(Kpi, "n"), "Kpi_prediction = " + OutputUtils.formatLinearCombination(Kpi_prediction, "n"));
-		ConsoleUtils.printColumns(CW, "Kpb = " + OutputUtils.formatLinearCombination(Kpb, "n"), "Kpb_prediction = " + OutputUtils.formatLinearCombination(Kpb_prediction, "n"));
+		print(CW, "Kpo", "Tpo", Kpo, Kpo_prediction);
+		print(CW, "Kpi", "Tpi", Kpi, Kpi_prediction);
+		print(CW, "Kpb", "Tpb", Kpb, Kpb_prediction);
 		System.out.println();
 	}
 	
@@ -346,25 +372,11 @@ public class ModelAnalysis {
 	 * repeated.
 	 * 
 	 * @param operation the operation type
+	 * @param tags the tags
 	 * @return the runtime in ms, or null if not found
 	 */
-	private Double getAverageOperationRuntime(Class<? extends Operation> operation) {
-		return getAverageOperationRuntime(operation.getSimpleName(), null);
-	}
-	
-	
-	/**
-	 * Get a runtime of an operation from the latest job, taking a simple average
-	 * if there is more than one within the job. If the operation is of the "Many"
-	 * type, then return the average runtime of the simpler operation that gets
-	 * repeated.
-	 * 
-	 * @param operation the operation type
-	 * @param tag the tag
-	 * @return the runtime in ms, or null if not found
-	 */
-	private Double getAverageOperationRuntime(Class<? extends Operation> operation, String tag) {
-		return getAverageOperationRuntime(operation.getSimpleName(), tag);
+	private Double getAverageOperationRuntime(Class<? extends Operation> operation, String... tags) {
+		return getAverageOperationRuntime(operation.getSimpleName(), tags);
 	}
 	
 	
@@ -375,10 +387,10 @@ public class ModelAnalysis {
 	 * repeated.
 	 * 
 	 * @param operationName the operation name
-	 * @param tag the tag
+	 * @param tags the tags
 	 * @return the runtime in ms, or null if not found
 	 */
-	private Double getAverageOperationRuntime(String operationName, String tag) {
+	private Double getAverageOperationRuntime(String operationName, String... tags) {
 		
 		boolean many = operationName.contains("GetMany")
 				|| operationName.contains("AddMany")
@@ -411,19 +423,23 @@ public class ModelAnalysis {
 		
 		// Read the log file
 		
-		String operationNameFilter = tag == null ? operationName : operationName + "-" + tag; 
-		OperationLogReader reader = tag == null
-				? new OperationLogReader(job.getLogFile())
-				: new OperationLogReader(job.getLogFile(), operationNameFilter);
+		OperationLogReader reader = new OperationLogReader(job.getLogFile());
 		
 		double time_ms = 0;
 		int count = 0;
 		
 		for (OperationLogEntry e : reader) {
 			
-			if (tag == null) {
+			if (tags.length == 0) {
 				if (!e.getName().equals(operationName)
 						&& !e.getName().startsWith(operationName + "-")) continue;
+			}
+			else {
+				boolean ok = false;
+				for (String t : tags) {
+					if (e.getName().equals(operationName + "-" + t)) { ok = true; break; }
+				}
+				if (!ok) continue;
 			}
 			
 			if (many) {
@@ -449,11 +465,11 @@ public class ModelAnalysis {
 	 * Get a runtime of a job as a linear function of one of the operation results
 	 * 
 	 * @param operation the operation type
-	 * @param tag the tag
+	 * @param tags the tags
 	 * @return the runtime in ms as a function described by [intercept, slope], or null if not found
 	 */
-	private Double[] getOperationRuntimeAsLinearFunction(Class<? extends Operation> operation, String tag) {
-		return getOperationRuntimeAsLinearFunction(operation.getSimpleName(), tag);
+	private Double[] getOperationRuntimeAsLinearFunction(Class<? extends Operation> operation, String... tags) {
+		return getOperationRuntimeAsLinearFunction(operation.getSimpleName(), tags);
 	}
 	
 	
@@ -461,10 +477,10 @@ public class ModelAnalysis {
 	 * Get a runtime of a job as a linear function of one of the operation results
 	 * 
 	 * @param operationName the operation name
-	 * @param tag the tag
+	 * @param tags the tags
 	 * @return the runtime in ms as a function described by [intercept, slope], or null if not found
 	 */
-	private Double[] getOperationRuntimeAsLinearFunction(String operationName, String tag) {
+	private Double[] getOperationRuntimeAsLinearFunction(String operationName, String... tags) {
 		
 		// Linear regression algorithm from:
 		//     http://introcs.cs.princeton.edu/java/97data/LinearRegression.java.html
@@ -489,25 +505,38 @@ public class ModelAnalysis {
 		
 		// Read the log file
 		
-		String operationNameFilter = tag == null ? operationName : operationName + "-" + tag; 
-		OperationLogReader reader = tag == null
-				? new OperationLogReader(job.getLogFile())
-				: new OperationLogReader(job.getLogFile(), operationNameFilter);
+		OperationLogReader reader = new OperationLogReader(job.getLogFile());
 		
-		Vector<Double> y = new Vector<Double>();
-		Vector<Double> x = new Vector<Double>();
+		Vector<Double > y = new Vector<Double >();
+		Vector<Integer> x = new Vector<Integer>();
 		@SuppressWarnings("unused")
 		double sumx = 0, sumy = 0, sumx2 = 0; int n = 0;
+		boolean samex = true; int lastx = 0;
 
 		for (OperationLogEntry e : reader) {
 
-			if (tag == null) {
+			if (tags.length == 0) {
 				if (!e.getName().equals(operationName)
 						&& !e.getName().startsWith(operationName + "-")) continue;
 			}
+			else {
+				boolean ok = false;
+				for (String t : tags) {
+					if (e.getName().equals(operationName + "-" + t)) { ok = true; break; }
+				}
+				if (!ok) continue;
+			}
 
-			double xv = Double.parseDouble(e.getResult().split(":")[xArg]);
+			int    xv = Integer.parseInt(e.getResult().split(":")[xArg]);
 			double yv = e.getTime() / 1000000.0;
+			
+			if (n == 0) {
+				lastx = xv;
+			}
+			else {
+				if (lastx != xv) samex = false;
+				lastx = xv;
+			}
 
 			sumx  += xv;
 			sumx2 += xv * xv;
@@ -533,11 +562,11 @@ public class ModelAnalysis {
 		double beta1 = xybar / xxbar;
 		double beta0 = ybar - beta1 * xbar;
 		
-		if (xxbar == 0) {
+		if (samex) {
 			// Might need to revisit this -- it might be beneficial to keep the
 			// slope, even if there is only one unique value of x
+			beta0 = getAverageOperationRuntime(operationName, tags);
 			beta1 = 0;
-			beta0 = getAverageOperationRuntime(operationName, tag);
 		}
 		
 		/*// print results

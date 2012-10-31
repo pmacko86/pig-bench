@@ -313,17 +313,19 @@ public class JobList {
 					current.start();
 					current.join();
 					
-					Pair<String, String> key = new Pair<String, String>(current.getDbEngine(),
-							current.getDbInstanceSafe());
-					if (finishedJobs.containsKey(key)) {
-						finishedJobs.get(key).add(current);
+					if (!current.isUnlisted()) {
+						Pair<String, String> key = new Pair<String, String>(current.getDbEngine(),
+								current.getDbInstanceSafe());
+						if (finishedJobs.containsKey(key)) {
+							finishedJobs.get(key).add(current);
+						}
+						else {
+							LinkedList<Job> l = new LinkedList<Job>();
+							l.add(current);
+							finishedJobs.put(key, l);
+						}
+						finishedJobMap.put(current.getId(), current);
 					}
-					else {
-						LinkedList<Job> l = new LinkedList<Job>();
-						l.add(current);
-						finishedJobs.put(key, l);
-					}
-					finishedJobMap.put(current.getId(), current);
 				}
 			}
 			catch (InterruptedException e) {
