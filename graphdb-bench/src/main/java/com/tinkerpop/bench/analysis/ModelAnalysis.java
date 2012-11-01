@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.Vector;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.tinkerpop.bench.log.OperationLogEntry;
 import com.tinkerpop.bench.log.OperationLogReader;
@@ -32,6 +33,7 @@ import com.tinkerpop.bench.util.OutputUtils;
 import com.tinkerpop.bench.web.DatabaseEngineAndInstance;
 import com.tinkerpop.bench.web.Job;
 import com.tinkerpop.bench.web.JobList;
+import com.tinkerpop.blueprints.Direction;
 
 
 /**
@@ -40,6 +42,13 @@ import com.tinkerpop.bench.web.JobList;
  * @author Peter Macko (pmacko@eecs.harvard.edu)
  */
 public class ModelAnalysis {
+	
+	/// The directions
+	public static final Direction[] DIRECTIONS = new Direction[] { Direction.OUT, Direction.IN, Direction.BOTH };
+	
+	/// The cache
+	private static ConcurrentHashMap<DatabaseEngineAndInstance, ModelAnalysis> cache =
+			new ConcurrentHashMap<DatabaseEngineAndInstance, ModelAnalysis>();
 
 	/// The database and instance pair
 	private DatabaseEngineAndInstance dbEI;
@@ -54,46 +63,46 @@ public class ModelAnalysis {
 	private HashMap<String, SortedSet<Job>> operationToJobs;
 	
 	/// The primitive operation runtimes -- reads
-	private Double Rv /* vertex */, Re /* edge */, Rp /* property */;
+	public Double Rv /* vertex */, Re /* edge */, Rp /* property */;
 	
 	/// The primitive operation runtimes -- writes
-	private Double Wv /* vertex */, We /* edge */, Wp /* property */;
+	public Double Wv /* vertex */, We /* edge */, Wp /* property */;
 	
 	/// The primitive traversals -- follow the first edge
-	private Double To /* out */, Ti /* in */, Tb /* both */;
-	private Double To_prediction /* out */, Ti_prediction /* in */, Tb_prediction /* both */;
+	public Double[] T             = new Double[3];
+	public Double[] T_prediction  = new Double[3];
 	
 	/// The primitive traversals -- follow the first edge with label
-	private Double Tlo /* out */, Tli /* in */, Tlb /* both */;
-	private Double Tlo_prediction /* out */, Tli_prediction /* in */, Tlb_prediction /* both */;
+	public Double[] Tl            = new Double[3];
+	public Double[] Tl_prediction = new Double[3];
 	
 	/// The primitive traversals -- follow an edge using a property
-	private Double[] Tpo /* out */, Tpi /* in */, Tpb /* both */;
-	private Double[] Tpo_prediction /* out */, Tpi_prediction /* in */, Tpb_prediction /* both */;
+	public Double[][] Tp            = new Double[3][];
+	public Double[][] Tp_prediction = new Double[3][];
 	
 	/// Get all neighbors -- follow all first edges
-	private Double[] No /* out */, Ni /* in */, Nb /* both */;
-	private Double[] No_prediction /* out */, Ni_prediction /* in */, Nb_prediction /* both */;
+	public Double[][] N             = new Double[3][];
+	public Double[][] N_prediction  = new Double[3][];
 	
 	/// Get all neighbors -- follow all first edges with label
-	private Double[] Nlo /* out */, Nli /* in */, Nlb /* both */;
-	private Double[] Nlo_prediction /* out */, Nli_prediction /* in */, Nlb_prediction /* both */;
+	public Double[][] Nl            = new Double[3][];
+	public Double[][] Nl_prediction = new Double[3][];
 	
 	/// Get all neighbors -- follow edges using a property
-	//private Double[] No /* out */, Ni /* in */, Nb /* both */;
-	//private Double[] No_prediction /* out */, Ni_prediction /* in */, Nb_prediction /* both */;
+	//private Double[][] Np            = new Double[3][];
+	//private Double[][] Np_prediction = new Double[3][];
 	
 	/// Get all K-hop neighbors -- follow all first edges
-	private Double[] Ko /* out */, Ki /* in */, Kb /* both */;
-	private Double[] Ko_prediction /* out */, Ki_prediction /* in */, Kb_prediction /* both */;
+	public Double[][] K             = new Double[3][];
+	public Double[][] K_prediction  = new Double[3][];
 	
 	/// Get all K-hop neighbors -- follow all first edges with label
-	private Double[] Klo /* out */, Kli /* in */, Klb /* both */;
-	private Double[] Klo_prediction /* out */, Kli_prediction /* in */, Klb_prediction /* both */;
+	public Double[][] Kl            = new Double[3][];
+	public Double[][] Kl_prediction = new Double[3][];
 	
 	/// Get all K-hop neighbors -- follow edges using a property
-	private Double[] Kpo /* out */, Kpi /* in */, Kpb /* both */;
-	private Double[] Kpo_prediction /* out */, Kpi_prediction /* in */, Kpb_prediction /* both */;
+	public Double[][] Kp            = new Double[3][];
+	public Double[][] Kp_prediction = new Double[3][];
 	
 	
 	/**
@@ -101,12 +110,33 @@ public class ModelAnalysis {
 	 * 
 	 * @param dbei the database engine and instance
 	 */
-	public ModelAnalysis(DatabaseEngineAndInstance dbEI) {
+	protected ModelAnalysis(DatabaseEngineAndInstance dbEI) {
 		
 		this.dbEI = dbEI;
 		this.numFinishedJobs = -1;
 		
-		recompute();
+		update();
+	}
+	
+	
+	/**
+	 * Get an instance of ModelAnalysis for a particular database engine and instance pair
+	 * 
+	 * @param dbEI the database engine and instance pair
+	 */
+	public static ModelAnalysis getInstance(DatabaseEngineAndInstance dbEI) {
+		
+		synchronized (cache) {
+			ModelAnalysis m = cache.get(dbEI);
+			if (m == null) {
+				m = new ModelAnalysis(dbEI);
+				cache.put(dbEI, m);
+			}
+			else {
+				m.update();
+			}
+			return m;
+		}
 	}
 	
 	
@@ -115,7 +145,7 @@ public class ModelAnalysis {
 	 * 
 	 * @return true if it was recomputed
 	 */
-	public boolean recompute() {
+	public boolean update() {
 		
 		List<Job> jobs = JobList.getInstance().getFinishedJobs(dbEI);
 		if (jobs.size() == numFinishedJobs) return false;
@@ -132,13 +162,21 @@ public class ModelAnalysis {
 		for (Job job : jobs) {
 			numFinishedJobs++;
 			
+			
+			// Exclude failed or unfinished jobs
+			
 			if (job.getExecutionCount() < 0 || job.getLastStatus() != 0 || job.isRunning()) continue;
 			File summaryFile = job.getSummaryFile();
 			if (summaryFile == null) continue;
 			if (job.getExecutionTime() == null) continue;
 			
 			
-			// Jobs
+			// Exclude jobs with some command-line arguments
+			
+			if (job.getArguments().contains("--use-stored-procedures")) continue;
+			
+			
+			// We found a relevant job!
 			
 			finishedJobs.add(job);
 			
@@ -184,79 +222,58 @@ public class ModelAnalysis {
 		 * Pull out the primitive traversals
 		 */
 		
-		To = getAverageOperationRuntime(OperationGetFirstNeighbor.class, "out");
-		Ti = getAverageOperationRuntime(OperationGetFirstNeighbor.class, "in");
-		Tb = getAverageOperationRuntime(OperationGetFirstNeighbor.class, "both");
-		
-		To_prediction = MathUtils.sum(Re, Rv);
-		Ti_prediction = MathUtils.sum(Re, Rv);
-		Tb_prediction = MathUtils.sum(Re, Rv);
-		
-		Tlo = getAverageOperationRuntime(OperationGetFirstNeighbor.class, "out-withlabel");
-		Tli = getAverageOperationRuntime(OperationGetFirstNeighbor.class, "in-withlabel");
-		Tlb = getAverageOperationRuntime(OperationGetFirstNeighbor.class, "both-withlabel");
-		
-		Tlo_prediction = MathUtils.sum(Re, Rv);
-		Tli_prediction = MathUtils.sum(Re, Rv);
-		Tlb_prediction = MathUtils.sum(Re, Rv);
-		
-		Tpo = getOperationRuntimeAsLinearFunction(OperationGetNeighborEdgeConditional.class, "out");
-		Tpi = getOperationRuntimeAsLinearFunction(OperationGetNeighborEdgeConditional.class, "in");
-		Tpb = getOperationRuntimeAsLinearFunction(OperationGetNeighborEdgeConditional.class, "both");
-		
-		Tpo_prediction = MathUtils.ifNeitherIsNull(MathUtils.sum(Re, Rv), Rp);
-		Tpi_prediction = MathUtils.ifNeitherIsNull(MathUtils.sum(Re, Rv), Rp);
-		Tpb_prediction = MathUtils.ifNeitherIsNull(MathUtils.sum(Re, Rv), Rp);
+		for (Direction d : DIRECTIONS) {
+			String t  = OutputUtils.toTag(d);
+			int index = translateDirection(d);
+			
+			T [index] = getAverageOperationRuntime(OperationGetFirstNeighbor.class, t);
+			Tl[index] = getAverageOperationRuntime(OperationGetFirstNeighbor.class, t + "-withlabel");
+			Tp[index] = getOperationRuntimeAsLinearFunction(OperationGetNeighborEdgeConditional.class, t);
+			
+			T_prediction [index] = MathUtils.sum(Re, Rv);
+			Tl_prediction[index] = MathUtils.sum(Re, Rv);
+			Tp_prediction[index] = MathUtils.ifNeitherIsNull(MathUtils.sum(Re, Rv), Rp);
+		}
 		
 		
 		/*
 		 * Pull out the get all neighbors operations
 		 */
 		
-		No = getOperationRuntimeAsLinearFunction(OperationGetAllNeighbors.class, "out");
-		Ni = getOperationRuntimeAsLinearFunction(OperationGetAllNeighbors.class, "in");
-		Nb = getOperationRuntimeAsLinearFunction(OperationGetAllNeighbors.class, "both");
+		for (Direction d : DIRECTIONS) {
+			String t  = OutputUtils.toTag(d);
+			int index = translateDirection(d);
 		
-		No_prediction = MathUtils.ifNeitherIsNull(new Double(0), To);
-		Ni_prediction = MathUtils.ifNeitherIsNull(new Double(0), Ti);
-		Nb_prediction = MathUtils.ifNeitherIsNull(new Double(0), Tb);
-		
-		Nlo = getOperationRuntimeAsLinearFunction(OperationGetAllNeighbors.class, "out-withlabel");
-		Nli = getOperationRuntimeAsLinearFunction(OperationGetAllNeighbors.class, "in-withlabel");
-		Nlb = getOperationRuntimeAsLinearFunction(OperationGetAllNeighbors.class, "both-withlabel");
-		
-		Nlo_prediction = MathUtils.ifNeitherIsNull(new Double(0), Tlo);
-		Nli_prediction = MathUtils.ifNeitherIsNull(new Double(0), Tli);
-		Nlb_prediction = MathUtils.ifNeitherIsNull(new Double(0), Tlb);
+			N [index] = getOperationRuntimeAsLinearFunction(OperationGetAllNeighbors.class, t);
+			Nl[index] = getOperationRuntimeAsLinearFunction(OperationGetAllNeighbors.class, t + "-withlabel");
+			
+			N_prediction [index] = MathUtils.ifNeitherIsNull(new Double(0), T[index]);
+			Nl_prediction[index] = MathUtils.ifNeitherIsNull(new Double(0), Tl[index]);
+		}
 		
 		
 		/*
 		 * Pull out the get all K-hop neighbors operations
 		 */
 		
-		Ko = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighbors.class, "out-1", "out-2", "out-3", "out-4", "out-5");
-		Ki = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighbors.class, "in-1", "in-2", "in-3", "in-4", "in-5");
-		Kb = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighbors.class, "both-1", "both-2", "both-3", "both-4", "both-5");
-		
-		Ko_prediction = No;
-		Ki_prediction = Ni;
-		Kb_prediction = Nb;
-		
-		Klo = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighbors.class, "out-withlabel-1", "out-withlabel-2", "out-withlabel-3", "out-withlabel-4", "out-withlabel-5");
-		Kli = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighbors.class, "in-withlabel-1", "in-withlabel-2", "in-withlabel-3", "in-withlabel-4", "in-withlabel-5");
-		Klb = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighbors.class, "both-withlabel-1", "both-withlabel-2", "both-withlabel-3", "both-withlabel-4", "both-withlabel-5");
-		
-		Klo_prediction = Nlo;
-		Kli_prediction = Nli;
-		Klb_prediction = Nlb;
-		
-		Kpo = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighborsEdgeConditional.class, "out-1", "out-2", "out-3", "out-4", "out-5");
-		Kpi = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighborsEdgeConditional.class, "in-1", "in-2", "in-3", "in-4", "in-5");
-		Kpb = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighborsEdgeConditional.class, "both-1", "both-2", "both-3", "both-4", "both-5");
-		
-		Kpo_prediction = Tpo;
-		Kpi_prediction = Tpi;
-		Kpb_prediction = Tpb;
+		for (Direction d : DIRECTIONS) {
+			String t  = OutputUtils.toTag(d);
+			int index = translateDirection(d);
+			
+			String[] tags = new String[4];
+			for (int i = 1; i <= tags.length; i++) tags[i-1] = t + "-" + i;
+			
+			String[] tagsWithLabel = new String[tags.length];
+			for (int i = 1; i <= tags.length; i++) tagsWithLabel[i-1] = t + "-withlabel-" + i;
+			
+			K [index] = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighbors.class, tags);
+			Kl[index] = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighbors.class, tagsWithLabel);
+			Kp[index] = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighborsEdgeConditional.class, tags);
+			
+			K_prediction [index] = N [index];
+			Kl_prediction[index] = Nl[index];
+			Kp_prediction[index] = Tp[index];
+		}
 		
 		
 		/*
@@ -264,6 +281,109 @@ public class ModelAnalysis {
 		 */
 		
 		return true;
+	}
+	
+	
+	/**
+	 * Get prediction for the operation
+	 * 
+	 * @param operationNameWithTags the operation name with all of its tags
+	 * @return the prediction as a linear function, or null
+	 */
+	public Double[] getPrediction(String operationNameWithTags) {
+		return getPredictionOrFit(operationNameWithTags, true);
+	}
+	
+	
+	/**
+	 * Get the fit for the operation
+	 * 
+	 * @param operationNameWithTags the operation name with all of its tags
+	 * @return the fit as a linear function, or null
+	 */
+	public Double[] getLinearFit(String operationNameWithTags) {
+		return getPredictionOrFit(operationNameWithTags, false);
+	}
+	
+	
+	/**
+	 * Get prediction or the fit for the operation
+	 * 
+	 * @param operationNameWithTags the operation name with all of its tags
+	 * @param prediction true for a prediction
+	 * @return the prediction as a linear function, or null
+	 */
+	public Double[] getPredictionOrFit(String operationNameWithTags, boolean prediction) {
+		
+		String operationName = operationNameWithTags;
+		int tagStart = operationName.indexOf('-');
+		if (tagStart > 0) operationName = operationName.substring(0, tagStart);
+		
+		
+		// Parse the tags
+		
+		String[] tags;
+		if (tagStart > 0) {
+			tags = operationNameWithTags.substring(tagStart + 1).split("-");
+		}
+		else {
+			tags = new String[0];
+		}
+		
+		boolean withlabel = false;
+		Direction direction = null;
+		
+		for (String t : tags) {			
+			if (t.equals("withlabel")) withlabel = true;
+			if (t.equals("out"      )) direction = Direction.OUT;
+			if (t.equals("in"       )) direction = Direction.IN;
+			if (t.equals("both"     )) direction = Direction.BOTH;
+		}
+		
+		
+		// Get the prediction, if available
+		
+		if (OperationGetNeighborEdgeConditional.class.getSimpleName().equals(operationName)) {
+			if (direction == null) throw new IllegalArgumentException("No direction");
+			if (withlabel) {
+				return prediction ? Tp_prediction[translateDirection(direction)] : Tp[translateDirection(direction)];
+			}
+			else {
+				return prediction ? Tp_prediction[translateDirection(direction)] : Tp[translateDirection(direction)];
+			}
+		}
+		
+		if (OperationGetAllNeighbors.class.getSimpleName().equals(operationName)) {
+			if (direction == null) throw new IllegalArgumentException("No direction");
+			if (withlabel) {
+				return prediction ? Nl_prediction[translateDirection(direction)] : Nl[translateDirection(direction)];
+			}
+			else {
+				return prediction ? N_prediction[translateDirection(direction)] : N[translateDirection(direction)];
+			}
+		}
+		
+		if (OperationGetKHopNeighbors.class.getSimpleName().equals(operationName)) {
+			if (direction == null) throw new IllegalArgumentException("No direction");
+			if (withlabel) {
+				return prediction ? Kl_prediction[translateDirection(direction)] : Kl[translateDirection(direction)];
+			}
+			else {
+				return prediction ? K_prediction[translateDirection(direction)] : K[translateDirection(direction)];
+			}
+		}
+		
+		if (OperationGetKHopNeighborsEdgeConditional.class.getSimpleName().equals(operationName)) {
+			if (direction == null) throw new IllegalArgumentException("No direction");
+			if (withlabel) {
+				return prediction ? Kp_prediction[translateDirection(direction)] : Kp[translateDirection(direction)];
+			}
+			else {
+				return prediction ? Kp_prediction[translateDirection(direction)] : Kp[translateDirection(direction)];
+			}
+		}
+		
+		return null;
 	}
 	
 	
@@ -278,19 +398,36 @@ public class ModelAnalysis {
 	 */
 	private void print(int cw, String variable, String model, Object value, Object predicted) {
 		
-		if (value instanceof Double && predicted instanceof Double) {
-			ConsoleUtils.printColumns(cw, variable + " = " + OutputUtils.format((Double) value),
-					variable + "_prediction = " + model + " = " + OutputUtils.format((Double) predicted));
-			return;
+		String s_value = null;
+		if (value == null) {
+			s_value = null;
+		}
+		else if (value instanceof Double) {
+			s_value = OutputUtils.format((Double) value);
+		}
+		else if (value instanceof Double[]) {
+			s_value = OutputUtils.formatLinearCombination((Double[]) value, "n");
+		}
+		else {
+			throw new IllegalArgumentException("Illegal type for the observed value");
 		}
 		
-		if (value instanceof Double[] && predicted instanceof Double[]) {
-			ConsoleUtils.printColumns(cw, variable + " = " + OutputUtils.formatLinearCombination((Double[]) value, "n"),
-					variable + "_prediction = " + model + " = " + OutputUtils.formatLinearCombination((Double[]) predicted, "n"));
-			return;
+		String s_predicted = null;
+		if (predicted == null) {
+			s_predicted = null;
+		}
+		else if (predicted instanceof Double) {
+			s_predicted = OutputUtils.format((Double) predicted);
+		}
+		else if (predicted instanceof Double[]) {
+			s_predicted = OutputUtils.formatLinearCombination((Double[]) predicted, "n");
+		}
+		else {
+			throw new IllegalArgumentException("Illegal type for the predicted value");
 		}
 		
-		throw new IllegalArgumentException("Illegal types for the observed value and the predicted value");
+		ConsoleUtils.printColumns(cw, variable + " = " + s_value,
+				variable + "_prediction = " + model + " = " + s_predicted);
 	}
 	
 	
@@ -319,49 +456,82 @@ public class ModelAnalysis {
 		ConsoleUtils.header("Micro Operations");
 		System.out.println();
 		
-		print(CW, "To", "Re + Rv", To, To_prediction);
-		print(CW, "Ti", "Re + Rv", Ti, Ti_prediction);
-		print(CW, "Tb", "Re + Rv", Tb, Tb_prediction);
+		for (Direction d : DIRECTIONS) {
+			String t  = OutputUtils.toTag(d);
+			int index = translateDirection(d);
+			print(CW, "T" + t.charAt(0), "Re + Rv", T[index], T_prediction[index]);
+		}
 		System.out.println();
 		
-		print(CW, "Tlo", "Re + Rv", Tlo, Tlo_prediction);
-		print(CW, "Tli", "Re + Rv", Tli, Tli_prediction);
-		print(CW, "Tlb", "Re + Rv", Tlb, Tlb_prediction);
+		for (Direction d : DIRECTIONS) {
+			String t  = OutputUtils.toTag(d);
+			int index = translateDirection(d);
+			print(CW, "Tl" + t.charAt(0), "Re + Rv", Tl[index], Tl_prediction[index]);
+		}
 		System.out.println();
 		
-		print(CW, "Tpo", "Rp + (Re+Rv)*n", Tpo, Tpo_prediction);
-		print(CW, "Tpi", "Rp + (Re+Rv)*n", Tpi, Tpi_prediction);
-		print(CW, "Tpb", "Rp + (Re+Rv)*n", Tpb, Tpb_prediction);
+		for (Direction d : DIRECTIONS) {
+			String t  = OutputUtils.toTag(d);
+			int index = translateDirection(d);
+			print(CW, "Tp" + t.charAt(0), "Rp + (Re+Rv)*n", Tp[index], Tp_prediction[index]);
+		}
 		System.out.println();
 		
 		System.out.println();
 		ConsoleUtils.header("Graph Operations");
 		System.out.println();
 		
-		print(CW, "No", "0 + To*n", No, No_prediction);
-		print(CW, "Ni", "0 + Ti*n", Ni, Ni_prediction);
-		print(CW, "Nb", "0 + Tb*n", Nb, Nb_prediction);
+		for (Direction d : DIRECTIONS) {
+			String t  = OutputUtils.toTag(d);
+			int index = translateDirection(d);
+			print(CW, "N" + t.charAt(0), "0 + T"+t.charAt(0)+"*n", N[index], N_prediction[index]);
+		}
 		System.out.println();
 		
-		print(CW, "Nlo", "0 + Tlo*n", Nlo, Nlo_prediction);
-		print(CW, "Nli", "0 + Tli*n", Nli, Nli_prediction);
-		print(CW, "Nlb", "0 + Tlb*n", Nlb, Nlb_prediction);
+		for (Direction d : DIRECTIONS) {
+			String t  = OutputUtils.toTag(d);
+			int index = translateDirection(d);
+			print(CW, "Nl" + t.charAt(0), "0 + Tl"+t.charAt(0)+"*n", Nl[index], Nl_prediction[index]);
+		}
 		System.out.println();
 		
-		print(CW, "Ko", "No", Ko, Ko_prediction);
-		print(CW, "Ki", "Ni", Ki, Ki_prediction);
-		print(CW, "Kb", "Nb", Kb, Kb_prediction);
+		for (Direction d : DIRECTIONS) {
+			String t  = OutputUtils.toTag(d);
+			int index = translateDirection(d);
+			print(CW, "K" + t.charAt(0), "N" + t.charAt(0), K[index], K_prediction[index]);
+		}
 		System.out.println();
 		
-		print(CW, "Klo", "Nlo", Klo, Klo_prediction);
-		print(CW, "Kli", "Nli", Kli, Kli_prediction);
-		print(CW, "Klb", "Nlb", Klb, Klb_prediction);
+		for (Direction d : DIRECTIONS) {
+			String t  = OutputUtils.toTag(d);
+			int index = translateDirection(d);
+			print(CW, "Kl" + t.charAt(0), "Nl" + t.charAt(0), Kl[index], Kl_prediction[index]);
+		}
 		System.out.println();
 		
-		print(CW, "Kpo", "Tpo", Kpo, Kpo_prediction);
-		print(CW, "Kpi", "Tpi", Kpi, Kpi_prediction);
-		print(CW, "Kpb", "Tpb", Kpb, Kpb_prediction);
+		for (Direction d : DIRECTIONS) {
+			String t  = OutputUtils.toTag(d);
+			int index = translateDirection(d);
+			print(CW, "Kp" + t.charAt(0), "Tp" + t.charAt(0), Kp[index], Kp_prediction[index]);
+		}
 		System.out.println();
+	}
+	
+	
+	/**
+	 * Translate a Direction to an index
+	 * 
+	 * @param d the direction
+	 * @return an index
+	 */
+	public static int translateDirection(Direction d) {
+		
+		switch (d) {
+		case OUT : return 0;
+		case IN  : return 1;
+		case BOTH: return 2;
+		default  : throw new IllegalArgumentException();
+		}
 	}
 	
 	
@@ -455,7 +625,7 @@ public class ModelAnalysis {
 			time_ms += e.getTime() / 1000000.0;
 		}
 		
-		if (count <= 0) throw new InternalError("Could not find any log entries for " + operationName);
+		if (count <= 0) return null;
 		
 		return time_ms / count;
 	}
@@ -547,7 +717,7 @@ public class ModelAnalysis {
 			y.add(yv);
  		}
 
-		if (n <= 0) throw new InternalError("Could not find any log entries for " + operationName);
+		if (n <= 0) return null;
 
 		double xbar = sumx / n;
 		double ybar = sumy / n;

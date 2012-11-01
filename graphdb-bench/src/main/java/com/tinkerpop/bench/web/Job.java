@@ -563,6 +563,16 @@ public class Job implements Comparable<Job> {
 		
 		return j;
 	}
+	
+	
+	/**
+	 * Get the database engine and the instance
+	 * 
+	 * @return the database engine and the instance
+	 */
+	public DatabaseEngineAndInstance getDatabaseEngineAndInstance() {
+		return new DatabaseEngineAndInstance(DatabaseEngine.ENGINES.get(dbEngine), dbInstance);
+	}
 
 
 	/**

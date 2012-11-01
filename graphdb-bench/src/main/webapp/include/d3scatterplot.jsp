@@ -351,9 +351,61 @@
 						return index < 0 ? "black" : band_colors(index);
 					})
 				 .attr("r", 4);
+			
+			
+			//
+			// Linear fits
+			//
 						
+			<%
+				if (!chartProperties.linear_fits.isEmpty()) {
+					int fit_index = -1;
+					for (Double[] fit : chartProperties.linear_fits) {
+						fit_index++;
+						if (fit == null) continue;
+						if (fit.length == 1) {
+							%>
+								var f0 = <%= fit[0].doubleValue() %>;
+								var f1 = <%= 0 %>;
+							<%
+						}
+						if (fit.length == 2) {
+							%>
+								var f0 = <%= fit[0].doubleValue() %>;
+								var f1 = <%= fit[1].doubleValue() %>;
+							<%
+						}
+						%>
+							var x0 = d3.min(x.domain());
+							var x1 = d3.max(x.domain());
+							if (data_yscale == "linear") {
+								chart.append("line")
+									 .attr("x1", x(x0))
+									 .attr("y1", y(f0 + f1 * x0))
+									 .attr("x2", x(x1))
+									 .attr("y2", y(f0 + f1 * x1))
+									 .style("stroke", band_colors(<%= fit_index %>));
+							}
+							if (data_yscale == "log") {
+								var im = 100.0;
+								for (var i = 1; i < im; i++) {
+									var x0i = x0 + (i    ) * ((x1 - x0) / im);
+									var x1i = x0 + (i + 1) * ((x1 - x0) / im);
+									chart.append("line")
+										 .attr("x1", x(x0i))
+										 .attr("y1", y(f0 + f1 * x0i))
+										 .attr("x2", x(x1i))
+										 .attr("y2", y(f0 + f1 * x1i))
+										 .style("stroke", band_colors(<%= fit_index %>));
+								}
+							}
+						<%
+					}
+				} 
+			%>
+			
 						
-						
+			
 			//
 			// Legend
 			//

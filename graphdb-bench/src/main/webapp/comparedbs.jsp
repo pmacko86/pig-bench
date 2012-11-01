@@ -1,13 +1,12 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <%@ page import="com.tinkerpop.bench.Bench"%>
 <%@ page import="com.tinkerpop.bench.DatabaseEngine"%>
-<%@ page import="com.tinkerpop.bench.util.LogUtils"%>
 <%@ page import="com.tinkerpop.bench.Workload"%>
+<%@ page import="com.tinkerpop.bench.analysis.ModelAnalysis"%>
 <%@ page import="com.tinkerpop.bench.benchmark.BenchmarkMicro"%>
 <%@ page import="com.tinkerpop.bench.log.SummaryLogEntry"%>
 <%@ page import="com.tinkerpop.bench.log.SummaryLogReader"%>
-<%@ page import="com.tinkerpop.bench.util.NaturalStringComparator"%>
-<%@ page import="com.tinkerpop.bench.util.Pair"%>
+<%@ page import="com.tinkerpop.bench.util.*"%>
 <%@ page import="com.tinkerpop.bench.web.*"%>
 <%@ page import="java.io.*"%>
 <%@ page import="java.text.SimpleDateFormat"%>
@@ -247,6 +246,9 @@
 				boolean plotTimeVsRetrievedNodes = WebUtils.getBooleanParameter(request, "plotTimeVsRetrievedNodes", false);
 				boolean additionalKHopNeighborsPlots = WebUtils.getBooleanParameter(request, "additionalKHopNeighborsPlots", false);
 				
+				String modelAnalysis = WebUtils.getStringParameter(request, "modelAnalysis");
+				if (modelAnalysis == null) modelAnalysis = "none";
+				
 				String boxPlotFilter = WebUtils.getStringParameter(request, "boxplotfilter");
 				if (boxPlotFilter == null) boxPlotFilter = "true";
 				// XXX Further sanitize boxPlotFilter!
@@ -379,6 +381,33 @@
 								Execution Time vs. Number of Retrieved Unique Neighborhoods and Neighborhood Nodes
 								(Get*Neighbors workloads only)
 							</label>
+							
+							
+							<div style="height:10px"></div>
+							<p class="middle_inner">Data Plots &ndash; Miscellaneous</p>
+							
+							<label class="checkbox">
+								<input class="checkbox" type="radio"
+										name="modelAnalysis" id="modelAnalysis"
+										onchange="form_submit();" <%= modelAnalysis.equals("none") ? "checked=\"checked\"" : "" %>
+										value="none"/>
+								None
+							</label>
+							<label class="checkbox">
+								<input class="checkbox" type="radio"
+										name="modelAnalysis" id="modelAnalysis"
+										onchange="form_submit();" <%= modelAnalysis.equals("fit") ? "checked=\"checked\"" : "" %>
+										value="fit"/>
+								Linear Fit
+							</label>
+							<label class="checkbox">
+								<input class="checkbox" type="radio"
+										name="modelAnalysis" id="modelAnalysis"
+										onchange="form_submit();" <%= modelAnalysis.equals("prediction") ? "checked=\"checked\"" : "" %>
+										value="prediction"/>
+								Model Prediction
+							</label>
+							
 				
 							<p class="middle"></p>
 							<div class="clear"></div>
@@ -443,6 +472,27 @@
 						}
 					}
 				}
+				
+				List<Triple<String, DatabaseEngineAndInstance, Double[]>> predictionData
+					= new ArrayList<Triple<String, DatabaseEngineAndInstance, Double[]>>();
+				
+				if (!"none".equals(modelAnalysis)) {
+					for (String operationName : selectedOperations) {
+						for (Job j : operationsToJobs.get(operationName)) {
+							DatabaseEngineAndInstance dbei = j.getDatabaseEngineAndInstance();
+							ModelAnalysis m = ModelAnalysis.getInstance(dbei);
+							Double[] p = null;
+							if ("fit".equals(modelAnalysis)) {
+								p = m.getLinearFit(operationName);
+							}
+							else if ("prediction".equals(modelAnalysis)) {
+								p = m.getPrediction(operationName);
+							}
+							predictionData.add(new Triple<String, DatabaseEngineAndInstance, Double[]>(operationName, dbei, p));
+						}
+					}
+				}
+				
 				
 				if (barGraphs) {
 					ChartProperties chartProperties = new ChartProperties();
@@ -541,6 +591,11 @@
 					chartProperties.attach = "chart_all_additionalKHopNeighborsPlots_2";
 					chartProperties.xvalue = "d.result[3]";
 					chartProperties.xlabel = "Number of Retrieved Neighborhood Nodes";
+					
+					chartProperties.linear_fits.clear();
+					for (Triple<String, DatabaseEngineAndInstance, Double[]> p : predictionData) {
+						chartProperties.linear_fits.add(p.getThird());
+					}
 					
 					%>
 						<div class="chart_outer">

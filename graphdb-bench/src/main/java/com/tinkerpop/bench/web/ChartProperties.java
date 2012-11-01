@@ -1,5 +1,7 @@
 package com.tinkerpop.bench.web;
 
+import java.util.Vector;
+
 
 /**
  * A collection of properties shared by different implementations of charts
@@ -66,5 +68,11 @@ public class ChartProperties {
 	public String group_by = null;
 	public String group_label_function = null;
 	public String category_label_function = null;
-
+	
+	
+	/*
+	 * Linear fits
+	 */
+	
+	public Vector<Double[]> linear_fits = new Vector<Double[]>();
 }

@@ -1048,7 +1048,7 @@ public class BenchmarkMicro extends Benchmark {
 		if (options.has("analysis")) {
 			
 			DatabaseEngineAndInstance dbEI = new DatabaseEngineAndInstance(dbEngine, dbInstanceName);
-			ModelAnalysis ic = new ModelAnalysis(dbEI);
+			ModelAnalysis ic = ModelAnalysis.getInstance(dbEI);
 			
 			ic.printAnalysis();
 			
