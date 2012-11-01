@@ -312,6 +312,17 @@ button {
 	padding-bottom:2px;
 }
 
+.stylized_form label.checkbox_lesser {
+	display:inline;
+	font-weight:normal;
+	text-align:left;
+	width:120px;
+	float:left;
+	padding-left:10px;
+	padding-bottom:2px;
+	clear:none;
+}
+
 .stylized_form .small {
 	color:#666666;
 	display:block;
@@ -336,6 +347,19 @@ button {
 	margin:0;
 	padding:0 0 0 10px;
 	width:auto;
+}
+
+.stylized_form input.checkbox_lesser {
+	float:none;
+	margin:0;
+	padding:0 0 0 10px;
+	width:auto;
+}
+
+.stylized_form div.checkbox_lesser {
+	float:none;
+	overflow: auto;
+	padding-left: 20px;
 }
 
 .stylized_form button {

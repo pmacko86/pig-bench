@@ -30,6 +30,7 @@ import com.tinkerpop.bench.operation.operations.OperationSetManyVertexProperties
 import com.tinkerpop.bench.util.ConsoleUtils;
 import com.tinkerpop.bench.util.MathUtils;
 import com.tinkerpop.bench.util.OutputUtils;
+import com.tinkerpop.bench.util.Pair;
 import com.tinkerpop.bench.web.DatabaseEngineAndInstance;
 import com.tinkerpop.bench.web.Job;
 import com.tinkerpop.bench.web.JobList;
@@ -93,16 +94,16 @@ public class ModelAnalysis {
 	//private Double[][] Np_prediction = new Double[3][];
 	
 	/// Get all K-hop neighbors -- follow all first edges
-	public Double[][] K             = new Double[3][];
-	public Double[][] K_prediction  = new Double[3][];
+	public Double[][][] K             = new Double[][][] { new Double[5][], new Double[5][], new Double[5][] };
+	public Double[][][] K_prediction  = new Double[][][] { new Double[5][], new Double[5][], new Double[5][] };
 	
 	/// Get all K-hop neighbors -- follow all first edges with label
-	public Double[][] Kl            = new Double[3][];
-	public Double[][] Kl_prediction = new Double[3][];
+	public Double[][][] Kl            = new Double[][][] { new Double[5][], new Double[5][], new Double[5][] };
+	public Double[][][] Kl_prediction = new Double[][][] { new Double[5][], new Double[5][], new Double[5][] };
 	
 	/// Get all K-hop neighbors -- follow edges using a property
-	public Double[][] Kp            = new Double[3][];
-	public Double[][] Kp_prediction = new Double[3][];
+	public Double[][][] Kp            = new Double[][][] { new Double[5][], new Double[5][], new Double[5][] };
+	public Double[][][] Kp_prediction = new Double[][][] { new Double[5][], new Double[5][], new Double[5][] };
 	
 	
 	/**
@@ -149,6 +150,8 @@ public class ModelAnalysis {
 		
 		List<Job> jobs = JobList.getInstance().getFinishedJobs(dbEI);
 		if (jobs.size() == numFinishedJobs) return false;
+		
+		boolean useKHops1 = true;
 		
 		
 		/*
@@ -230,6 +233,10 @@ public class ModelAnalysis {
 			Tl[index] = getAverageOperationRuntime(OperationGetFirstNeighbor.class, t + "-withlabel");
 			Tp[index] = getOperationRuntimeAsLinearFunction(OperationGetNeighborEdgeConditional.class, t);
 			
+			if (useKHops1) {
+				Tp[index] = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighborsEdgeConditional.class, t + "-" + 1);
+			}
+			
 			T_prediction [index] = MathUtils.sum(Re, Rv);
 			Tl_prediction[index] = MathUtils.sum(Re, Rv);
 			Tp_prediction[index] = MathUtils.ifNeitherIsNull(MathUtils.sum(Re, Rv), Rp);
@@ -247,6 +254,11 @@ public class ModelAnalysis {
 			N [index] = getOperationRuntimeAsLinearFunction(OperationGetAllNeighbors.class, t);
 			Nl[index] = getOperationRuntimeAsLinearFunction(OperationGetAllNeighbors.class, t + "-withlabel");
 			
+			if (useKHops1) {
+				N [index] = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighbors.class, t + "-" + 1);
+				Nl[index] = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighbors.class, t + "-withlabel-" + 1);
+			}
+			
 			N_prediction [index] = MathUtils.ifNeitherIsNull(new Double(0), T[index]);
 			Nl_prediction[index] = MathUtils.ifNeitherIsNull(new Double(0), Tl[index]);
 		}
@@ -259,20 +271,20 @@ public class ModelAnalysis {
 		for (Direction d : DIRECTIONS) {
 			String t  = OutputUtils.toTag(d);
 			int index = translateDirection(d);
-			
-			String[] tags = new String[4];
-			for (int i = 1; i <= tags.length; i++) tags[i-1] = t + "-" + i;
-			
-			String[] tagsWithLabel = new String[tags.length];
-			for (int i = 1; i <= tags.length; i++) tagsWithLabel[i-1] = t + "-withlabel-" + i;
-			
-			K [index] = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighbors.class, tags);
-			Kl[index] = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighbors.class, tagsWithLabel);
-			Kp[index] = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighborsEdgeConditional.class, tags);
-			
-			K_prediction [index] = N [index];
-			Kl_prediction[index] = Nl[index];
-			Kp_prediction[index] = Tp[index];
+
+			for (int k = 1; k <= 5; k++) {
+				K [index][k-1] = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighbors.class, t + "-" + k);
+				Kl[index][k-1] = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighbors.class, t + "-withlabel-" + k);
+				Kp[index][k-1] = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighborsEdgeConditional.class, t + "-" + k);
+				
+				/*K_prediction [index][k-1] = N [index];
+				Kl_prediction[index][k-1] = Nl[index];
+				Kp_prediction[index][k-1] = Tp[index];*/
+				
+				K_prediction [index][k-1] = MathUtils.multiplyElementwise(N [index], (double) k);
+				Kl_prediction[index][k-1] = MathUtils.multiplyElementwise(Nl[index], (double) k);
+				Kp_prediction[index][k-1] = MathUtils.multiplyElementwise(Tp[index], (double) k);
+			}
 		}
 		
 		
@@ -332,12 +344,14 @@ public class ModelAnalysis {
 		
 		boolean withlabel = false;
 		Direction direction = null;
+		int digit = -1;
 		
 		for (String t : tags) {			
 			if (t.equals("withlabel")) withlabel = true;
 			if (t.equals("out"      )) direction = Direction.OUT;
 			if (t.equals("in"       )) direction = Direction.IN;
 			if (t.equals("both"     )) direction = Direction.BOTH;
+			if (t.length() == 1 && Character.isDigit(t.charAt(0))) digit = Integer.parseInt(t);
 		}
 		
 		
@@ -366,20 +380,20 @@ public class ModelAnalysis {
 		if (OperationGetKHopNeighbors.class.getSimpleName().equals(operationName)) {
 			if (direction == null) throw new IllegalArgumentException("No direction");
 			if (withlabel) {
-				return prediction ? Kl_prediction[translateDirection(direction)] : Kl[translateDirection(direction)];
+				return prediction ? Kl_prediction[translateDirection(direction)][digit-1] : Kl[translateDirection(direction)][digit-1];
 			}
 			else {
-				return prediction ? K_prediction[translateDirection(direction)] : K[translateDirection(direction)];
+				return prediction ? K_prediction[translateDirection(direction)][digit-1] : K[translateDirection(direction)][digit-1];
 			}
 		}
 		
 		if (OperationGetKHopNeighborsEdgeConditional.class.getSimpleName().equals(operationName)) {
 			if (direction == null) throw new IllegalArgumentException("No direction");
 			if (withlabel) {
-				return prediction ? Kp_prediction[translateDirection(direction)] : Kp[translateDirection(direction)];
+				return prediction ? Kp_prediction[translateDirection(direction)][digit-1] : Kp[translateDirection(direction)][digit-1];
 			}
 			else {
-				return prediction ? Kp_prediction[translateDirection(direction)] : Kp[translateDirection(direction)];
+				return prediction ? Kp_prediction[translateDirection(direction)][digit-1] : Kp[translateDirection(direction)][digit-1];
 			}
 		}
 		
@@ -495,26 +509,24 @@ public class ModelAnalysis {
 		}
 		System.out.println();
 		
-		for (Direction d : DIRECTIONS) {
-			String t  = OutputUtils.toTag(d);
-			int index = translateDirection(d);
-			print(CW, "K" + t.charAt(0), "N" + t.charAt(0), K[index], K_prediction[index]);
+		for (int k = 1; k <= 5; k++) {
+			for (Direction d : DIRECTIONS) {
+				String t  = OutputUtils.toTag(d);
+				int index = translateDirection(d);
+				print(CW, "K[k="+k+"]" + t.charAt(0), "N" + t.charAt(0) + " * k", K[index][k-1], K_prediction[index][k-1]);
+			}
+			for (Direction d : DIRECTIONS) {
+				String t  = OutputUtils.toTag(d);
+				int index = translateDirection(d);
+				print(CW, "K[k="+k+"]l" + t.charAt(0), "Nl" + t.charAt(0) + " * k", Kl[index][k-1], Kl_prediction[index][k-1]);
+			}
+			for (Direction d : DIRECTIONS) {
+				String t  = OutputUtils.toTag(d);
+				int index = translateDirection(d);
+				print(CW, "K[k="+k+"]p" + t.charAt(0), "Tp" + t.charAt(0) + " * k", Kp[index][k-1], Kp_prediction[index][k-1]);
+			}
+			System.out.println();
 		}
-		System.out.println();
-		
-		for (Direction d : DIRECTIONS) {
-			String t  = OutputUtils.toTag(d);
-			int index = translateDirection(d);
-			print(CW, "Kl" + t.charAt(0), "Nl" + t.charAt(0), Kl[index], Kl_prediction[index]);
-		}
-		System.out.println();
-		
-		for (Direction d : DIRECTIONS) {
-			String t  = OutputUtils.toTag(d);
-			int index = translateDirection(d);
-			print(CW, "Kp" + t.charAt(0), "Tp" + t.charAt(0), Kp[index], Kp_prediction[index]);
-		}
-		System.out.println();
 	}
 	
 	
@@ -651,10 +663,6 @@ public class ModelAnalysis {
 	 * @return the runtime in ms as a function described by [intercept, slope], or null if not found
 	 */
 	private Double[] getOperationRuntimeAsLinearFunction(String operationName, String... tags) {
-		
-		// Linear regression algorithm from:
-		//     http://introcs.cs.princeton.edu/java/97data/LinearRegression.java.html
-		
 	
 		int xArg = -1;
 		if (operationName.equals("OperationGetAllNeighbors"                )) xArg = 3;
@@ -677,11 +685,8 @@ public class ModelAnalysis {
 		
 		OperationLogReader reader = new OperationLogReader(job.getLogFile());
 		
-		Vector<Double > y = new Vector<Double >();
-		Vector<Integer> x = new Vector<Integer>();
-		@SuppressWarnings("unused")
-		double sumx = 0, sumy = 0, sumx2 = 0; int n = 0;
-		boolean samex = true; int lastx = 0;
+		Vector<Double> y = new Vector<Double>();
+		Vector<Double> x = new Vector<Double>();
 
 		for (OperationLogEntry e : reader) {
 
@@ -699,71 +704,28 @@ public class ModelAnalysis {
 
 			int    xv = Integer.parseInt(e.getResult().split(":")[xArg]);
 			double yv = e.getTime() / 1000000.0;
-			
-			if (n == 0) {
-				lastx = xv;
-			}
-			else {
-				if (lastx != xv) samex = false;
-				lastx = xv;
-			}
 
-			sumx  += xv;
-			sumx2 += xv * xv;
-			sumy  += yv;
-			n++;
-
-			x.add(xv);
+			x.add((double) xv);
 			y.add(yv);
  		}
 
-		if (n <= 0) return null;
-
-		double xbar = sumx / n;
-		double ybar = sumy / n;
-
-		@SuppressWarnings("unused")
-		double xxbar = 0.0, yybar = 0.0, xybar = 0.0;
-		for (int i = 0; i < n; i++) {
-			xxbar += (x.get(i) - xbar) * (x.get(i) - xbar);
-			yybar += (y.get(i) - ybar) * (y.get(i) - ybar);
-			xybar += (x.get(i) - xbar) * (y.get(i) - ybar);
-		}
-		double beta1 = xybar / xxbar;
-		double beta0 = ybar - beta1 * xbar;
+		if (x.size() <= 0) return null;
 		
-		if (samex) {
-			// Might need to revisit this -- it might be beneficial to keep the
-			// slope, even if there is only one unique value of x
-			beta0 = getAverageOperationRuntime(operationName, tags);
-			beta1 = 0;
-		}
 		
-		/*// print results
-		System.out.println("y   = " + beta1 + " * x + " + beta0);
-		// analyze results
-		int df = n - 2;
-		double rss = 0.0;      // residual sum of squares
-		double ssr = 0.0;      // regression sum of squares
-		for (int i = 0; i < n; i++) {
-			double fit = beta1*x.get(i) + beta0;
-			rss += (fit - y.get(i)) * (fit - y.get(i));
-			ssr += (fit - ybar) * (fit - ybar);
-		}
-		double R2    = ssr / yybar;
-		double svar  = rss / df;
-		double svar1 = svar / xxbar;
-		double svar0 = svar/n + xbar*xbar*svar1;
-		System.out.println("R^2                 = " + R2);
-		System.out.println("std error of beta_1 = " + Math.sqrt(svar1));
-		System.out.println("std error of beta_0 = " + Math.sqrt(svar0));
-		svar0 = svar * sumx2 / (n * xxbar);
-		System.out.println("std error of beta_0 = " + Math.sqrt(svar0));
-
-		System.out.println("SSTO = " + yybar);
-		System.out.println("SSE  = " + rss);
-		System.out.println("SSR  = " + ssr);*/
+		// Drop extreme 5% values
+		
+		double[] ax = MathUtils.downgradeArray(x.toArray(new Double[0]));
+		double[] ay = MathUtils.downgradeArray(y.toArray(new Double[0]));
+		double  min = MathUtils.quantile(ay, 0.05);
+		double  max = MathUtils.quantile(ay, 0.95);
         
-		return new Double[] { beta0, beta1 };
+		Pair<double[], double[]> filtered = MathUtils.filter(ay, ax, min, max);
+		ay = filtered.getFirst();
+		ax = filtered.getSecond();
+		
+		
+		// Finish
+		
+		return MathUtils.upgradeArray(MathUtils.robustLinearFit(ax, ay));
 	}
 }

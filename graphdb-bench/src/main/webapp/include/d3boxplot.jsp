@@ -169,8 +169,8 @@
 					});
 					d = domain_data.map(function(d) { return d._value; }).sort(d3.ascending);
 					
-					min = d3.quantile(d, .01);
-					max = d3.quantile(d, .99);
+					min = d3.quantile(d, .05);
+					max = d3.quantile(d, .95);
 				
 					data = data.filter(function(d) {
 						return d.label != domain || (d._value >= min && d._value <= max);

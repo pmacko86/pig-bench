@@ -75,4 +75,5 @@ public class ChartProperties {
 	 */
 	
 	public Vector<Double[]> linear_fits = new Vector<Double[]>();
+	public Vector<Double[]> predictions = new Vector<Double[]>();
 }

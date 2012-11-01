@@ -122,6 +122,10 @@ if (true) {
 	// Operations
 	
 	if (numOperations > 0) {
+		String lastOperationNameWithoutTag = "";
+		String lastTag = "";
+		boolean divOpen = false;
+		
 		for (String n : operationMap.keySet()) {
 			if (operationMap.get(n).size() != selectedDatabaseInstances.size()) continue;
 			
@@ -133,14 +137,91 @@ if (true) {
 			String niceName = n;
 			if (niceName.startsWith("Operation")) niceName = niceName.substring(9);
 			
-			%>
-				<label class="checkbox">
-					<input class="checkbox" type="<%= selectoperations_selectMultiple ? "checkbox" : "radio" %>" name="operations"
+			int tagStart = niceName.indexOf('-');
+			String operationNameWithoutTag = tagStart > 0 ? niceName.substring(0, tagStart) : niceName;
+			boolean sameOperationNameWithoutTag = lastOperationNameWithoutTag.equals(operationNameWithoutTag);
+			lastOperationNameWithoutTag = operationNameWithoutTag;
+			
+			String tag = tagStart > 0 ? niceName.substring(tagStart+1) : "";
+			String[] t = tag.split("-");
+			String[] l = lastTag.split("-");
+			boolean sameTagPrefix = true;
+			if (t.length == l.length) {
+				for (int i = 0; i < t.length-1; i++) {
+					if (!t[i].equals(l[i])) sameTagPrefix = false;
+				}
+			}
+			if (t.length < l.length) {
+				for (int i = 0; i < t.length; i++) {
+					if (!t[i].equals(l[i])) sameTagPrefix = false;
+				}
+			}
+			if (t.length > l.length) {
+				for (int i = 0; i < l.length; i++) {
+					if (!t[i].equals(l[i])) sameTagPrefix = false;
+				}
+			}			
+			lastTag = tag;
+			
+			if (tagStart > 0) {
+				if (!sameOperationNameWithoutTag) {
+					if (divOpen) {
+						%>
+							</div>
+						<%
+						divOpen = false;
+					}
+					divOpen = true;
+					%>
+						<label class="checkbox">
+							<%= operationNameWithoutTag %>
+						</label>
+						<div class="checkbox_lesser">
+					<%
+				}
+				else if (!sameTagPrefix) {
+					if (divOpen) {
+						%>
+							</div>
+						<%
+						divOpen = false;
+					}
+					divOpen = true;
+					%>
+						<div class="checkbox_lesser">
+					<%
+				}
+				%>
+				<label class="checkbox_lesser">
+					<input class="checkbox_lesser" type="<%= selectoperations_selectMultiple ? "checkbox" : "radio" %>" name="operations"
 							onchange="form_submit();" <%= extraTags %>
 							value="<%= n %>"/>
-					<%= niceName %>
+					<%= niceName.substring(tagStart + 1) %>
 				</label>
 			<%
+			}
+			else {
+				if (divOpen) {
+					%>
+						</div>
+					<%
+					divOpen = false;
+				}
+				%>
+					<label class="checkbox">
+						<input class="checkbox" type="<%= selectoperations_selectMultiple ? "checkbox" : "radio" %>" name="operations"
+								onchange="form_submit();" <%= extraTags %>
+								value="<%= n %>"/>
+						<%= niceName %>
+					</label>
+				<%
+			}
+		}
+		if (divOpen) {
+			%>
+				</div>
+			<%
+			divOpen = false;
 		}
 	}
 }

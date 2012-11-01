@@ -163,7 +163,7 @@
 								<%
 								
 								for (DatabaseEngineAndInstance p : selectedDatabaseInstances) {
-									Set<Job> jobs = new TreeSet<Job>();
+									SortedSet<Job> jobs = new TreeSet<Job>();
 									for (Job j : selectedDatabaseInstanceToJobsMap.get(p)) {
 										if (ojs.contains(j)) jobs.add(j);
 									}
@@ -187,6 +187,20 @@
 									selectedDatabaseInstanceAndOperationToSelectedJobsMap.put(
 											new Pair<DatabaseEngineAndInstance, String>(p, operationName),
 											selectedJobsForSelectedDatabaseInstanceAndOperation);
+									
+									if (selectedJobsForSelectedDatabaseInstanceAndOperation.isEmpty()) {
+										Job lastGoodJob = null;
+										for (Job job : jobs) {
+											if (job.getArguments().contains("--use-stored-procedures")) continue;
+											lastGoodJob = job;
+										}
+										if (lastGoodJob == null) {
+											lastGoodJob = jobs.last();
+										}
+										if (lastGoodJob != null) {
+											selectedJobsForSelectedDatabaseInstanceAndOperation.add(lastGoodJob);
+										}
+									}
 
 									%>
 										<label class="lesser">
@@ -204,17 +218,8 @@
 										index++;
 										
 										String extraTags = "";
-											
-										if (params == null) {
-											if (index == jobs.size()) {
-												extraTags += " selected=\"selected\"";
-												selectedJobsForSelectedDatabaseInstanceAndOperation.add(job);
-											}
-										}
-										else {
-											if (selectedJobsForSelectedDatabaseInstanceAndOperation.contains(job)) {
-												extraTags += " selected=\"selected\"";
-											}
+										if (selectedJobsForSelectedDatabaseInstanceAndOperation.contains(job)) {
+											extraTags += " selected=\"selected\"";
 										}
 										
 										String prefix = dateTimeFormatter.format(job.getExecutionTime()) + " ";
@@ -244,10 +249,10 @@
 				boolean logScale = WebUtils.getBooleanParameter(request, "logscale", false);
 				boolean dropExtremes = WebUtils.getBooleanParameter(request, "dropextremes", false);
 				boolean plotTimeVsRetrievedNodes = WebUtils.getBooleanParameter(request, "plotTimeVsRetrievedNodes", false);
-				boolean additionalKHopNeighborsPlots = WebUtils.getBooleanParameter(request, "additionalKHopNeighborsPlots", false);
-				
-				String modelAnalysis = WebUtils.getStringParameter(request, "modelAnalysis");
-				if (modelAnalysis == null) modelAnalysis = "none";
+				boolean plotTimeVsRetrievedNeighborhoods = WebUtils.getBooleanParameter(request, "plotTimeVsRetrievedNeighborhoods", false);
+				boolean plotTimeVsRetrievedNeighborhoodNodes = WebUtils.getBooleanParameter(request, "plotTimeVsRetrievedNeighborhoodNodes", false);
+				boolean modelAnalysisLinearFits = WebUtils.getBooleanParameter(request, "modelAnalysisLinearFits", false);
+				boolean modelAnalysisPredictions = WebUtils.getBooleanParameter(request, "modelAnalysisPredictions", false);
 				
 				String boxPlotFilter = WebUtils.getStringParameter(request, "boxplotfilter");
 				if (boxPlotFilter == null) boxPlotFilter = "true";
@@ -264,8 +269,10 @@
 					if (!s.startsWith("OperationGetAllNeighbors")
 							&& !s.startsWith("OperationGetFirstNeighbor")
 							&& !s.startsWith("OperationGetRandomNeighbor")
+							&& !s.startsWith("OperationGetNeighborEdgeConditional")
 							&& !s.startsWith("OperationGetKFirstNeighbors")
 							&& !s.startsWith("OperationGetKHopNeighbors")
+							&& !s.startsWith("OperationGetKHopNeighborsEdgeConditional")
 							&& !s.startsWith("OperationGetKRandomNeighbors")) {
 						allGetNeighborsBenchmarks = false;
 						break;
@@ -321,7 +328,7 @@
 										name="dropextremes" id="dropextremes"
 										onchange="form_submit();" <%= dropExtremes ? "checked=\"checked\"" : "" %>
 										value="true"/>
-								Drop top and bottom 1% of values
+								Drop top and bottom 5% of values
 							</label>
 							
 							
@@ -374,37 +381,40 @@
 							
 							<label class="checkbox">
 								<input class="checkbox" type="checkbox"
-										name="additionalKHopNeighborsPlots" id="additionalKHopNeighborsPlots"
-										onchange="form_submit();" <%= additionalKHopNeighborsPlots ? "checked=\"checked\"" : "" %>
+										name="plotTimeVsRetrievedNeighborhoods" id="plotTimeVsRetrievedNeighborhoods"
+										onchange="form_submit();" <%= plotTimeVsRetrievedNeighborhoods ? "checked=\"checked\"" : "" %>
 										<%= !allGetNeighborsBenchmarks ? "disabled=\"disabled\"" : ""  %>
 										value="true"/>
-								Execution Time vs. Number of Retrieved Unique Neighborhoods and Neighborhood Nodes
+								Execution Time vs. Number of Retrieved Neighborhoods
+								(Get*Neighbors workloads only)
+							</label>
+							
+							<label class="checkbox">
+								<input class="checkbox" type="checkbox"
+										name="plotTimeVsRetrievedNeighborhoodNodes" id="plotTimeVsRetrievedNeighborhoodNodes"
+										onchange="form_submit();" <%= plotTimeVsRetrievedNeighborhoodNodes ? "checked=\"checked\"" : "" %>
+										<%= !allGetNeighborsBenchmarks ? "disabled=\"disabled\"" : ""  %>
+										value="true"/>
+								Execution Time vs. Number of Retrieved Neighborhood Nodes
 								(Get*Neighbors workloads only)
 							</label>
 							
 							
 							<div style="height:10px"></div>
-							<p class="middle_inner">Data Plots &ndash; Miscellaneous</p>
+							<p class="middle_inner">Model Analysis &ndash; "Execution Time vs. Number of Retrieved Neighborhood Nodes"</p>
 							
 							<label class="checkbox">
-								<input class="checkbox" type="radio"
-										name="modelAnalysis" id="modelAnalysis"
-										onchange="form_submit();" <%= modelAnalysis.equals("none") ? "checked=\"checked\"" : "" %>
-										value="none"/>
-								None
-							</label>
-							<label class="checkbox">
-								<input class="checkbox" type="radio"
-										name="modelAnalysis" id="modelAnalysis"
-										onchange="form_submit();" <%= modelAnalysis.equals("fit") ? "checked=\"checked\"" : "" %>
-										value="fit"/>
+								<input class="checkbox" type="checkbox"
+										name="modelAnalysisLinearFits" id="modelAnalysisLinearFits"
+										onchange="form_submit();" <%= modelAnalysisLinearFits ? "checked=\"checked\"" : "" %>
+										value="true"/>
 								Linear Fit
 							</label>
 							<label class="checkbox">
-								<input class="checkbox" type="radio"
-										name="modelAnalysis" id="modelAnalysis"
-										onchange="form_submit();" <%= modelAnalysis.equals("prediction") ? "checked=\"checked\"" : "" %>
-										value="prediction"/>
+								<input class="checkbox" type="checkbox"
+										name="modelAnalysisPredictions" id="modelAnalysisPredictions"
+										onchange="form_submit();" <%= modelAnalysisPredictions ? "checked=\"checked\"" : "" %>
+										value="true"/>
 								Model Prediction
 							</label>
 							
@@ -422,7 +432,10 @@
 						<input type="hidden" name="logscale" id="logscale" value="<%= "" + logScale %>" />
 						<input type="hidden" name="dropextremes" id="dropextremes" value="<%= "" + dropExtremes %>" />
 						<input type="hidden" name="plotTimeVsRetrievedNodes" id="plotTimeVsRetrievedNodes" value="<%= "" + plotTimeVsRetrievedNodes %>" />
-						<input type="hidden" name="additionalKHopNeighborsPlots" id="additionalKHopNeighborsPlots" value="<%= "" + additionalKHopNeighborsPlots %>" />
+						<input type="hidden" name="plotTimeVsRetrievedNeighborhoods" id="plotTimeVsRetrievedNeighborhoods" value="<%= "" + plotTimeVsRetrievedNeighborhoods %>" />
+						<input type="hidden" name="plotTimeVsRetrievedNeighborhoodNodes" id="plotTimeVsRetrievedNeighborhoodNodes" value="<%= "" + plotTimeVsRetrievedNeighborhoodNodes %>" />
+						<input type="hidden" name="modelAnalysisLinearFits" id="modelAnalysisLinearFits" value="<%= "" + modelAnalysisLinearFits %>" />
+						<input type="hidden" name="modelAnalysisPredictions" id="modelAnalysisPredictions" value="<%= "" + modelAnalysisPredictions %>" />
 					<%
 				}
 			%>
@@ -473,21 +486,22 @@
 					}
 				}
 				
+				List<Triple<String, DatabaseEngineAndInstance, Double[]>> linearFitData
+					= new ArrayList<Triple<String, DatabaseEngineAndInstance, Double[]>>();
 				List<Triple<String, DatabaseEngineAndInstance, Double[]>> predictionData
 					= new ArrayList<Triple<String, DatabaseEngineAndInstance, Double[]>>();
 				
-				if (!"none".equals(modelAnalysis)) {
+				if (modelAnalysisLinearFits || modelAnalysisPredictions) {
 					for (String operationName : selectedOperations) {
 						for (Job j : operationsToJobs.get(operationName)) {
 							DatabaseEngineAndInstance dbei = j.getDatabaseEngineAndInstance();
 							ModelAnalysis m = ModelAnalysis.getInstance(dbei);
 							Double[] p = null;
-							if ("fit".equals(modelAnalysis)) {
-								p = m.getLinearFit(operationName);
-							}
-							else if ("prediction".equals(modelAnalysis)) {
-								p = m.getPrediction(operationName);
-							}
+							
+							p = m.getLinearFit(operationName);
+							linearFitData.add(new Triple<String, DatabaseEngineAndInstance, Double[]>(operationName, dbei, p));
+							
+							p = m.getPrediction(operationName);
 							predictionData.add(new Triple<String, DatabaseEngineAndInstance, Double[]>(operationName, dbei, p));
 						}
 					}
@@ -564,7 +578,7 @@
 					<%
 				}
 				
-				if (additionalKHopNeighborsPlots && allGetNeighborsBenchmarks) {
+				if ((plotTimeVsRetrievedNeighborhoodNodes || plotTimeVsRetrievedNeighborhoods) && allGetNeighborsBenchmarks) {
 					ChartProperties chartProperties = new ChartProperties();
 					
 					chartProperties.source = link + "&show=details&format=csv";
@@ -580,30 +594,43 @@
 					chartProperties.series_column = "label";
 					chartProperties.series_label_function = "return d.label.replace(/^Operation/, '')";
 					
-					%>
-						<div class="chart_outer">
-							<div class="chart chart_all_additionalKHopNeighborsPlots_1" id="chart_all_additionalKHopNeighborsPlots_1"></div>
-							<%@ include file="include/d3scatterplot.jsp" %>
-							<a class="chart_save" href="javascript:save_svg('chart_all_additionalKHopNeighborsPlots_1', 'plot.svg')">Save</a>
-						</div>
-					<%
+					if (plotTimeVsRetrievedNeighborhoods) {
+						%>
+							<div class="chart_outer">
+								<div class="chart chart_all_additionalKHopNeighborsPlots_1" id="chart_all_additionalKHopNeighborsPlots_1"></div>
+								<%@ include file="include/d3scatterplot.jsp" %>
+								<a class="chart_save" href="javascript:save_svg('chart_all_additionalKHopNeighborsPlots_1', 'plot.svg')">Save</a>
+							</div>
+						<%
+					}
 					
 					chartProperties.attach = "chart_all_additionalKHopNeighborsPlots_2";
 					chartProperties.xvalue = "d.result[3]";
 					chartProperties.xlabel = "Number of Retrieved Neighborhood Nodes";
 					
 					chartProperties.linear_fits.clear();
-					for (Triple<String, DatabaseEngineAndInstance, Double[]> p : predictionData) {
-						chartProperties.linear_fits.add(p.getThird());
+					if (modelAnalysisLinearFits) {
+						for (Triple<String, DatabaseEngineAndInstance, Double[]> p : linearFitData) {
+							chartProperties.linear_fits.add(p.getThird());
+						}
 					}
 					
-					%>
-						<div class="chart_outer">
-							<div class="chart chart_all_additionalKHopNeighborsPlots_2" id="chart_all_additionalKHopNeighborsPlots_2"></div>
-							<%@ include file="include/d3scatterplot.jsp" %>
-							<a class="chart_save" href="javascript:save_svg('chart_all_additionalKHopNeighborsPlots_2', 'plot.svg')">Save</a>
-						</div>
-					<%
+					chartProperties.predictions.clear();
+					if (modelAnalysisPredictions) {
+						for (Triple<String, DatabaseEngineAndInstance, Double[]> p : predictionData) {
+							chartProperties.predictions.add(p.getThird());
+						}
+					}
+					
+					if (plotTimeVsRetrievedNeighborhoodNodes) {
+						%>
+							<div class="chart_outer">
+								<div class="chart chart_all_additionalKHopNeighborsPlots_2" id="chart_all_additionalKHopNeighborsPlots_2"></div>
+								<%@ include file="include/d3scatterplot.jsp" %>
+								<a class="chart_save" href="javascript:save_svg('chart_all_additionalKHopNeighborsPlots_2', 'plot.svg')">Save</a>
+							</div>
+						<%
+					}
 				}
 
 				%>
