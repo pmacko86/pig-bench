@@ -350,6 +350,7 @@ public class MathUtils {
 	 * @return the result, or null if at least one of the values is null
 	 */
 	public static Double[] multiplyElementwise(Double[] array, Double scalar) {
+		if (array == null) return null;
 		Double[] r = new Double[array.length];
 		if (scalar == null) return null;
 		for (int i = 0; i < array.length; i++) {

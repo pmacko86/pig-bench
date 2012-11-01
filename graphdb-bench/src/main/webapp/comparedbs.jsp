@@ -249,6 +249,7 @@
 				boolean logScale = WebUtils.getBooleanParameter(request, "logscale", false);
 				boolean dropExtremes = WebUtils.getBooleanParameter(request, "dropextremes", false);
 				boolean plotTimeVsRetrievedNodes = WebUtils.getBooleanParameter(request, "plotTimeVsRetrievedNodes", false);
+				boolean plotTimeVsMaxDepth = WebUtils.getBooleanParameter(request, "plotTimeVsMaxDepth", false);
 				boolean plotTimeVsRetrievedNeighborhoods = WebUtils.getBooleanParameter(request, "plotTimeVsRetrievedNeighborhoods", false);
 				boolean plotTimeVsRetrievedNeighborhoodNodes = WebUtils.getBooleanParameter(request, "plotTimeVsRetrievedNeighborhoodNodes", false);
 				boolean modelAnalysisLinearFits = WebUtils.getBooleanParameter(request, "modelAnalysisLinearFits", false);
@@ -276,6 +277,7 @@
 							&& !s.startsWith("OperationGetKHopNeighbors")
 							&& !s.startsWith("OperationGetKHopNeighborsEdgeConditional")
 							&& !s.startsWith("OperationGetKRandomNeighbors")
+							&& !s.startsWith("OperationGetShortestPath")
 							&& !s.startsWith("OperationLocalClusteringCoefficient")
 							) {
 						benchmarksWithExtendedInfo = false;
@@ -384,6 +386,15 @@
 							
 							<label class="checkbox">
 								<input class="checkbox" type="checkbox"
+										name="plotTimeVsMaxDepth" id="plotTimeVsMaxDepth"
+										onchange="form_submit();" <%= plotTimeVsMaxDepth ? "checked=\"checked\"" : "" %>
+										<%= !benchmarksWithExtendedInfo ? "disabled=\"disabled\"" : ""  %>
+										value="true"/>
+								Execution Time vs. Maximum Depth (value of K)
+							</label>
+							
+							<label class="checkbox">
+								<input class="checkbox" type="checkbox"
 										name="plotTimeVsRetrievedNeighborhoods" id="plotTimeVsRetrievedNeighborhoods"
 										onchange="form_submit();" <%= plotTimeVsRetrievedNeighborhoods ? "checked=\"checked\"" : "" %>
 										<%= !benchmarksWithExtendedInfo ? "disabled=\"disabled\"" : ""  %>
@@ -433,6 +444,7 @@
 						<input type="hidden" name="logscale" id="logscale" value="<%= "" + logScale %>" />
 						<input type="hidden" name="dropextremes" id="dropextremes" value="<%= "" + dropExtremes %>" />
 						<input type="hidden" name="plotTimeVsRetrievedNodes" id="plotTimeVsRetrievedNodes" value="<%= "" + plotTimeVsRetrievedNodes %>" />
+						<input type="hidden" name="plotTimeVsMaxDepth" id="plotTimeVsMaxDepth" value="<%= "" + plotTimeVsMaxDepth %>" />
 						<input type="hidden" name="plotTimeVsRetrievedNeighborhoods" id="plotTimeVsRetrievedNeighborhoods" value="<%= "" + plotTimeVsRetrievedNeighborhoods %>" />
 						<input type="hidden" name="plotTimeVsRetrievedNeighborhoodNodes" id="plotTimeVsRetrievedNeighborhoodNodes" value="<%= "" + plotTimeVsRetrievedNeighborhoodNodes %>" />
 						<input type="hidden" name="modelAnalysisLinearFits" id="modelAnalysisLinearFits" value="<%= "" + modelAnalysisLinearFits %>" />
@@ -579,23 +591,23 @@
 					<%
 				}
 				
-				if ((plotTimeVsRetrievedNeighborhoodNodes || plotTimeVsRetrievedNeighborhoods) && benchmarksWithExtendedInfo) {
+				if ((plotTimeVsRetrievedNeighborhoodNodes || plotTimeVsRetrievedNeighborhoods || plotTimeVsMaxDepth) && benchmarksWithExtendedInfo) {
 					ChartProperties chartProperties = new ChartProperties();
 					
 					chartProperties.source = link + "&show=details&format=csv";
 					chartProperties.attach = "chart_all_additionalKHopNeighborsPlots_1";
 					chartProperties.filter = boxPlotFilter;
-					chartProperties.xvalue = "d.result[2]";
+					chartProperties.xvalue = "d.result[1]";
 					chartProperties.yvalue = boxPlotYValue;
 					if (logScale) chartProperties.yscale = "log";
 					if (dropExtremes) chartProperties.dropTopBottomExtremes = true;
-					chartProperties.xlabel = "Number of Retrieved Neighborhoods"; // e.g. calls to Vertex.getVertices()
+					chartProperties.xlabel = "Maximum Depth";
 					chartProperties.ylabel = "d.time".equals(boxPlotYValue) 
 							? "Execution Time (ms)" : StringEscapeUtils.escapeXml(boxPlotYValue);	// TODO Need better escape
 					chartProperties.series_column = "label";
 					chartProperties.series_label_function = "return d.label.replace(/^Operation/, '')";
 					
-					if (plotTimeVsRetrievedNeighborhoods) {
+					if (plotTimeVsMaxDepth) {
 						%>
 							<div class="chart_outer">
 								<div class="chart chart_all_additionalKHopNeighborsPlots_1" id="chart_all_additionalKHopNeighborsPlots_1"></div>
@@ -606,6 +618,20 @@
 					}
 					
 					chartProperties.attach = "chart_all_additionalKHopNeighborsPlots_2";
+					chartProperties.xvalue = "d.result[2]";
+					chartProperties.xlabel = "Number of Retrieved Neighborhoods"; // e.g. calls to Vertex.getVertices()
+					
+					if (plotTimeVsRetrievedNeighborhoods) {
+						%>
+							<div class="chart_outer">
+								<div class="chart chart_all_additionalKHopNeighborsPlots_2" id="chart_all_additionalKHopNeighborsPlots_1"></div>
+								<%@ include file="include/d3scatterplot.jsp" %>
+								<a class="chart_save" href="javascript:save_svg('chart_all_additionalKHopNeighborsPlots_2', 'plot.svg')">Save</a>
+							</div>
+						<%
+					}
+					
+					chartProperties.attach = "chart_all_additionalKHopNeighborsPlots_3";
 					chartProperties.xvalue = "d.result[3]";
 					chartProperties.xlabel = "Number of Retrieved Neighborhood Nodes";
 					
@@ -626,9 +652,9 @@
 					if (plotTimeVsRetrievedNeighborhoodNodes) {
 						%>
 							<div class="chart_outer">
-								<div class="chart chart_all_additionalKHopNeighborsPlots_2" id="chart_all_additionalKHopNeighborsPlots_2"></div>
+								<div class="chart chart_all_additionalKHopNeighborsPlots_3" id="chart_all_additionalKHopNeighborsPlots_2"></div>
 								<%@ include file="include/d3scatterplot.jsp" %>
-								<a class="chart_save" href="javascript:save_svg('chart_all_additionalKHopNeighborsPlots_2', 'plot.svg')">Save</a>
+								<a class="chart_save" href="javascript:save_svg('chart_all_additionalKHopNeighborsPlots_3', 'plot.svg')">Save</a>
 							</div>
 						<%
 					}
