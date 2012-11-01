@@ -25,6 +25,7 @@ import com.tinkerpop.bench.operation.operations.OperationGetManyEdges;
 import com.tinkerpop.bench.operation.operations.OperationGetManyVertexProperties;
 import com.tinkerpop.bench.operation.operations.OperationGetManyVertices;
 import com.tinkerpop.bench.operation.operations.OperationGetNeighborEdgeConditional;
+import com.tinkerpop.bench.operation.operations.OperationLocalClusteringCoefficient;
 import com.tinkerpop.bench.operation.operations.OperationSetManyEdgeProperties;
 import com.tinkerpop.bench.operation.operations.OperationSetManyVertexProperties;
 import com.tinkerpop.bench.util.ConsoleUtils;
@@ -43,7 +44,13 @@ import com.tinkerpop.blueprints.Direction;
  * @author Peter Macko (pmacko@eecs.harvard.edu)
  */
 public class ModelAnalysis {
+
+	/// Whether to use KHops operations with K=1 instead of the simpler (in theory, equivalent) primitives
+	public static boolean useKHops1 = true;
 	
+	/// Whether to use robust linear fits
+	public static boolean useRobustFits = true;
+
 	/// The directions
 	public static final Direction[] DIRECTIONS = new Direction[] { Direction.OUT, Direction.IN, Direction.BOTH };
 	
@@ -62,6 +69,11 @@ public class ModelAnalysis {
 	
 	/// The map of operations to finished jobs
 	private HashMap<String, SortedSet<Job>> operationToJobs;
+	
+	
+	/*
+	 * Observations and predictions
+	 */
 	
 	/// The primitive operation runtimes -- reads
 	public Double Rv /* vertex */, Re /* edge */, Rp /* property */;
@@ -104,6 +116,10 @@ public class ModelAnalysis {
 	/// Get all K-hop neighbors -- follow edges using a property
 	public Double[][][] Kp            = new Double[][][] { new Double[5][], new Double[5][], new Double[5][] };
 	public Double[][][] Kp_prediction = new Double[][][] { new Double[5][], new Double[5][], new Double[5][] };
+	
+	/// Local clustering coefficient
+	public Double[] CC;
+	public Double[] CC_prediction;
 	
 	
 	/**
@@ -150,8 +166,6 @@ public class ModelAnalysis {
 		
 		List<Job> jobs = JobList.getInstance().getFinishedJobs(dbEI);
 		if (jobs.size() == numFinishedJobs) return false;
-		
-		boolean useKHops1 = true;
 		
 		
 		/*
@@ -257,6 +271,20 @@ public class ModelAnalysis {
 			if (useKHops1) {
 				N [index] = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighbors.class, t + "-" + 1);
 				Nl[index] = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighbors.class, t + "-withlabel-" + 1);
+				
+				if (N[index] != null) {
+					Double[] D = N[index];
+					if (D[1] < 0) {
+						N [index] = MathUtils.multiplyElementwise(getOperationRuntimeAsLinearFunction(OperationGetKHopNeighbors.class, t + "-" + 2), (double) 0.5);
+					}
+				}
+				
+				if (Nl[index] != null) {
+					Double[] D = Nl[index];
+					if (D[1] < 0) {
+						Nl[index] = MathUtils.multiplyElementwise(getOperationRuntimeAsLinearFunction(OperationGetKHopNeighbors.class, t + "-withlabel-" + 2), (double) 0.5);
+					}
+				}
 			}
 			
 			N_prediction [index] = MathUtils.ifNeitherIsNull(new Double(0), T[index]);
@@ -286,6 +314,14 @@ public class ModelAnalysis {
 				Kp_prediction[index][k-1] = MathUtils.multiplyElementwise(Tp[index], (double) k);
 			}
 		}
+		
+		
+		/*
+		 * Algorithms
+		 */
+		
+		CC = getOperationRuntimeAsLinearFunction(OperationLocalClusteringCoefficient.class);
+		CC_prediction = K_prediction[translateDirection(Direction.BOTH)][2-1];
 		
 		
 		/*
@@ -395,6 +431,10 @@ public class ModelAnalysis {
 			else {
 				return prediction ? Kp_prediction[translateDirection(direction)][digit-1] : Kp[translateDirection(direction)][digit-1];
 			}
+		}
+		
+		if (OperationLocalClusteringCoefficient.class.getSimpleName().equals(operationName)) {
+			return prediction ? CC_prediction : CC;
 		}
 		
 		return null;
@@ -527,6 +567,12 @@ public class ModelAnalysis {
 			}
 			System.out.println();
 		}
+		
+		System.out.println();
+		ConsoleUtils.header("Algorithms");
+		System.out.println();
+		
+		print(CW, "CC", "K[k=2]b", CC, CC_prediction);
 	}
 	
 	
@@ -669,6 +715,7 @@ public class ModelAnalysis {
 		if (operationName.equals("OperationGetNeighborEdgeConditional"     )) xArg = 3;
 		if (operationName.equals("OperationGetKHopNeighbors"               )) xArg = 3;
 		if (operationName.equals("OperationGetKHopNeighborsEdgeConditional")) xArg = 3;
+		if (operationName.equals("OperationLocalClusteringCoefficient"     )) xArg = 3;
 		if (xArg < 0) {
 			throw new IllegalArgumentException("Unsupported operation " + operationName);
 		}
@@ -726,6 +773,6 @@ public class ModelAnalysis {
 		
 		// Finish
 		
-		return MathUtils.upgradeArray(MathUtils.robustLinearFit(ax, ay));
+		return MathUtils.upgradeArray(useRobustFits ? MathUtils.robustLinearFit(ax, ay) : MathUtils.linearFit(ax, ay));
 	}
 }

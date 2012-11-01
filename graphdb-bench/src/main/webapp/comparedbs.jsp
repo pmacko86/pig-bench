@@ -258,13 +258,15 @@
 				if (boxPlotFilter == null) boxPlotFilter = "true";
 				// XXX Further sanitize boxPlotFilter!
 				boxPlotFilter = boxPlotFilter.replace(';', ' ');
+				boxPlotFilter = boxPlotFilter.replace('\\', ' ');
 				
 				String boxPlotYValue = WebUtils.getStringParameter(request, "boxplotyvalue");
 				if (boxPlotYValue == null) boxPlotYValue = "d.time";
 				// XXX Further sanitize boxPlotYValue!
 				boxPlotYValue = boxPlotYValue.replace(';', ' ');
+				boxPlotYValue = boxPlotYValue.replace('\\', ' ');
 				
-				boolean allGetNeighborsBenchmarks = true;
+				boolean benchmarksWithExtendedInfo = true;
 				for (String s : selectedOperations) {
 					if (!s.startsWith("OperationGetAllNeighbors")
 							&& !s.startsWith("OperationGetFirstNeighbor")
@@ -273,8 +275,10 @@
 							&& !s.startsWith("OperationGetKFirstNeighbors")
 							&& !s.startsWith("OperationGetKHopNeighbors")
 							&& !s.startsWith("OperationGetKHopNeighborsEdgeConditional")
-							&& !s.startsWith("OperationGetKRandomNeighbors")) {
-						allGetNeighborsBenchmarks = false;
+							&& !s.startsWith("OperationGetKRandomNeighbors")
+							&& !s.startsWith("OperationLocalClusteringCoefficient")
+							) {
+						benchmarksWithExtendedInfo = false;
 						break;
 					}
 				}
@@ -367,36 +371,33 @@
 							
 							
 							<div style="height:10px"></div>
-							<p class="middle_inner">Data Plots &ndash; Specialty Plots</p>
+							<p class="middle_inner">Data Plots &ndash; Specialty Plots (selected workload types only)</p>
 							
 							<label class="checkbox">
 								<input class="checkbox" type="checkbox"
 										name="plotTimeVsRetrievedNodes" id="plotTimeVsRetrievedNodes"
 										onchange="form_submit();" <%= plotTimeVsRetrievedNodes ? "checked=\"checked\"" : "" %>
-										<%= !allGetNeighborsBenchmarks ? "disabled=\"disabled\"" : ""  %>
+										<%= !benchmarksWithExtendedInfo ? "disabled=\"disabled\"" : ""  %>
 										value="true"/>
 								Execution Time vs. Number of Returned Unique Nodes
-								(Get*Neighbors workloads only)
 							</label>
 							
 							<label class="checkbox">
 								<input class="checkbox" type="checkbox"
 										name="plotTimeVsRetrievedNeighborhoods" id="plotTimeVsRetrievedNeighborhoods"
 										onchange="form_submit();" <%= plotTimeVsRetrievedNeighborhoods ? "checked=\"checked\"" : "" %>
-										<%= !allGetNeighborsBenchmarks ? "disabled=\"disabled\"" : ""  %>
+										<%= !benchmarksWithExtendedInfo ? "disabled=\"disabled\"" : ""  %>
 										value="true"/>
 								Execution Time vs. Number of Retrieved Neighborhoods
-								(Get*Neighbors workloads only)
 							</label>
 							
 							<label class="checkbox">
 								<input class="checkbox" type="checkbox"
 										name="plotTimeVsRetrievedNeighborhoodNodes" id="plotTimeVsRetrievedNeighborhoodNodes"
 										onchange="form_submit();" <%= plotTimeVsRetrievedNeighborhoodNodes ? "checked=\"checked\"" : "" %>
-										<%= !allGetNeighborsBenchmarks ? "disabled=\"disabled\"" : ""  %>
+										<%= !benchmarksWithExtendedInfo ? "disabled=\"disabled\"" : ""  %>
 										value="true"/>
 								Execution Time vs. Number of Retrieved Neighborhood Nodes
-								(Get*Neighbors workloads only)
 							</label>
 							
 							
@@ -553,7 +554,7 @@
 					<%
 				}
 				
-				if (plotTimeVsRetrievedNodes && allGetNeighborsBenchmarks) {
+				if (plotTimeVsRetrievedNodes && benchmarksWithExtendedInfo) {
 					ChartProperties chartProperties = new ChartProperties();
 					
 					chartProperties.source = link + "&show=details&format=csv";
@@ -578,7 +579,7 @@
 					<%
 				}
 				
-				if ((plotTimeVsRetrievedNeighborhoodNodes || plotTimeVsRetrievedNeighborhoods) && allGetNeighborsBenchmarks) {
+				if ((plotTimeVsRetrievedNeighborhoodNodes || plotTimeVsRetrievedNeighborhoods) && benchmarksWithExtendedInfo) {
 					ChartProperties chartProperties = new ChartProperties();
 					
 					chartProperties.source = link + "&show=details&format=csv";

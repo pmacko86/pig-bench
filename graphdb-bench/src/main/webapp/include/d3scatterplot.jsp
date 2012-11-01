@@ -360,16 +360,25 @@
 			var add_linear_function = function(f0, f1, series_index, dashed) {
 				
 				var x0 = d3.min(x.domain());
+				var y0 = f0 + f1 * x0;
 				
 				var x1 = d3.max(x.domain());
 				var y1 = f0 + f1 * x1;
 				
-				var ym = d3.max(y.domain());
-				if (y1 > ym && f1 != 0) {
-					x1 = (ym - f0) / f1;
+				var ymin = d3.min(y.domain());
+				if (y0 > ymax && f1 != 0) {
+					x0 = (ymax - f0) / f1;
 				}
-				if (y1 < 0 && f1 != 0) {
-					x1 = (-f0) / f1;
+				if (y0 < ymin) {
+					x0 = (ymin - f0) / f1;
+				}
+				
+				var ymax = d3.max(y.domain());
+				if (y1 > ymax && f1 != 0) {
+					x1 = (ymax - f0) / f1;
+				}
+				if (y1 < ymin && f1 != 0) {
+					x1 = (ymin - f0) / f1;
 				}
 				
 				var f;
