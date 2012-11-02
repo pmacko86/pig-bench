@@ -91,9 +91,22 @@ public class AddPredefinedJobs extends HttpServlet {
 			
 			return r;
 		}
-		else {
-			throw new IllegalArgumentException("Unsupported dataset");
+		
+		if (dataset.startsWith("amazon") && dataset.endsWith(".fgf")) {
+			
+			//
+			// Amazon graphs
+			//
+			
+			String d = dataset.substring(0, dataset.length() - ".fgf".length());
+			if (d.endsWith("-a") || d.endsWith("-b")) {
+				d = d.substring(0, d.length() - 2);
+			}
+			
+			return d;
 		}
+		
+		throw new IllegalArgumentException("Unsupported dataset");
 	}
 	
 	
@@ -153,9 +166,12 @@ public class AddPredefinedJobs extends HttpServlet {
 			
 			return r;
 		}
-		else {
-			throw new IllegalArgumentException("Unsupported instance or dataset");
+	
+		if (instanceName.startsWith("amazon")) {
+			return instanceName + "-a.fgf";
 		}
+	
+		throw new IllegalArgumentException("Unsupported instance or dataset");
 	}
 	
 	
@@ -237,9 +253,64 @@ public class AddPredefinedJobs extends HttpServlet {
 			
 			JobList.getInstance().addJob(new Job("--" + dbEngine, "--database", instanceName,
 					"--create-index"));
+			
+			return;
 		}
-		else {
-			throw new IllegalArgumentException("Unsupported dataset");
+		
+		if (dataset.startsWith("amazon") && dataset.endsWith(".fgf")) {
+			
+			//
+			// Amazon graphs
+			//
+			
+			String d = dataset.substring(0, dataset.length() - ".fgf".length());
+			
+			boolean partial = false;
+			if (d.endsWith("-a")) {
+				partial = true;
+				d = d.substring(0, d.length() - 2);
+			}
+			if (d.endsWith("-b")) {
+				throw new IllegalArgumentException("The dataset is not bulkloadable -- please use the \"-a\", not the \"-b\" part");
+			}
+			
+			String warmupDataset = "amazon0302";
+			if (partial) warmupDataset += "-a";
+			warmupDataset += ".fgf";
+			
+			if (dataset.equals(warmupDataset)) {
+				JobList.getInstance().addJob(new Job("--" + dbEngine, "--database", instanceName,
+						"--ingest", dataset));
+			}
+			else {
+				JobList.getInstance().addJob(new Job("--" + dbEngine, "--database", instanceName,
+						"--ingest", dataset, "--warmup-ingest", warmupDataset));
+			}
+			
+			if (partial) {
+				
+				assert dataset.endsWith("-a.fgf");
+				assert warmupDataset.endsWith("-a.fgf");
+				
+				String dataset_b = dataset.substring(0, dataset.length() - "-a.fgf".length()) + "-b.fgf";
+				String warmupDataset_b = warmupDataset.substring(0, warmupDataset.length() - "-a.fgf".length()) + "-b.fgf";
+				
+				if (dataset_b.equals(warmupDataset_b)) {
+					JobList.getInstance().addJob(new Job("--" + dbEngine, "--database", instanceName,
+							"--incr-ingest", dataset_b));
+				}
+				else {
+					JobList.getInstance().addJob(new Job("--" + dbEngine, "--database", instanceName,
+							"--incr-ingest", dataset_b, "--warmup-ingest", warmupDataset_b));
+				}
+			}
+			
+			JobList.getInstance().addJob(new Job("--" + dbEngine, "--database", instanceName,
+					"--create-index", "title,salesrank,group"));
+			
+			return;
 		}
+		
+		throw new IllegalArgumentException("Unsupported dataset");
 	}
 }
