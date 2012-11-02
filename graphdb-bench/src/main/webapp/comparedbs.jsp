@@ -440,6 +440,7 @@
 					%>
 						<input type="hidden" name="bargraphs" id="bargraphs" value="<%= "" + barGraphs %>" />
 						<input type="hidden" name="logscale_bargraphs" id="logscale_bargraphs" value="<%= "" + logScale_barGraphs %>" />
+						<input type="hidden" name="eachop" id="eachop" value="<%= "" + separateGraphForEachOperation %>" />
 						<input type="hidden" name="boxplots" id="boxplots" value="<%= "" + boxPlots %>" />
 						<input type="hidden" name="logscale" id="logscale" value="<%= "" + logScale %>" />
 						<input type="hidden" name="dropextremes" id="dropextremes" value="<%= "" + dropExtremes %>" />

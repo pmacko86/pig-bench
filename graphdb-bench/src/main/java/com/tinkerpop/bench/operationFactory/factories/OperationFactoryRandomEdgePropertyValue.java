@@ -12,6 +12,7 @@ public class OperationFactoryRandomEdgePropertyValue extends OperationFactoryBas
 	
 	private Class<?> opType = null;
 	private int opCount;
+	private int actualOpCount;
 	private Object[] args;
 	private LinkedList<Object> valueSamples = null;
 	private String tag = null;
@@ -34,6 +35,7 @@ public class OperationFactoryRandomEdgePropertyValue extends OperationFactoryBas
 		this.tag = tag;
 		this.key = key;
 		this.update = isUpdateOperation(opType);
+		this.actualOpCount = opCount;
 	}
 
 	@Override
@@ -45,6 +47,7 @@ public class OperationFactoryRandomEdgePropertyValue extends OperationFactoryBas
 			if (x != null) samples.add(x);
 		}
 		valueSamples.addAll(samples);
+		actualOpCount = valueSamples.size();
 	}
 
 	@Override
@@ -68,7 +71,7 @@ public class OperationFactoryRandomEdgePropertyValue extends OperationFactoryBas
 	 */
 	@Override
 	public int getOpCount() {
-		return opCount;
+		return actualOpCount;
 	}
 	
 	/**
@@ -78,7 +81,7 @@ public class OperationFactoryRandomEdgePropertyValue extends OperationFactoryBas
 	 */
 	@Override
 	public int getExecutedOpCount() {
-		return opCount - valueSamples.size();
+		return actualOpCount - valueSamples.size();
 	}
 	
 	/**

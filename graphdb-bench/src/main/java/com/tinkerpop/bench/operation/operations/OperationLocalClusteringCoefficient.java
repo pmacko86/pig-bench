@@ -19,7 +19,6 @@ import com.tinkerpop.blueprints.extensions.impls.neo4j.Neo4jUtils;
 import com.tinkerpop.blueprints.impls.dex.DexGraph;
 import com.tinkerpop.blueprints.impls.neo4j.Neo4jVertex;
 
-@SuppressWarnings("unused")
 public class OperationLocalClusteringCoefficient extends Operation {
 
 	protected Vertex vertex;
@@ -72,7 +71,7 @@ public class OperationLocalClusteringCoefficient extends Operation {
 			Graph graph = ((DexGraph) getGraph()).getRawGraph();
 			int get_ops = 0, get_vertex = 0, unique = 0;
 
-			/*long start = ((Long) vertex.getId()).longValue();
+			long start = ((Long) vertex.getId()).longValue();
 			OIDList neighbors = new OIDList();
 			HashSet<Long> neighborSet = new HashSet<Long>();
 			get_ops++;
@@ -123,10 +122,10 @@ public class OperationLocalClusteringCoefficient extends Operation {
 				}
 			}
 			
-			neighbors.delete();*/
+			neighbors.delete();
 			
 			
-			long start = ((Long) vertex.getId()).longValue();
+			/*long start = ((Long) vertex.getId()).longValue();
 			com.sparsity.dex.gdb.Objects[] neighbors = new com.sparsity.dex.gdb.Objects[types.length];
 			HashSet<Long> neighborSet = new HashSet<Long>();
 			get_ops++;
@@ -173,7 +172,7 @@ public class OperationLocalClusteringCoefficient extends Operation {
 			for (int i = 0; i < types.length; i++) {
 				get_ops += neighbors[i].count();
 				neighbors[i].close();
-			}
+			}*/
 			
 			
 			int K = neighborSet.size();

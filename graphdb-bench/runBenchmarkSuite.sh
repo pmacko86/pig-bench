@@ -197,7 +197,7 @@ while [ "x${1:0:1}" = "x+" ]; do
 	if [ $ARG = "+webserver" ]; then
 		MAVEN_TARGET=jetty:run
 		if [ x$OPT_MEMORY_SIZE_IS_DEFAULT = xyes ]; then
-			OPT_MEMORY_SIZE=128M
+			OPT_MEMORY_SIZE=256M
 		fi
 		continue
 	fi
