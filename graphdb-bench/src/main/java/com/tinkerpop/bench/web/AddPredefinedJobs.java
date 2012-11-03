@@ -332,7 +332,7 @@ public class AddPredefinedJobs extends HttpServlet {
 			String warmupDataset = dataset;
 			if (!fields[0].equals("1k")) {
 				warmupDataset = "kron_8k";
-				for (int i = 2; i < fields.length; i++) {
+				for (int i = 1; i < fields.length; i++) {
 					warmupDataset += "_" + fields[i];
 				}
 				if (partial) warmupDataset += "-a";
