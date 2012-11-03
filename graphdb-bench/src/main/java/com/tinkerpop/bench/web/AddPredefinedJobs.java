@@ -92,6 +92,26 @@ public class AddPredefinedJobs extends HttpServlet {
 			return r;
 		}
 		
+		if (dataset.startsWith("kron_") && dataset.endsWith(".fgf")) {
+			
+			//
+			// Kronecker graphs
+			//
+			
+			String d = dataset.substring("kron_".length(), dataset.length() - ".fgf".length());
+			if (d.endsWith("-a") || d.endsWith("-b")) {
+				d = d.substring(0, d.length() - 2);
+			}
+			String[] fields = d.split("_");
+			
+			String r = "b" + fields[0];
+			for (int i = 1; i < fields.length; i++) {
+				r += "_" + fields[i];
+			}
+			
+			return r;
+		}
+		
 		if (dataset.startsWith("amazon") && dataset.endsWith(".fgf")) {
 			
 			//
@@ -166,6 +186,35 @@ public class AddPredefinedJobs extends HttpServlet {
 			
 			return r;
 		}
+		
+		if (instanceName.startsWith("k") && instanceName.length() > 1 && Character.isDigit(instanceName.charAt(1))) {
+			
+			//
+			// Kronecker graphs
+			//
+			
+			String d = instanceName.substring("k".length(), instanceName.length());
+			String[] fields = d.split("_");
+			
+			
+			// Start with the number of vertices
+			
+			String r = "kron_" + fields[0];
+			
+			
+			// Copy the other fields
+			
+			for (int i = 1; i < fields.length; i++) {
+				r += "_" + fields[i];
+			}
+			
+			
+			// Finish
+			
+			r += "-a.fgf";
+			
+			return r;
+		}
 	
 		if (instanceName.startsWith("amazon")) {
 			return instanceName + "-a.fgf";
@@ -214,6 +263,75 @@ public class AddPredefinedJobs extends HttpServlet {
 			String warmupDataset = dataset;
 			if (!fields[0].equals("1k")) {
 				warmupDataset = "barabasi_10k_50k";
+				for (int i = 2; i < fields.length; i++) {
+					warmupDataset += "_" + fields[i];
+				}
+				if (partial) warmupDataset += "-a";
+				warmupDataset += ".fgf";
+			}
+			
+			
+			// Create the jobs
+			
+			if (dataset.equals(warmupDataset)) {
+				JobList.getInstance().addJob(new Job("--" + dbEngine, "--database", instanceName,
+						"--ingest", dataset));
+			}
+			else {
+				JobList.getInstance().addJob(new Job("--" + dbEngine, "--database", instanceName,
+						"--ingest", dataset, "--warmup-ingest", warmupDataset));
+			}
+			
+			if (partial) {
+				
+				assert dataset.endsWith("-a.fgf");
+				assert warmupDataset.endsWith("-a.fgf");
+				
+				String dataset_b = dataset.substring(0, dataset.length() - "-a.fgf".length()) + "-b.fgf";
+				String warmupDataset_b = warmupDataset.substring(0, warmupDataset.length() - "-a.fgf".length()) + "-b.fgf";
+				
+				if (dataset_b.equals(warmupDataset_b)) {
+					JobList.getInstance().addJob(new Job("--" + dbEngine, "--database", instanceName,
+							"--incr-ingest", dataset_b));
+				}
+				else {
+					JobList.getInstance().addJob(new Job("--" + dbEngine, "--database", instanceName,
+							"--incr-ingest", dataset_b, "--warmup-ingest", warmupDataset_b));
+				}
+			}
+			
+			JobList.getInstance().addJob(new Job("--" + dbEngine, "--database", instanceName,
+					"--create-index"));
+			
+			return;
+		}
+		
+		if (dataset.startsWith("kron_") && dataset.endsWith(".fgf")) {
+		
+			//
+			// Kronecker graphs
+			//
+			
+			// Parse the dataset name 
+			
+			String d = dataset.substring("kron_".length(), dataset.length() - ".fgf".length());
+			
+			boolean partial = false;
+			if (d.endsWith("-a")) {
+				partial = true;
+				d = d.substring(0, d.length() - 2);
+			}
+			if (d.endsWith("-b")) {
+				throw new IllegalArgumentException("The dataset is not bulkloadable -- please use the \"-a\", not the \"-b\" part");
+			}
+			String[] fields = d.split("_");
+			
+			
+			// Get the warmup dataset name
+			
+			String warmupDataset = dataset;
+			if (!fields[0].equals("1k")) {
+				warmupDataset = "kron_8k";
 				for (int i = 2; i < fields.length; i++) {
 					warmupDataset += "_" + fields[i];
 				}
