@@ -28,11 +28,20 @@ public class OperationGetManyEdgePropertySets extends Operation {
 	
 	@Override
 	protected void onExecute() throws Exception {
-		for (int i = 0; i < opCount; i++)
-			for (String property_key : propertyKeys)
-				edgeSamples[i].getProperty(property_key);
+		int num = 0;
+		
+		for (int i = 0; i < opCount; i++) {
+			for (String property_key : propertyKeys) {
+				try {
+					if (edgeSamples[i].getProperty(property_key) != null) num++;
+				}
+				catch (Exception e) {
+					// Nothing to do
+				}
+			}
+		}
 			
-		setResult(opCount);
+		setResult(opCount + ":" + num);
 	}
 	
 	
@@ -47,6 +56,7 @@ public class OperationGetManyEdgePropertySets extends Operation {
 		@Override
 		protected void onExecute() throws Exception {
 			
+			int num = 0;
 			Graph graph = ((DexGraph) getGraph()).getRawGraph();
 			
 			for (Edge edge : edgeSamples) {
@@ -71,7 +81,6 @@ public class OperationGetManyEdgePropertySets extends Operation {
 		
 			        com.sparsity.dex.gdb.Value v = new com.sparsity.dex.gdb.Value();
 			        graph.getAttribute(oid, attr, v);
-			        @SuppressWarnings("unused")
 					Object r = null;
 			        if (!v.isNull()) {
 			            switch (v.getDataType()) {
@@ -91,10 +100,11 @@ public class OperationGetManyEdgePropertySets extends Operation {
 			                    throw new UnsupportedOperationException("Unsupported attribute type: " + v.getDataType());
 			            }
 			        }
+			        if (r != null) num++;
 				}
 			}
 			
-			setResult(opCount);
+			setResult(opCount + ":" + num);
 		}
 	}
 	
@@ -109,13 +119,20 @@ public class OperationGetManyEdgePropertySets extends Operation {
 		 */
 		@Override
 		protected void onExecute() throws Exception {
+			int num = 0;
 			for (Edge edge : edgeSamples) {
 				for (String property_key : propertyKeys) {
-					@SuppressWarnings("unused")
-					Object r = ((Neo4jEdge) edge).getRawEdge().getProperty(property_key);
+					try {
+						Object r = ((Neo4jEdge) edge).getRawEdge().getProperty(property_key);
+				        if (r != null) num++;
+					}
+					catch (org.neo4j.graphdb.NotFoundException e) {
+						// Nothing to do
+					}
+
 				}
 			}
-			setResult(opCount);
+			setResult(opCount + ":" + num);
 		}
 	}
 }
