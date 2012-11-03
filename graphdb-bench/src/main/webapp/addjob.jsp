@@ -117,6 +117,25 @@
 			}
 			
 			
+			// Edge property for conditional traversal
+			
+			b_edge_cond_prop = false;
+			for (i = 0; i < checked.length; i++) {
+				if (["get"].indexOf(checked[i]) >= 0) b_edge_cond_prop = true;
+				if (["get-label"].indexOf(checked[i]) >= 0) b_edge_cond_prop = true;
+				if (["get-k"].indexOf(checked[i]) >= 0) b_edge_cond_prop = true;
+				if (["get-k-label"].indexOf(checked[i]) >= 0) b_edge_cond_prop = true;
+			}
+
+			if (b_edge_cond_prop) {
+				b_workloads = true;
+				document.getElementById("conf_edge_cond_prop").style.display = "block";
+			}
+			else {
+				document.getElementById("conf_edge_cond_prop").style.display = "none";
+			}
+			
+			
 			// Ingest
 			
 			b_ingest = false;
@@ -434,6 +453,16 @@
 					<span class="small">A comma-separated list</span>
 				</label>
 				<input type="text" name="edge_property_keys" id="edge_property_keys" value="<%= defaultEdgeProperties %>" />
+
+				<div class="clear"></div>
+			</div>
+			
+			<div id="conf_edge_cond_prop">
+				<label>Edge Property Key for Conditional Traversal
+					<span class="small">Use "none" to disable</span>
+				</label>
+				<input type="text" name="edge_cond_prop" id="edge_cond_prop"
+					value="<%= BenchmarkMicro.DEFAULT_EDGE_CONDITIONAL_PROPERTY_KEY %>" />
 
 				<div class="clear"></div>
 			</div>

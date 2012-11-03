@@ -241,7 +241,8 @@ public class Job implements Comparable<Job> {
 		String s_vertexPropertyKeys = WebUtils.getStringParameter(request, "vertex_property_keys");
 		String s_edgePropertyKeys = WebUtils.getStringParameter(request, "edge_property_keys");
 		String s_propertyKeys = combinePropertyKeys(s_vertexPropertyKeys, s_edgePropertyKeys);
-		
+		String s_edgeCondProp = WebUtils.getStringParameter(request, "edge_cond_prop");
+				
 		String s_edgeLabels = WebUtils.getStringParameter(request, "edge_labels");
 		String s_edgeLabelsNormalized = combinePropertyKeys(s_edgeLabels, null);
 
@@ -381,6 +382,15 @@ public class Job implements Comparable<Job> {
 				if (!s_kHops.equals("" + BenchmarkMicro.DEFAULT_K_HOPS)) {
 					arguments.add("--k-hops"); arguments.add(s_kHops);
 				}
+			}
+		}
+		
+		if (s_edgeCondProp != null
+				&& !BenchmarkMicro.DEFAULT_EDGE_CONDITIONAL_PROPERTY_KEY.equals(s_edgeCondProp)) {
+			if (workloads.containsKey("get") || workloads.containsKey("get-k")
+					|| workloads.containsKey("get-label") || workloads.containsKey("get-k-label")) {
+				arguments.add("--edge-cond-prop");
+				arguments.add(s_edgeCondProp);
 			}
 		}
 		

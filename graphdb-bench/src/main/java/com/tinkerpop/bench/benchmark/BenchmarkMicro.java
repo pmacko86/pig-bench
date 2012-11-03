@@ -80,7 +80,8 @@ public class BenchmarkMicro extends Benchmark {
 	public static final int DEFAULT_BARABASI_M = 5;
 	public static final String DEFAULT_EDGE_LABELS = "friend";
 	public static final String DEFAULT_PROPERTY_KEYS = "name,age,:time";
-	
+	public static final String DEFAULT_EDGE_CONDITIONAL_PROPERTY_KEY = "time";
+
 	/// External defaults
 	public static final String DEFAULT_JVM_HEAP_SIZE = "1G";
 
@@ -142,6 +143,7 @@ public class BenchmarkMicro extends Benchmark {
 		}
 		System.err.println("");
 		System.err.println("Benchmark and workload options:");
+		System.err.println("  --edge-cond-prop NAME   Set edge property for conditional traversal");
 		System.err.println("  --force-blueprints      Use Blueprints even if the native API can be used");
 		System.err.println("  --ingest-as-undirected  Ingest a graph as undirected by doubling-up edges");
 		System.err.println("  --k-hops K              Set the number of k-hops");
@@ -260,6 +262,7 @@ public class BenchmarkMicro extends Benchmark {
 		
 		// Benchmark and workload modifiers
 		
+		parser.accepts("edge-cond-prop").withRequiredArg().ofType(String.class);
 		parser.accepts("force-blueprints");
 		parser.accepts("ingest-as-undirected");
 		parser.accepts("k-hops").withRequiredArg().ofType(String.class);
@@ -434,6 +437,11 @@ public class BenchmarkMicro extends Benchmark {
 		
 		int warmupOpCount = opCount;
 		if (options.has("warmup-op-count")) warmupOpCount = (Integer) options.valueOf("warmup-op-count");
+		
+		String edgePropertyForConditionalTraversal = DEFAULT_EDGE_CONDITIONAL_PROPERTY_KEY;
+		if (options.has("edge-cond-prop")) {
+			edgePropertyForConditionalTraversal = (String) options.valueOf("edge-cond-prop");
+		}
 		
 		int[] kHops;
 		String kHopsStr;
@@ -997,11 +1005,11 @@ public class BenchmarkMicro extends Benchmark {
 		
 		Benchmark warmupBenchmark = new BenchmarkMicro(
 				warmupGraphmlFiles, graphGenerators, options, warmupOpCount, kHops,
-				ingestAsUndirected);
+				ingestAsUndirected, edgePropertyForConditionalTraversal);
 		
 		Benchmark benchmark = new BenchmarkMicro(
 				graphmlFiles, graphGenerators, options, opCount, kHops,
-				ingestAsUndirected);
+				ingestAsUndirected, edgePropertyForConditionalTraversal);
 		
 		
 		/*
@@ -1423,7 +1431,7 @@ public class BenchmarkMicro extends Benchmark {
 	
 	private int opCount = DEFAULT_OP_COUNT;
 	private String ADD_PROPERTY_KEY = "_property";				// XXX Should not be hard-coded
-	private String EDGE_CONDITIONAL_PROPERTY_KEY = "time";		// XXX Should not be hard-coded
+	private String edgePropertyForConditionalTraversal;
 	private int[] kHops;
 	private boolean ingestAsUndirected;
 
@@ -1433,13 +1441,15 @@ public class BenchmarkMicro extends Benchmark {
 
 	public BenchmarkMicro(String[] graphmlFilenames,
 			GraphGenerator[] graphGenerators, OptionSet options,
-			int opCount, int[] kHops, boolean ingestAsUndirected) {
+			int opCount, int[] kHops, boolean ingestAsUndirected,
+			String edgePropertyForConditionalTraversal) {
 		this.graphmlFilenames = graphmlFilenames;
 		this.graphGenerators = graphGenerators;
 		this.options = options;
 		this.opCount = opCount;
 		this.kHops = kHops;
 		this.ingestAsUndirected = ingestAsUndirected;
+		this.edgePropertyForConditionalTraversal = edgePropertyForConditionalTraversal;
 	}
 	
 	private List<String> parseEdgeLabels(String argument, String defaults) {
@@ -1645,9 +1655,11 @@ public class BenchmarkMicro extends Benchmark {
 					operationFactories.add(new OperationFactoryRandomVertex(
 							OperationGetAllNeighbors.class, opCount,
 							new Object[] { d }, OutputUtils.toTag(d)));
+					
+					if (edgePropertyForConditionalTraversal.equalsIgnoreCase("none")) continue;
 					operationFactories.add(new OperationFactoryRandomVertex(
 							OperationGetNeighborEdgeConditional.class, opCount,
-							new Object[] { d, EDGE_CONDITIONAL_PROPERTY_KEY },
+							new Object[] { d, edgePropertyForConditionalTraversal },
 							OutputUtils.toTag(d)));
 				}
 			}
@@ -1664,9 +1676,11 @@ public class BenchmarkMicro extends Benchmark {
 						operationFactories.add(new OperationFactoryRandomVertex(
 								OperationGetAllNeighbors.class, opCount,
 								new Object[] { d, label }, OutputUtils.toTag(d) + "-withlabel"));
+
+						if (edgePropertyForConditionalTraversal.equalsIgnoreCase("none")) continue;
 						operationFactories.add(new OperationFactoryRandomVertex(
 								OperationGetNeighborEdgeConditional.class, opCount,
-								new Object[] { d, EDGE_CONDITIONAL_PROPERTY_KEY, label },
+								new Object[] { d, edgePropertyForConditionalTraversal, label },
 								OutputUtils.toTag(d) + "-withlabel"));
 					}
 				}
@@ -1682,9 +1696,11 @@ public class BenchmarkMicro extends Benchmark {
 						operationFactories.add(new OperationFactoryRandomVertex(
 								OperationGetKHopNeighbors.class, opCount,
 								new Object[] { k, d }, OutputUtils.toTag(d) + "-" + k));
+						
+						if (edgePropertyForConditionalTraversal.equalsIgnoreCase("none")) continue;
 						operationFactories.add(new OperationFactoryRandomVertex(
 								OperationGetKHopNeighborsEdgeConditional.class, opCount,
-								new Object[] { k, d, EDGE_CONDITIONAL_PROPERTY_KEY },
+								new Object[] { k, d, edgePropertyForConditionalTraversal },
 								OutputUtils.toTag(d) + "-" + k));
 					}
 				}
@@ -1701,9 +1717,11 @@ public class BenchmarkMicro extends Benchmark {
 							operationFactories.add(new OperationFactoryRandomVertex(
 									OperationGetKHopNeighbors.class, opCount,
 									new Object[] { k, d, label }, OutputUtils.toTag(d) + "-withlabel-" + k));
+							
+							if (edgePropertyForConditionalTraversal.equalsIgnoreCase("none")) continue;
 							operationFactories.add(new OperationFactoryRandomVertex(
 									OperationGetKHopNeighborsEdgeConditional.class, opCount,
-									new Object[] { k, d, EDGE_CONDITIONAL_PROPERTY_KEY, label },
+									new Object[] { k, d, edgePropertyForConditionalTraversal, label },
 									OutputUtils.toTag(d) + "-withlabel-" + k));
 						}
 					}
