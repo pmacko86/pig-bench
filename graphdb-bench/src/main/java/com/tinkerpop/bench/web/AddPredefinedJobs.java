@@ -104,7 +104,7 @@ public class AddPredefinedJobs extends HttpServlet {
 			}
 			String[] fields = d.split("_");
 			
-			String r = "b" + fields[0];
+			String r = "k" + fields[0];
 			for (int i = 1; i < fields.length; i++) {
 				r += "_" + fields[i];
 			}
