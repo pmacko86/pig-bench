@@ -63,7 +63,7 @@
 		var y = d3.scale.<%= chartProperties.yscale %>()
 				  .domain([<%= "log".equals(chartProperties.yscale)
 					  ? "0.9 * d3.min(data, function(d) { "
-						+ "  return d.mean + d.stdev;"
+						+ "  return d.mean - d.stdev < 0 ? 0 : d.mean - d.stdev;"
 					  	+ "})"
 					  : "0" %>, 
 				  	      1.1 * d3.max(data, function(d) { return d.mean + d.stdev; })])
