@@ -68,6 +68,10 @@ public class ChartProperties {
 	
 	public String group_by = null;
 	public String group_label_function = null;
+	
+	public String subgroup_by = null;
+	public String subgroup_label_function = null;
+	
 	public String category_label_function = null;
 	
 	

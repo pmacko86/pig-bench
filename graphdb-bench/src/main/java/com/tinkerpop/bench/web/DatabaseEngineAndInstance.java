@@ -139,4 +139,72 @@ public class DatabaseEngineAndInstance implements Comparable<DatabaseEngineAndIn
 	public String toString() {
 		return engine.toString() + ", " + getInstanceSafe("<default>");
 	}
+	
+	
+	/**
+	 * Comparator -- first by engine, then by instance
+	 */
+	public static class ByEngine implements Comparator<DatabaseEngineAndInstance> {
+
+		/**
+		 * Create an instance of the comparator
+		 */
+		public ByEngine() {
+			//
+		}
+		
+		/**
+		 * Compare two instances of DatabaseEngineAndInstance
+		 * 
+		 * @param o1 the first object
+		 * @param o2 the second object
+		 * @return the result of the comparison
+		 */
+		@Override
+		public int compare(DatabaseEngineAndInstance o1, DatabaseEngineAndInstance o2) {
+			
+			int r = o1.engine.compareTo(o2.engine);
+			if (r != 0) return r;
+			
+			if (o1.instance == null && o2.instance != null) return -1;
+			if (o1.instance != null && o2.instance == null) return  1;
+			if (o1.instance == null && o2.instance == null) return  0;
+			
+			return instanceComparator.compare(o1.instance, o2.instance);
+		}
+	}
+	
+	
+	/**
+	 * Comparator -- first by instance, then by engine
+	 */
+	public static class ByInstance implements Comparator<DatabaseEngineAndInstance> {
+
+		/**
+		 * Create an instance of the comparator
+		 */
+		public ByInstance() {
+			//
+		}
+		
+		/**
+		 * Compare two instances of DatabaseEngineAndInstance
+		 * 
+		 * @param o1 the first object
+		 * @param o2 the second object
+		 * @return the result of the comparison
+		 */
+		@Override
+		public int compare(DatabaseEngineAndInstance o1, DatabaseEngineAndInstance o2) {
+			
+			if (o1.instance == null && o2.instance != null) return -1;
+			if (o1.instance != null && o2.instance == null) return  1;
+			if (o1.instance == null && o2.instance == null) return  0;
+			
+			int r = instanceComparator.compare(o1.instance, o2.instance);
+			if (r != 0) return r;
+			
+			return o1.engine.compareTo(o2.engine);
+		}
+	}
 }
