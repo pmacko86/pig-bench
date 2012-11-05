@@ -463,12 +463,13 @@
 		
 	<div class="basic_form">
 		<%		
+			TreeSet<DatabaseEngineAndInstance> selectedDatabaseInstances_sortedByInstance
+				= new TreeSet<DatabaseEngineAndInstance>(new DatabaseEngineAndInstance.ByInstance());
+			selectedDatabaseInstances_sortedByInstance.addAll(selectedDatabaseInstances);
+		
 			if (selectedOperations.size() > 0) {
 				
 				TreeMap<String, Collection<Job>> operationsToJobs = new TreeMap<String, Collection<Job>>();
-				TreeSet<DatabaseEngineAndInstance> selectedDatabaseInstances_sortedByInstance
-					= new TreeSet<DatabaseEngineAndInstance>(new DatabaseEngineAndInstance.ByInstance());
-				selectedDatabaseInstances_sortedByInstance.addAll(selectedDatabaseInstances);
 				for (String operationName : selectedOperations) {
 					LinkedList<Job> currentJobs = new LinkedList<Job>();
 					for (DatabaseEngineAndInstance p : selectedDatabaseInstances_sortedByInstance) {
@@ -741,7 +742,7 @@
 					LinkedList<Job> currentJobs = new LinkedList<Job>();
 					boolean sameDbInstance = true;
 					Job firstJob = null;
-					for (DatabaseEngineAndInstance p : selectedDatabaseInstances) {
+					for (DatabaseEngineAndInstance p : selectedDatabaseInstances_sortedByInstance) {
 						Collection<Job> jobs = selectedDatabaseInstanceAndOperationToSelectedJobsMap.get(
 								new Pair<DatabaseEngineAndInstance, String>(p, operationName));
 						currentJobs.addAll(jobs);
@@ -777,7 +778,11 @@
 					if (logScale_barGraphs) chartProperties.yscale = "log";
 					chartProperties.group_by = "operation";
 					chartProperties.group_label_function = "return d.operation.replace(/^Operation/, '')";
-					chartProperties.category_label_function = "return d.dbengine" + (sameDbInstance ? "" : " + ', ' + d.dbinstance");
+					if (!sameDbInstance) {
+						chartProperties.subgroup_by = "dbinstance";
+						chartProperties.subgroup_label_function = "return d.dbinstance";
+					}
+					chartProperties.category_label_function = "return d.dbengine";
 					
 					%>
 						<div class="chart_outer"><div class="chart chart_<%= operationName %>">

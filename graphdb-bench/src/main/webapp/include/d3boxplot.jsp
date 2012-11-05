@@ -377,6 +377,7 @@
 						
 							var __last_subgroup_column = "";
 							var __last_subgroup_length = -1;
+							var __last_subgroup_label = "";
 							var __last_subgroup_column_major = "";
 							
 							data.forEach(function(d, i) {
@@ -397,7 +398,9 @@
 									__last_subgroup_length = 0;
 									__last_subgroup_column_major = d.<%= chartProperties.group_by %>;
 								}
-								__last_subgroup_length++;
+								if (__last_subgroup_label != d.label) __last_subgroup_length++;
+								
+								__last_subgroup_label = d.label;
 							});
 							
 							if (__last_subgroup_length > 0) {
@@ -418,6 +421,7 @@
 								var p = subgroup_offsets[i] + 0.5 * subgroup_lengths[i] - 0.5;
 								var t = subgroup_label_function(data[subgroup_offsets[i]], subgroup_offsets[i]);
 								if (t.length > __longest_subgroup_name.length) __longest_subgroup_name = t;
+								//console.log("" + p + " --> " + t);
 								
 								chart.append("text")
 								 .attr("x", 0)

@@ -250,6 +250,7 @@
 							var p = subgroup_offsets[i] + 0.5 * subgroup_lengths[i] - 0.5;
 							var t = subgroup_label_function(data[subgroup_offsets[i]], subgroup_offsets[i]);
 							if (t.length > __longest_subgroup_name.length) __longest_subgroup_name = t;
+							//console.log("" + p + " ==> " + t);
 							
 							chart.append("text")
 							 .attr("x", 0)
