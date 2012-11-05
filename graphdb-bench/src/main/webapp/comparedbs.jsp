@@ -8,6 +8,7 @@
 <%@ page import="com.tinkerpop.bench.log.SummaryLogReader"%>
 <%@ page import="com.tinkerpop.bench.util.*"%>
 <%@ page import="com.tinkerpop.bench.web.*"%>
+<%@ page import="com.tinkerpop.bench.web.ChartProperties.LinearFunction"%>
 <%@ page import="java.io.*"%>
 <%@ page import="java.text.SimpleDateFormat"%>
 <%@ page import="java.util.*"%>
@@ -500,23 +501,62 @@
 					}
 				}
 				
-				List<Triple<String, DatabaseEngineAndInstance, Double[]>> linearFitData
-					= new ArrayList<Triple<String, DatabaseEngineAndInstance, Double[]>>();
-				List<Triple<String, DatabaseEngineAndInstance, Double[]>> predictionData
-					= new ArrayList<Triple<String, DatabaseEngineAndInstance, Double[]>>();
+				List<Triple<String, DatabaseEngineAndInstance, Collection<LinearFunction>>> linearFitData
+					= new ArrayList<Triple<String, DatabaseEngineAndInstance, Collection<LinearFunction>>>();
+				List<Triple<String, DatabaseEngineAndInstance, Collection<LinearFunction>>> predictionData
+					= new ArrayList<Triple<String, DatabaseEngineAndInstance, Collection<LinearFunction>>>();
 				
 				if (modelAnalysisLinearFits || modelAnalysisPredictions) {
 					for (String operationName : selectedOperations) {
 						for (Job j : operationsToJobs.get(operationName)) {
 							DatabaseEngineAndInstance dbei = j.getDatabaseEngineAndInstance();
 							ModelAnalysis m = ModelAnalysis.getInstance(dbei);
+							
+							Collection<LinearFunction> cf = null;
+							Collection<LinearFunction> cm = null;
 							Double[] p = null;
-							
-							p = m.getLinearFit(operationName);
-							linearFitData.add(new Triple<String, DatabaseEngineAndInstance, Double[]>(operationName, dbei, p));
-							
-							p = m.getPrediction(operationName);
-							predictionData.add(new Triple<String, DatabaseEngineAndInstance, Double[]>(operationName, dbei, p));
+													
+							if (operationName.equals("OperationGetShortestPath")) {
+								for (int k = 0; k < ModelAnalysis.SP_MAX_DEPTH; k++) {
+									Double[] bounds = m.SP_x_bounds[k];
+									if (bounds == null) {
+										continue;
+									}
+									
+									p = m.SP[k];
+									if (p != null) {
+										if (cf == null) cf = new ArrayList<LinearFunction>();
+										cf.add(new LinearFunction(p, bounds[0], bounds[1]));
+									}
+									
+									p = m.SP_prediction[k];
+									if (p != null) {
+										if (cm == null) cm = new ArrayList<LinearFunction>();
+										cm.add(new LinearFunction(p, bounds[0], bounds[1]));
+									}
+								}
+								linearFitData.add(new Triple<String, DatabaseEngineAndInstance, Collection<LinearFunction>>
+									(operationName, dbei, cf));
+								predictionData.add(new Triple<String, DatabaseEngineAndInstance, Collection<LinearFunction>>
+									(operationName, dbei, cm));
+							}
+							else {
+								p = m.getLinearFit(operationName);
+								if (p != null) {
+									cf = new ArrayList<LinearFunction>();
+									cf.add(new LinearFunction(p));
+								}
+								linearFitData.add(new Triple<String, DatabaseEngineAndInstance, Collection<LinearFunction>>
+									(operationName, dbei, cf));
+								
+								p = m.getPrediction(operationName);
+								if (p != null) {
+									cm = new ArrayList<LinearFunction>();
+									cm.add(new LinearFunction(p));
+								}
+								predictionData.add(new Triple<String, DatabaseEngineAndInstance, Collection<LinearFunction>>
+									(operationName, dbei, cm));
+							}
 						}
 					}
 				}
@@ -638,14 +678,14 @@
 					
 					chartProperties.linear_fits.clear();
 					if (modelAnalysisLinearFits) {
-						for (Triple<String, DatabaseEngineAndInstance, Double[]> p : linearFitData) {
+						for (Triple<String, DatabaseEngineAndInstance, Collection<LinearFunction>> p : linearFitData) {
 							chartProperties.linear_fits.add(p.getThird());
 						}
 					}
 					
 					chartProperties.predictions.clear();
 					if (modelAnalysisPredictions) {
-						for (Triple<String, DatabaseEngineAndInstance, Double[]> p : predictionData) {
+						for (Triple<String, DatabaseEngineAndInstance, Collection<LinearFunction>> p : predictionData) {
 							chartProperties.predictions.add(p.getThird());
 						}
 					}

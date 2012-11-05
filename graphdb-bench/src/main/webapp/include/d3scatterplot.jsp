@@ -1,4 +1,6 @@
 <%@ page import="com.tinkerpop.bench.web.ChartProperties"%>
+<%@ page import="com.tinkerpop.bench.web.ChartProperties.LinearFunction"%>
+<%@ page import="java.util.*"%>
 
 <script language="JavaScript">
 	<!-- Begin
@@ -357,12 +359,14 @@
 			// Linear fits
 			//
 			
-			var add_linear_function = function(f0, f1, series_index, dashed) {
+			var add_linear_function = function(f0, f1, xmin, xmax, series_index, dashed) {
 				
 				var x0 = d3.min(x.domain());
+				if (xmin != null) { if (x0 < xmin) x0 = xmin; }
 				var y0 = f0 + f1 * x0;
 				
 				var x1 = d3.max(x.domain());
+				if (xmax != null) { if (x1 > xmax) x1 = xmax; }
 				var y1 = f0 + f1 * x1;
 				
 				var ymin = d3.min(y.domain());
@@ -380,6 +384,8 @@
 				if (y1 < ymin && f1 != 0) {
 					x1 = (ymin - f0) / f1;
 				}
+				
+				if (x1 <= x0) return; 
 				
 				var f;
 				if (data_yscale == "linear") {
@@ -416,26 +422,36 @@
 			<%
 				if (!chartProperties.linear_fits.isEmpty()) {
 					int fit_index = -1;
-					for (Double[] fit : chartProperties.linear_fits) {
+					for (Collection<LinearFunction> fits : chartProperties.linear_fits) {
 						fit_index++;
-						if (fit == null) continue;
-						%>
-							add_linear_function(<%= fit[0].doubleValue() %>,
-								<%= fit.length >= 2 ? fit[1].doubleValue() : 0 %>,
-								<%= fit_index %>, false);
-						<%
+						if (fits == null) continue;
+						for (LinearFunction fit : fits) {
+							if (fit == null) continue;
+							%>
+								add_linear_function(<%= fit.coefficients[0].doubleValue() %>,
+									<%= fit.coefficients.length >= 2 ? fit.coefficients[1].doubleValue() : 0 %>,
+									<%= fit.xmin == null ? "null" : "" + fit.xmin %>,
+									<%= fit.xmax == null ? "null" : "" + fit.xmax %>,
+									<%= fit_index %>, false);
+							<%
+						}
 					}
 				} 
 				if (!chartProperties.predictions.isEmpty()) {
 					int fit_index = -1;
-					for (Double[] fit : chartProperties.predictions) {
+					for (Collection<LinearFunction> fits : chartProperties.predictions) {
 						fit_index++;
-						if (fit == null) continue;
-						%>
-							add_linear_function(<%= fit[0].doubleValue() %>,
-								<%= fit.length >= 2 ? fit[1].doubleValue() : 0 %>,
-								<%= fit_index %>, true);
-						<%
+						if (fits == null) continue;
+						for (LinearFunction fit : fits) {
+							if (fit == null) continue;
+							%>
+								add_linear_function(<%= fit.coefficients[0].doubleValue() %>,
+									<%= fit.coefficients.length >= 2 ? fit.coefficients[1].doubleValue() : 0 %>,
+									<%= fit.xmin == null ? "null" : "" + fit.xmin %>,
+									<%= fit.xmax == null ? "null" : "" + fit.xmax %>,
+									<%= fit_index %>, true);
+							<%
+						}
 					}
 				} 
 			%>

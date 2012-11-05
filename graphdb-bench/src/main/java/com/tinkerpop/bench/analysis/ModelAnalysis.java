@@ -25,6 +25,7 @@ import com.tinkerpop.bench.operation.operations.OperationGetManyEdges;
 import com.tinkerpop.bench.operation.operations.OperationGetManyVertexProperties;
 import com.tinkerpop.bench.operation.operations.OperationGetManyVertices;
 import com.tinkerpop.bench.operation.operations.OperationGetNeighborEdgeConditional;
+import com.tinkerpop.bench.operation.operations.OperationGetShortestPath;
 import com.tinkerpop.bench.operation.operations.OperationLocalClusteringCoefficient;
 import com.tinkerpop.bench.operation.operations.OperationSetManyEdgeProperties;
 import com.tinkerpop.bench.operation.operations.OperationSetManyVertexProperties;
@@ -69,6 +70,9 @@ public class ModelAnalysis {
 	
 	/// The map of operations to finished jobs
 	private HashMap<String, SortedSet<Job>> operationToJobs;
+	
+	/// The map of x bounds
+	private HashMap<String, Double[]> xBounds;
 	
 	
 	/*
@@ -120,6 +124,12 @@ public class ModelAnalysis {
 	/// Local clustering coefficient
 	public Double[] CC;
 	public Double[] CC_prediction;
+	
+	/// Shortest path
+	public static final int SP_MAX_DEPTH = 10;
+	public Double[][] SP            = new Double[SP_MAX_DEPTH][];
+	public Double[][] SP_prediction = new Double[SP_MAX_DEPTH][];
+	public Double[][] SP_x_bounds   = new Double[SP_MAX_DEPTH][];
 	
 	
 	/**
@@ -218,6 +228,13 @@ public class ModelAnalysis {
 				ojs.add(job);
 			}
 		}
+		
+		
+		/*
+		 * More initialization
+		 */
+		
+		xBounds = new HashMap<String, Double[]>();
 		
 		
 		/*
@@ -323,6 +340,20 @@ public class ModelAnalysis {
 		CC = getOperationRuntimeAsLinearFunction(OperationLocalClusteringCoefficient.class);
 		CC_prediction = K_prediction[translateDirection(Direction.BOTH)][2-1];
 		
+		for (int k = 0; k < SP_MAX_DEPTH; k++) {
+			SP[k] = getOperationRuntimeAsLinearFunctionWithResultFilter(OperationGetShortestPath.class, null, k);
+			SP_x_bounds[k] = getXBounds(OperationGetShortestPath.class, null, k);
+			assert SP[k] == null || SP_x_bounds[k] != null;
+			
+			int index = translateDirection(Direction.BOTH);
+			if (k == 0) {
+				SP_prediction[k] = MathUtils.ifNeitherIsNull(Rv, (double) 0);
+			}
+			else {
+				SP_prediction[k] = MathUtils.multiplyElementwise(N[index], (double) k);
+			}
+		}
+		
 		
 		/*
 		 * Finish
@@ -380,14 +411,26 @@ public class ModelAnalysis {
 		
 		boolean withlabel = false;
 		Direction direction = null;
-		int digit = -1;
+		int number = -1;
 		
-		for (String t : tags) {			
+		for (String t : tags) {		
+			if (t.equals("")) continue;
+			
 			if (t.equals("withlabel")) withlabel = true;
 			if (t.equals("out"      )) direction = Direction.OUT;
 			if (t.equals("in"       )) direction = Direction.IN;
 			if (t.equals("both"     )) direction = Direction.BOTH;
-			if (t.length() == 1 && Character.isDigit(t.charAt(0))) digit = Integer.parseInt(t);
+			
+			boolean isNumeric = true;
+			for (int i = 0; i < t.length(); i++) {
+				if (!Character.isDigit(t.charAt(i))) {
+					isNumeric = false;
+					break;
+				}
+			}
+			if (isNumeric) {
+				number = Integer.parseInt(t);
+			}
 		}
 		
 		
@@ -416,25 +459,30 @@ public class ModelAnalysis {
 		if (OperationGetKHopNeighbors.class.getSimpleName().equals(operationName)) {
 			if (direction == null) throw new IllegalArgumentException("No direction");
 			if (withlabel) {
-				return prediction ? Kl_prediction[translateDirection(direction)][digit-1] : Kl[translateDirection(direction)][digit-1];
+				return prediction ? Kl_prediction[translateDirection(direction)][number-1] : Kl[translateDirection(direction)][number-1];
 			}
 			else {
-				return prediction ? K_prediction[translateDirection(direction)][digit-1] : K[translateDirection(direction)][digit-1];
+				return prediction ? K_prediction[translateDirection(direction)][number-1] : K[translateDirection(direction)][number-1];
 			}
 		}
 		
 		if (OperationGetKHopNeighborsEdgeConditional.class.getSimpleName().equals(operationName)) {
 			if (direction == null) throw new IllegalArgumentException("No direction");
 			if (withlabel) {
-				return prediction ? Kp_prediction[translateDirection(direction)][digit-1] : Kp[translateDirection(direction)][digit-1];
+				return prediction ? Kp_prediction[translateDirection(direction)][number-1] : Kp[translateDirection(direction)][number-1];
 			}
 			else {
-				return prediction ? Kp_prediction[translateDirection(direction)][digit-1] : Kp[translateDirection(direction)][digit-1];
+				return prediction ? Kp_prediction[translateDirection(direction)][number-1] : Kp[translateDirection(direction)][number-1];
 			}
 		}
 		
 		if (OperationLocalClusteringCoefficient.class.getSimpleName().equals(operationName)) {
 			return prediction ? CC_prediction : CC;
+		}
+		
+		if (OperationGetShortestPath.class.getSimpleName().equals(operationName)) {
+			if (number < 0) throw new IllegalArgumentException("The path length needs to be specified");
+			return prediction ? SP_prediction[number] : SP[number];
 		}
 		
 		return null;
@@ -490,7 +538,7 @@ public class ModelAnalysis {
 	 */
 	public void printAnalysis() {
 		
-		int CW = 30;
+		int CW = 32;
 		
 		ConsoleUtils.sectionHeader("Model Analysis");
 		
@@ -573,6 +621,11 @@ public class ModelAnalysis {
 		System.out.println();
 		
 		print(CW, "CC", "K[k=2]b", CC, CC_prediction);
+		System.out.println();
+		
+		for (int k = 1; k < SP_MAX_DEPTH; k++) {
+			print(CW, "SP[k="+k+"]", "K[k="+k+"]b", SP[k], SP_prediction[k]);
+		}
 	}
 	
 	
@@ -693,11 +746,24 @@ public class ModelAnalysis {
 	 * Get a runtime of a job as a linear function of one of the operation results
 	 * 
 	 * @param operation the operation type
-	 * @param tags the tags
+	 * @param tag the tag
 	 * @return the runtime in ms as a function described by [intercept, slope], or null if not found
 	 */
 	private Double[] getOperationRuntimeAsLinearFunction(Class<? extends Operation> operation, String... tags) {
-		return getOperationRuntimeAsLinearFunction(operation.getSimpleName(), tags);
+		return getOperationRuntimeAsLinearFunction(operation.getSimpleName(), tags, null);
+	}
+	
+	
+	/**
+	 * Get a runtime of a job as a linear function of one of the operation results
+	 * 
+	 * @param operation the operation type
+	 * @param resultFilter the result filter
+	 * @return the runtime in ms as a function described by [intercept, slope], or null if not found
+	 */
+	private Double[] getOperationRuntimeAsLinearFunctionWithResultFilter(
+			Class<? extends Operation> operation, Integer... resultFilter) {
+		return getOperationRuntimeAsLinearFunction(operation.getSimpleName(), new String[0], resultFilter);
 	}
 	
 	
@@ -706,9 +772,10 @@ public class ModelAnalysis {
 	 * 
 	 * @param operationName the operation name
 	 * @param tags the tags
+	 * @param resultFilter the result filter
 	 * @return the runtime in ms as a function described by [intercept, slope], or null if not found
 	 */
-	private Double[] getOperationRuntimeAsLinearFunction(String operationName, String... tags) {
+	private Double[] getOperationRuntimeAsLinearFunction(String operationName, String[] tags, Integer[] resultFilter) {
 	
 		int xArg = -1;
 		if (operationName.equals("OperationGetAllNeighbors"                )) xArg = 3;
@@ -716,6 +783,7 @@ public class ModelAnalysis {
 		if (operationName.equals("OperationGetKHopNeighbors"               )) xArg = 3;
 		if (operationName.equals("OperationGetKHopNeighborsEdgeConditional")) xArg = 3;
 		if (operationName.equals("OperationLocalClusteringCoefficient"     )) xArg = 3;
+		if (operationName.equals("OperationGetShortestPath"                )) xArg = 3;
 		if (xArg < 0) {
 			throw new IllegalArgumentException("Unsupported operation " + operationName);
 		}
@@ -736,8 +804,11 @@ public class ModelAnalysis {
 		Vector<Double> x = new Vector<Double>();
 
 		for (OperationLogEntry e : reader) {
+			
+			
+			// Filter by tags (if specified)
 
-			if (tags.length == 0) {
+			if (tags == null || tags.length == 0) {
 				if (!e.getName().equals(operationName)
 						&& !e.getName().startsWith(operationName + "-")) continue;
 			}
@@ -748,8 +819,32 @@ public class ModelAnalysis {
 				}
 				if (!ok) continue;
 			}
+			
+			
+			// Filter by the result values
+			
+			String[] result = e.getResult().split(":");
+			if (resultFilter != null && resultFilter.length > 0) {
+				boolean ok = true;
+				for (int i = 0; i < resultFilter.length; i++) {
+					if (resultFilter[i] != null) {
+						if (result.length <= i) {
+							ok = false;
+							break;
+						}
+						if (Integer.parseInt(result[i]) != resultFilter[i].intValue()) {
+							ok = false;
+							break;
+						}
+					}
+				}
+				if (!ok) continue;
+			}
+			
+			
+			// Get the data points
 
-			int    xv = Integer.parseInt(e.getResult().split(":")[xArg]);
+			int    xv = Integer.parseInt(result[xArg]);
 			double yv = e.getTime() / 1000000.0;
 
 			x.add((double) xv);
@@ -771,8 +866,45 @@ public class ModelAnalysis {
 		ax = filtered.getSecond();
 		
 		
+		// Find the bounds and store them for later
+		
+		String key = operationName;
+		if (tags != null) for (String t : tags) key += "-" + t;
+		if (resultFilter != null) for (Integer n : resultFilter) key += ":" + n;
+		xBounds.put(key, new Double[] { MathUtils.min(ax), MathUtils.max(ax) });
+		
+		
 		// Finish
 		
-		return MathUtils.upgradeArray(useRobustFits ? MathUtils.robustLinearFit(ax, ay) : MathUtils.linearFit(ax, ay));
+		return MathUtils.upgradeArray(
+				useRobustFits && ax.length >= 50 ? MathUtils.robustLinearFit(ax, ay) : MathUtils.linearFit(ax, ay));
+	}
+	
+	
+	/**
+	 * Get the x bounds computed by a call to getOperationRuntimeAsLinearFunction()
+	 * 
+	 * @param operation the operation type
+	 * @param resultFilter the result filter
+	 * @return the x bounds, or null if not found
+	 */
+	private Double[] getXBounds(Class<? extends Operation> operation, Integer... resultFilter) {
+		return getXBounds(operation.getSimpleName(), new String[0], resultFilter);
+	}
+	
+	
+	/**
+	 * Get the x bounds computed by a call to getOperationRuntimeAsLinearFunction()
+	 * 
+	 * @param operationName the operation name
+	 * @param tags the tags
+	 * @param resultFilter the result filter
+	 * @return the x bounds, or null if not found
+	 */
+	private Double[] getXBounds(String operationName, String[] tags, Integer[] resultFilter) {
+		String key = operationName;
+		if (tags != null) for (String t : tags) key += "-" + t;
+		if (resultFilter != null) for (Integer n : resultFilter) key += ":" + n;
+		return xBounds.get(key);
 	}
 }

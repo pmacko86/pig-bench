@@ -1,5 +1,6 @@
 package com.tinkerpop.bench.web;
 
+import java.util.Collection;
 import java.util.Vector;
 
 
@@ -74,6 +75,29 @@ public class ChartProperties {
 	 * Linear fits
 	 */
 	
-	public Vector<Double[]> linear_fits = new Vector<Double[]>();
-	public Vector<Double[]> predictions = new Vector<Double[]>();
+	public Vector<Collection<LinearFunction>> linear_fits = new Vector<Collection<LinearFunction>>();
+	public Vector<Collection<LinearFunction>> predictions = new Vector<Collection<LinearFunction>>();
+	
+	
+	/*
+	 * A linear function
+	 */
+	public static class LinearFunction {
+		
+		public Double[] coefficients;
+		public Double xmin;
+		public Double xmax;
+		
+		public LinearFunction(Double[] coefficients, Double xmin, Double xmax) {
+			this.coefficients = coefficients;
+			this.xmin = xmin;
+			this.xmax = xmax;
+		}
+		
+		public LinearFunction(Double[] coefficients) {
+			this.coefficients = coefficients;
+			this.xmin = null;
+			this.xmax = null;
+		}
+	}
 }

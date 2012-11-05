@@ -72,6 +72,31 @@ public class MathUtils {
 		for (double x : a) t += x;
 		return t / a.length;
 	}
+
+	
+	/**
+	 * Find the minimum element in an array
+	 * 
+	 * @param a the array
+	 * @return the minimum element
+	 */
+	public static double min(double[] a) {
+		double t = a[0];
+		for (double x : a) if (x < t) t = x;
+		return t;
+	}
+	
+	/**
+	 * Find the maximum element in an array
+	 * 
+	 * @param a the array
+	 * @return the maximum element
+	 */
+	public static double max(double[] a) {
+		double t = a[0];
+		for (double x : a) if (x > t) t = x;
+		return t;
+	}
 	
 	
 	/**
@@ -573,6 +598,7 @@ public class MathUtils {
 		java.util.Arrays.sort(a);
 		
 		int i = (int) Math.round(q * n);
+		if (i >= n) i = n-1; 
 		return a[i];
 	}
 	
