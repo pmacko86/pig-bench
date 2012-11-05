@@ -1617,19 +1617,19 @@ public class BenchmarkMicro extends Benchmark {
 				}
 				
 				operationFactories.add(new OperationFactoryGeneric(
-						OperationAddManyVertices.class, 1,
+						OperationAddManyVertices.class, opCount,
 						new Integer[] { opCount }));
 				
 				operationFactories.add(new OperationFactoryGeneric(
-						OperationSetManyVertexProperties.class, 1,
+						OperationSetManyVertexProperties.class, opCount,
 						new Object[] { ADD_PROPERTY_KEY, opCount }));
 				
 				operationFactories.add(new OperationFactoryGeneric(
-						OperationAddManyEdges.class, 1,
+						OperationAddManyEdges.class, opCount,
 						new Integer[] { opCount }));
 				
 				operationFactories.add(new OperationFactoryGeneric(
-						OperationSetManyEdgeProperties.class, 1,
+						OperationSetManyEdgeProperties.class, opCount,
 						new Object[] { ADD_PROPERTY_KEY, opCount }));
 			}
 			
@@ -1642,10 +1642,10 @@ public class BenchmarkMicro extends Benchmark {
 			
 			if (options.has("get")) {
 				operationFactories.add(new OperationFactoryGeneric(
-						OperationGetManyVertices.class, 1,
+						OperationGetManyVertices.class, opCount,
 						new Integer[] { opCount }));
 				operationFactories.add(new OperationFactoryGeneric(
-						OperationGetManyEdges.class, 1,
+						OperationGetManyEdges.class, opCount,
 						new Integer[] { opCount }));
 				
 				for (Direction d : DIRECTIONS) {
@@ -1738,23 +1738,23 @@ public class BenchmarkMicro extends Benchmark {
 				
 				for (String key : vertexKeys) {
 					operationFactories.add(new OperationFactoryGeneric(
-							OperationGetManyVertexProperties.class, 1,
+							OperationGetManyVertexProperties.class, opCount,
 							new Object[] { key, opCount }, key));
 				}
 				for (String key : edgeKeys) {
 					operationFactories.add(new OperationFactoryGeneric(
-							OperationGetManyEdgeProperties.class, 1,
+							OperationGetManyEdgeProperties.class, opCount,
 							new Object[] { key, opCount }, key));
 				}
 				
 				if (!vertexKeys.isEmpty()) {
 					operationFactories.add(new OperationFactoryGeneric(
-							OperationGetManyVertexPropertySets.class, 1,
+							OperationGetManyVertexPropertySets.class, opCount,
 							new Object[] { vertexKeys, opCount }));
 				}
 				if (!edgeKeys.isEmpty()) {
 					operationFactories.add(new OperationFactoryGeneric(
-							OperationGetManyEdgePropertySets.class, 1,
+							OperationGetManyEdgePropertySets.class, opCount,
 							new Object[] { edgeKeys, opCount }));
 				}
             }

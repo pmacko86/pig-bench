@@ -19,6 +19,7 @@ import com.tinkerpop.blueprints.extensions.impls.neo4j.Neo4jUtils;
 import com.tinkerpop.blueprints.impls.dex.DexGraph;
 import com.tinkerpop.blueprints.impls.neo4j.Neo4jVertex;
 
+@SuppressWarnings("unused")
 public class OperationLocalClusteringCoefficient extends Operation {
 
 	protected Vertex vertex;
