@@ -32,7 +32,10 @@ public class OperationAddManyVertices extends Operation {
 	@Override
 	protected void onInitialize(Object[] args) {
 		opCount = args.length > 0 ? (Integer) args[0] : 1000;
-
+	}
+	
+	@Override
+	protected void onDelayedInitialize() throws Exception {
 		previousVertexCount = (int) ((BenchmarkableGraph) getGraph()).countVertices();
 	}
 	
