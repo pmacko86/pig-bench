@@ -12,6 +12,10 @@ import com.sparsity.dex.gdb.EdgesDirection;
 import com.sparsity.dex.gdb.Graph;
 import com.tinkerpop.bench.operation.Operation;
 import com.tinkerpop.bench.util.GraphUtils;
+import com.tinkerpop.bench.util.LongComparator;
+import com.tinkerpop.bench.util.LongIntHashMap;
+import com.tinkerpop.bench.util.LongLongHashMap;
+import com.tinkerpop.bench.util.LongPriorityHashQueue;
 import com.tinkerpop.bench.util.PriorityHashQueue;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Vertex;
@@ -140,30 +144,28 @@ public class OperationGetShortestPath extends Operation {
 			int get_nbrs = 0;
 			int get_vertex = 0;
 			
-			final HashMap<Long,Long> prev = new HashMap<Long,Long>();
-			final HashMap<Long,Integer> dist = new HashMap<Long,Integer>();
+			final LongLongHashMap prev = new LongLongHashMap();
+			final LongIntHashMap  dist = new LongIntHashMap ();
+			dist.setKeyNotFoundValue(Integer.MAX_VALUE);
 			
-			final Comparator<Long> minDist = new Comparator<Long>()
+			final LongComparator minDist = new LongComparator()
 			{
-				@SuppressWarnings({ "unchecked", "rawtypes" })
-				public int compare(Long left, Long right) {
-					Integer  leftDist = dist.get( left);
-					Integer rightDist = dist.get(right);
-					int l = leftDist  != null ?  leftDist.intValue() : Integer.MAX_VALUE;
-					int r = rightDist != null ? rightDist.intValue() : Integer.MAX_VALUE;
-					return l > r ? 1 : l < r ? -1 : ((Comparable) left).compareTo(right);
+				public int compare(long left, long right) {
+					int l = dist.get( left);
+					int r = dist.get(right);
+					return (l == r) ? (left > right ? 1 : (left < right ? -1 : 0)) : (l - r);
 				}
 			};
 			
-			final PriorityHashQueue<Long> queue = new PriorityHashQueue<Long>(11, minDist);
+			final LongPriorityHashQueue queue = new LongPriorityHashQueue(11, minDist);
 			
 			dist.put(source, 0);
 			queue.add(source);
 			
 			while (!queue.isEmpty()) {
-				Long u = queue.remove();
+				long u = queue.remove();
 				
-				if (u.longValue() == target)
+				if (u == target)
 					break;
 				
 				int dist_u = dist.get(u);
@@ -177,10 +179,10 @@ public class OperationGetShortestPath extends Operation {
 						get_vertex++;
 						long v = objsItr.nextObject();
 						
-						Integer dist_v = dist.get(v);						
+						int dist_v = dist.get(v);						
 						int alt = dist_u + 1;
 						
-						if (dist_v == null || alt < dist_v.intValue()) {
+						if (dist_v == dist.getKeyNotFoundValue() || alt < dist_v) {
 							prev.put(v, u);
 							dist.put(v, alt);
 							queue.remove(v);
@@ -193,7 +195,7 @@ public class OperationGetShortestPath extends Operation {
 				}
 			}
 							
-			Long u = target;
+			long u = target;
 			while (prev.containsKey(u)) {
 				result.add(u);
 				u = prev.get(u);

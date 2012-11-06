@@ -162,6 +162,14 @@
 		//
 		
 		function draw_chart(data, chart, x) {
+		
+			//
+			// Set up fill patterns
+			//
+			
+			// TODO
+			//   http://www.carto.net/svg/samples/patterns.shtml
+			//   http://bl.ocks.org/1178682
 			
 				
 			//
