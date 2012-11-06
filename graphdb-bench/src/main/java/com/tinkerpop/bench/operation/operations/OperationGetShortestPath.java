@@ -241,6 +241,8 @@ public class OperationGetShortestPath extends Operation {
 		@Override
 		protected void onExecute() throws Exception {
 			
+			// TODO Can we improve the memory overhead?
+			
 			ArrayList<Node> result = new ArrayList<Node>();
 			
 			int get_nbrs = 0;

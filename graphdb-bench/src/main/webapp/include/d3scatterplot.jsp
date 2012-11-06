@@ -10,6 +10,7 @@
 		var chart_inner_height = 420;
 		var chart_inner_width = 640;
 		var chart_margin = 10;
+		var num_ticks = 10;
 		
 		var padding_left = 100;
 		var padding_right = 300;
@@ -26,7 +27,7 @@
 		var legend_padding_left = 10;
 		var legend_padding_top = 10;
 		var legend_band_padding_right = 4;
-		var legend_band_width = 2 * band_width;
+		var legend_band_width = band_width;
 		var legend_band_height = band_width;
 		var legend_vertical_spacing = 2;
 		
@@ -206,7 +207,6 @@
 			// The vertical ruler (ticks) and the axis
 			//
 			
-			var num_ticks = 10;
 			var yticks = y.ticks(num_ticks);
 			if (data_yscale == "log" && yticks.length > num_ticks) {
 				t = new Array();
@@ -265,7 +265,6 @@
 			// The horizontal ruler (ticks) and the axis
 			//
 			
-			num_ticks = 10;
 			var xticks = x.ticks(num_ticks);
 			if (data_xscale == "log" && xticks.length > num_ticks) {
 				t = new Array();
@@ -341,18 +340,147 @@
 			// Data
 			//
 			
-			chart.selectAll("data_points")
-				 .data(data)
-				 .enter().append("circle")
-				 .attr("cx", function(d, i) { return x(d._xvalue); })
-				 .attr("cy", function(d, i) { return y(d._yvalue); })
-				 .style("fill", "none")
-				 .style("stroke", function(d, i) {
-						var c = d._series;
-						var index = series.indexOf(c);
-						return index < 0 ? "black" : band_colors(index);
-					})
-				 .attr("r", 4);
+			for (var series_index = 0; series_index < series.length; series_index++) {
+				filtered = data.filter(function(d) {
+					return d._series == series[series_index];
+				});
+				
+				point_type = series_index % 5;
+				
+				switch (point_type) {
+				case 0:
+					chart.selectAll("data_points_" + series_index)
+						 .data(filtered)
+						 .enter().append("circle")
+						 .attr("cx", function(d, i) { return x(d._xvalue); })
+						 .attr("cy", function(d, i) { return y(d._yvalue); })
+						 .style("fill", "none")
+						 .style("stroke", function(d, i) {
+								var c = d._series;
+								var index = series.indexOf(c);
+								return index < 0 ? "black" : band_colors(index);
+							})
+						 .attr("r", 4);
+					break;
+				case 1:
+					chart.selectAll("data_points_" + series_index)
+						 .data(filtered)
+						 .enter().append("rect")
+						 .attr("x", function(d, i) { return x(d._xvalue) - 4; })
+						 .attr("y", function(d, i) { return y(d._yvalue) - 4; })
+						 .style("fill", "none")
+						 .style("stroke", function(d, i) {
+								var c = d._series;
+								var index = series.indexOf(c);
+								return index < 0 ? "black" : band_colors(index);
+							})
+						 .attr("width", 8)
+						 .attr("height", 8);
+					break;
+				case 2:
+					chart.selectAll("data_points_" + series_index + "_a")
+						 .data(filtered)
+						 .enter().append("line")
+						 .attr("x1", function(d, i) { return x(d._xvalue) - 4; })
+						 .attr("y1", function(d, i) { return y(d._yvalue); })
+						 .attr("x2", function(d, i) { return x(d._xvalue) + 4; })
+						 .attr("y2", function(d, i) { return y(d._yvalue); })
+						 .style("stroke", function(d, i) {
+								var c = d._series;
+								var index = series.indexOf(c);
+								return index < 0 ? "black" : band_colors(index);
+							});
+					chart.selectAll("data_points_" + series_index + "_b")
+						 .data(filtered)
+						 .enter().append("line")
+						 .attr("x1", function(d, i) { return x(d._xvalue); })
+						 .attr("y1", function(d, i) { return y(d._yvalue) - 4; })
+						 .attr("x2", function(d, i) { return x(d._xvalue); })
+						 .attr("y2", function(d, i) { return y(d._yvalue) + 4; })
+						 .style("stroke", function(d, i) {
+								var c = d._series;
+								var index = series.indexOf(c);
+								return index < 0 ? "black" : band_colors(index);
+							});
+					break;
+				case 3:
+					chart.selectAll("data_points_" + series_index + "_a")
+						 .data(filtered)
+						 .enter().append("line")
+						 .attr("x1", function(d, i) { return x(d._xvalue) - 4; })
+						 .attr("y1", function(d, i) { return y(d._yvalue) - 4; })
+						 .attr("x2", function(d, i) { return x(d._xvalue) + 4; })
+						 .attr("y2", function(d, i) { return y(d._yvalue) + 4; })
+						 .style("stroke", function(d, i) {
+								var c = d._series;
+								var index = series.indexOf(c);
+								return index < 0 ? "black" : band_colors(index);
+							});
+					chart.selectAll("data_points_" + series_index + "_b")
+						 .data(filtered)
+						 .enter().append("line")
+						 .attr("x1", function(d, i) { return x(d._xvalue) + 4; })
+						 .attr("y1", function(d, i) { return y(d._yvalue) - 4; })
+						 .attr("x2", function(d, i) { return x(d._xvalue) - 4; })
+						 .attr("y2", function(d, i) { return y(d._yvalue) + 4; })
+						 .style("stroke", function(d, i) {
+								var c = d._series;
+								var index = series.indexOf(c);
+								return index < 0 ? "black" : band_colors(index);
+							});
+					break;
+				case 4:
+					chart.selectAll("data_points_" + series_index + "_a")
+						 .data(filtered)
+						 .enter().append("line")
+						 .attr("x1", function(d, i) { return x(d._xvalue) - 4; })
+						 .attr("y1", function(d, i) { return y(d._yvalue); })
+						 .attr("x2", function(d, i) { return x(d._xvalue); })
+						 .attr("y2", function(d, i) { return y(d._yvalue) - 4; })
+						 .style("stroke", function(d, i) {
+								var c = d._series;
+								var index = series.indexOf(c);
+								return index < 0 ? "black" : band_colors(index);
+							});
+					chart.selectAll("data_points_" + series_index + "_b")
+						 .data(filtered)
+						 .enter().append("line")
+						 .attr("x1", function(d, i) { return x(d._xvalue); })
+						 .attr("y1", function(d, i) { return y(d._yvalue) - 4; })
+						 .attr("x2", function(d, i) { return x(d._xvalue) + 4; })
+						 .attr("y2", function(d, i) { return y(d._yvalue); })
+						 .style("stroke", function(d, i) {
+								var c = d._series;
+								var index = series.indexOf(c);
+								return index < 0 ? "black" : band_colors(index);
+							});
+					chart.selectAll("data_points_" + series_index + "_c")
+						 .data(filtered)
+						 .enter().append("line")
+						 .attr("x1", function(d, i) { return x(d._xvalue) + 4; })
+						 .attr("y1", function(d, i) { return y(d._yvalue); })
+						 .attr("x2", function(d, i) { return x(d._xvalue); })
+						 .attr("y2", function(d, i) { return y(d._yvalue) + 4; })
+						 .style("stroke", function(d, i) {
+								var c = d._series;
+								var index = series.indexOf(c);
+								return index < 0 ? "black" : band_colors(index);
+							});
+					chart.selectAll("data_points_" + series_index + "_d")
+						 .data(filtered)
+						 .enter().append("line")
+						 .attr("x1", function(d, i) { return x(d._xvalue); })
+						 .attr("y1", function(d, i) { return y(d._yvalue) + 4; })
+						 .attr("x2", function(d, i) { return x(d._xvalue) - 4; })
+						 .attr("y2", function(d, i) { return y(d._yvalue); })
+						 .style("stroke", function(d, i) {
+								var c = d._series;
+								var index = series.indexOf(c);
+								return index < 0 ? "black" : band_colors(index);
+							});
+					break;
+				}
+			}
 			
 			
 			//
@@ -465,12 +593,113 @@
 			if (series.length > 1) {
 				for (var i = 0; i < series.length; i++) {
 				
-					chart.append("rect")
-						 .attr("x", chart_inner_width + bands_margin + chart_margin + legend_padding_left)
-						 .attr("y", i * (legend_band_height + legend_vertical_spacing) + legend_padding_top)
-						 .attr("width", legend_band_width)
-						 .attr("height", legend_band_height)
-						 .style("fill", band_colors(i));
+					point_type = i % 5;
+					
+					var px = chart_inner_width + bands_margin + chart_margin + legend_padding_left;
+					var py = i * (legend_band_height + legend_vertical_spacing) + legend_padding_top;
+					var pw = legend_band_width;
+					var ph = legend_band_height;
+					var cx = px + pw/2;
+					var cy = py + ph/2;
+					
+					switch (point_type) {
+					case 0:
+						chart.append("circle")
+							 .attr("cx", cx)
+							 .attr("cy", cy)
+							 .style("fill", "none")
+							 .style("stroke", band_colors(i))
+							 .attr("r", 4);
+						break;
+					case 1:
+						chart.selectAll("data_points_" + series_index)
+							 .data(filtered)
+							 .enter().append("rect")
+							 .attr("x", cx - 4)
+							 .attr("y", cy - 4)
+							 .style("fill", "none")
+							 .style("stroke", band_colors(i))
+							 .attr("width", 8)
+							 .attr("height", 8);
+						break;
+					case 2:
+						chart.selectAll("data_points_" + series_index + "_a")
+							 .data(filtered)
+							 .enter().append("line")
+							 .attr("x1", cx - 4)
+							 .attr("y1", cy)
+							 .attr("x2", cx + 4)
+							 .attr("y2", cy)
+							 .style("stroke", band_colors(i));
+						chart.selectAll("data_points_" + series_index + "_b")
+							 .data(filtered)
+							 .enter().append("line")
+							 .attr("x1", cx)
+							 .attr("y1", cy - 4)
+							 .attr("x2", cx)
+							 .attr("y2", cy + 4)
+							 .style("stroke", band_colors(i));
+						break;
+					case 3:
+						chart.selectAll("data_points_" + series_index + "_a")
+							 .data(filtered)
+							 .enter().append("line")
+							 .attr("x1", cx - 4)
+							 .attr("y1", cy - 4)
+							 .attr("x2", cx + 4)
+							 .attr("y2", cy + 4)
+							 .style("stroke", band_colors(i));
+						chart.selectAll("data_points_" + series_index + "_b")
+							 .data(filtered)
+							 .enter().append("line")
+							 .attr("x1", cx + 4)
+							 .attr("y1", cy - 4)
+							 .attr("x2", cx - 4)
+							 .attr("y2", cy + 4)
+							 .style("stroke", band_colors(i));
+						break;
+					case 4:
+						chart.selectAll("data_points_" + series_index + "_a")
+							 .data(filtered)
+							 .enter().append("line")
+							 .attr("x1", cx - 4)
+							 .attr("y1", cy)
+							 .attr("x2", cx)
+							 .attr("y2", cy - 4)
+							 .style("stroke", band_colors(i));
+						chart.selectAll("data_points_" + series_index + "_b")
+							 .data(filtered)
+							 .enter().append("line")
+							 .attr("x1", cx)
+							 .attr("y1", cy - 4)
+							 .attr("x2", cx + 4)
+							 .attr("y2", cy)
+							 .style("stroke", band_colors(i));
+						chart.selectAll("data_points_" + series_index + "_c")
+							 .data(filtered)
+							 .enter().append("line")
+							 .attr("x1", cx + 4)
+							 .attr("y1", cy)
+							 .attr("x2", cx)
+							 .attr("y2", cy + 4)
+							 .style("stroke", band_colors(i));
+						chart.selectAll("data_points_" + series_index + "_d")
+							 .data(filtered)
+							 .enter().append("line")
+							 .attr("x1", cx)
+							 .attr("y1", cy + 4)
+							 .attr("x2", cx - 4)
+							 .attr("y2", cy)
+							 .style("stroke", band_colors(i));
+						break;
+					}
+				
+					//chart.append("rect")
+					//	 .attr("x", chart_inner_width + bands_margin + chart_margin + legend_padding_left)
+					//	 .attr("y", i * (legend_band_height + legend_vertical_spacing) + legend_padding_top)
+					//	 .attr("width", legend_band_width)
+					//	 .attr("height", legend_band_height)
+					//	 .style("fill", band_colors(i));
 				
 					chart.append("text")
 						 .attr("x", chart_inner_width + bands_margin + chart_margin
