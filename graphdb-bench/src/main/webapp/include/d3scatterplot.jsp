@@ -38,6 +38,17 @@
 					? "return null" : chartProperties.series_label_function %>;
 		};
 		
+		
+		<% if (chartProperties.smallGraph) { %>
+			chart_inner_height /= 2;
+			chart_inner_width /= 2;
+			padding_right /= 2;
+			padding_bottom /= 2;
+			num_ticks /= 2;
+			xlabel_from_chart_margin /= 1.5;
+			legend_padding_left = 0;
+		<% } %>
+		
 
 
 		//

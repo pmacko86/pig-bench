@@ -243,6 +243,7 @@
 				
 				// Display options
 				
+				boolean smallGraphs = WebUtils.getBooleanParameter(request, "smallgraphs", false);
 				boolean barGraphs = WebUtils.getBooleanParameter(request, "bargraphs", false);
 				boolean logScale_barGraphs = WebUtils.getBooleanParameter(request, "logscale_bargraphs", false);
 				boolean separateGraphForEachOperation = WebUtils.getBooleanParameter(request, "eachop", false);
@@ -290,6 +291,14 @@
 					%>
 						<div id="select_job">
 							<p class="middle">4) Select display options:</p>
+								
+							<label class="checkbox">
+								<input class="checkbox" type="checkbox"
+										name="smallgraphs" id="smallgraphs"
+										onchange="form_submit();" <%= smallGraphs ? "checked=\"checked\"" : "" %>
+										value="true"/>
+								Produce smaller graphs
+							</label>
 							
 							
 							<p class="middle_inner">Summary Bar Graphs</p>
@@ -439,6 +448,7 @@
 				}
 				else {
 					%>
+						<input type="hidden" name="smallgraphs" id="smallgraphs" value="<%= "" + smallGraphs %>" />
 						<input type="hidden" name="bargraphs" id="bargraphs" value="<%= "" + barGraphs %>" />
 						<input type="hidden" name="logscale_bargraphs" id="logscale_bargraphs" value="<%= "" + logScale_barGraphs %>" />
 						<input type="hidden" name="eachop" id="eachop" value="<%= "" + separateGraphForEachOperation %>" />
@@ -478,6 +488,26 @@
 						currentJobs.addAll(jobs);
 					}
 					operationsToJobs.put(operationName, currentJobs);
+				}
+				
+				boolean sameOperationBaseName = true;	// i.e. without tag
+				String __lastOperationName = null;
+				for (String operationName : selectedOperations) {
+					if (__lastOperationName != null) {
+						int i1 = __lastOperationName.indexOf('-');
+						int i2 = operationName.indexOf('-');
+						if (i1 != i2) {
+							sameOperationBaseName = false;
+							break;
+						}
+						if (i1 > 0) {
+							if (!__lastOperationName.substring(0, i1).equals(operationName.substring(0, i2))) {
+								sameOperationBaseName = false;
+								break;
+							}
+						}
+					}
+					__lastOperationName = operationName;
 				}
 				
 				%>
@@ -571,11 +601,15 @@
 					
 					chartProperties.source = link + "&format=csv";
 					chartProperties.attach = "chart_all";
+					chartProperties.smallGraph = smallGraphs;
 					chartProperties.yvalue = "d.mean";
 					chartProperties.ylabel = "Execution Time (ms)";
 					if (logScale_barGraphs) chartProperties.yscale = "log";
 					chartProperties.group_by = "operation";
 					chartProperties.group_label_function = "return d.operation.replace(/^Operation/, '')";
+					if (sameOperationBaseName && selectedOperations.size() > 1) {
+						chartProperties.group_label_function += ".replace(/^[^-]*-/, '')";
+					}
 					if (!sameDbInstance) {
 						chartProperties.subgroup_by = "dbinstance";
 						chartProperties.subgroup_label_function = "return d.dbinstance";
@@ -596,6 +630,7 @@
 					
 					chartProperties.source = link + "&show=details&format=csv";
 					chartProperties.attach = "chart_all_details";
+					chartProperties.smallGraph = smallGraphs;
 					chartProperties.filter = boxPlotFilter;
 					chartProperties.yvalue = boxPlotYValue;
 					if (logScale) chartProperties.yscale = "log";
@@ -604,6 +639,9 @@
 							? "Execution Time (ms)" : StringEscapeUtils.escapeXml(boxPlotYValue);	// TODO Need better escape
 					chartProperties.group_by = "operation";
 					chartProperties.group_label_function = "return d.operation.replace(/^Operation/, '')";
+					if (sameOperationBaseName && selectedOperations.size() > 1) {
+						chartProperties.group_label_function += ".replace(/^[^-]*-/, '')";
+					}
 					if (!sameDbInstance) {
 						chartProperties.subgroup_by = "dbinstance";
 						chartProperties.subgroup_label_function = "return d.dbinstance";
@@ -624,6 +662,7 @@
 					
 					chartProperties.source = link + "&show=details&format=csv";
 					chartProperties.attach = "chart_all_plotTimeVsRetrievedNodes";
+					chartProperties.smallGraph = smallGraphs;
 					chartProperties.filter = boxPlotFilter;
 					chartProperties.xvalue = "d.result[0]";
 					chartProperties.yvalue = boxPlotYValue;
@@ -634,7 +673,10 @@
 							? "Execution Time (ms)" : StringEscapeUtils.escapeXml(boxPlotYValue);	// TODO Need better escape
 					chartProperties.series_column = "label";
 					chartProperties.series_label_function = "return d.label.replace(/^Operation/, '')";
-					
+					if (sameOperationBaseName && selectedOperations.size() > 1) {
+						chartProperties.series_label_function += ".replace(/^[^-]*-/, '')";
+					}
+			
 					%>
 						<div class="chart_outer">
 							<div class="chart chart_all_plotTimeVsRetrievedNodes" id="chart_all_plotTimeVsRetrievedNodes"></div>
@@ -649,6 +691,7 @@
 					
 					chartProperties.source = link + "&show=details&format=csv";
 					chartProperties.attach = "chart_all_additionalKHopNeighborsPlots_1";
+					chartProperties.smallGraph = smallGraphs;
 					chartProperties.filter = boxPlotFilter;
 					chartProperties.xvalue = "d.result[1]";
 					chartProperties.yvalue = boxPlotYValue;
@@ -659,6 +702,9 @@
 							? "Execution Time (ms)" : StringEscapeUtils.escapeXml(boxPlotYValue);	// TODO Need better escape
 					chartProperties.series_column = "label";
 					chartProperties.series_label_function = "return d.label.replace(/^Operation/, '')";
+					if (sameOperationBaseName && selectedOperations.size() > 1) {
+						chartProperties.series_label_function += ".replace(/^[^-]*-/, '')";
+					}
 					
 					if (plotTimeVsMaxDepth) {
 						%>
@@ -774,6 +820,7 @@
 					
 					chartProperties.source = link + "&format=csv";
 					chartProperties.attach = "chart_" + operationName;
+					chartProperties.smallGraph = smallGraphs;
 					chartProperties.ylabel = "Execution Time (ms)";
 					if (logScale_barGraphs) chartProperties.yscale = "log";
 					chartProperties.group_by = "operation";

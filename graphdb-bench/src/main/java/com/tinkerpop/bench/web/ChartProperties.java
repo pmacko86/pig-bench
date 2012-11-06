@@ -53,6 +53,8 @@ public class ChartProperties {
 	public String yscale = "linear";
 	public String ylabel = "";
 	
+	public boolean smallGraph = false;
+	
 	
 	/*
 	 * Simple series

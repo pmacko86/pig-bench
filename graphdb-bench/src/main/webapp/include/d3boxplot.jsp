@@ -30,6 +30,7 @@
 		
 		var chart_inner_height = 420;
 		var chart_margin = 10;
+		var num_ticks = 10;
 		
 		var padding_left = 100;
 		var padding_right = 300;
@@ -50,6 +51,17 @@
 		var legend_vertical_spacing = 2;
 		
 		var boxplot_width = 0.5;
+				
+		
+		<% if (chartProperties.smallGraph) { %>
+			chart_inner_height /= 2;
+			padding_right /= 2;
+			padding_bottom /= 2;
+			num_ticks /= 2;
+			legend_padding_left = 0;
+			legend_band_width /= 1.5;
+		<% } %>
+		
 		
 
 		<% if (chartProperties.group_by != null) { %>
@@ -253,7 +265,6 @@
 			// The vertical ruler (ticks) and the axis
 			//
 			
-			var num_ticks = 10;
 			var ticks = y.ticks(num_ticks);
 			if (data_scale == "log" && ticks.length > num_ticks) {
 				t = new Array();
