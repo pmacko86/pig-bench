@@ -21,7 +21,6 @@ import com.sparsity.dex.gdb.Graph;
 import com.sparsity.dex.gdb.OIDList;
 import com.sparsity.dex.gdb.OIDListIterator;
 import com.tinkerpop.bench.operation.Operation;
-//import com.tinkerpop.bench.util.BloomFilter;
 import com.tinkerpop.bench.util.GraphUtils;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Vertex;
@@ -33,6 +32,7 @@ import com.tinkerpop.blueprints.impls.neo4j.Neo4jGraph;
 import com.tinkerpop.blueprints.impls.neo4j.Neo4jVertex;
 
 
+@SuppressWarnings("unused")
 public class OperationGetKHopNeighbors extends Operation {
 
 	protected Vertex startVertex;
@@ -40,7 +40,6 @@ public class OperationGetKHopNeighbors extends Operation {
 	protected Direction direction;
 	protected HashSet<Object> result;
 	protected String label;
-	//private BloomFilter result;
 	
 	@Override
 	protected void onInitialize(Object[] args) {
@@ -135,7 +134,8 @@ public class OperationGetKHopNeighbors extends Operation {
 			Graph graph = ((DexGraph) getGraph()).getRawGraph();
 			int real_hops, get_ops = 0, get_vertex = 0;
 
-			OIDList curr = new OIDList();
+			
+			/*OIDList curr = new OIDList();
 			OIDList next = new OIDList();
 			
 			curr.add(((Long) startVertex.getId()).longValue());
@@ -177,10 +177,10 @@ public class OperationGetKHopNeighbors extends Operation {
 			}
 			
 			curr.delete();
-			next.delete();
+			next.delete();*/
 			
 		
-			/*ArrayList<com.sparsity.dex.gdb.Objects> curr = new ArrayList<com.sparsity.dex.gdb.Objects>();
+			ArrayList<com.sparsity.dex.gdb.Objects> curr = new ArrayList<com.sparsity.dex.gdb.Objects>();
 			ArrayList<com.sparsity.dex.gdb.Objects> next = new ArrayList<com.sparsity.dex.gdb.Objects>();
 			
 			long start = ((Long) startVertex.getId()).longValue();
@@ -189,14 +189,27 @@ public class OperationGetKHopNeighbors extends Operation {
 				com.sparsity.dex.gdb.Objects objs = graph.neighbors(start, t, d);
 				com.sparsity.dex.gdb.ObjectsIterator objsItr = objs.iterator();
 				
+				int size = 0;
 				while (objsItr.hasNext()) {
 					get_vertex++;
+					size++;
 					long v = objsItr.nextObject();
 					result.add(v);
 				}
 				
 				objsItr.close();
-				curr.add(objs);
+				
+				if (size == 0) {
+					objs.close();
+				}
+				else {
+					curr.add(objs);
+				}
+			}
+			
+			if (curr.isEmpty()) {
+				setResult(result.size() + ":" + 0 + ":" + get_ops + ":" + get_vertex);
+				return;
 			}
 			
 			for (real_hops = 1; real_hops < k; real_hops++) {
@@ -209,8 +222,10 @@ public class OperationGetKHopNeighbors extends Operation {
 						com.sparsity.dex.gdb.Objects objs = graph.neighbors(c, t, d);
 						com.sparsity.dex.gdb.ObjectsIterator objsItr = objs.iterator();
 						
+						int size = 0;
 						while (objsItr.hasNext()) {
 							get_vertex++;
+							size++;
 							long v = objsItr.nextObject();
 							if (result.add(v)) {
 								nextSize++;
@@ -218,7 +233,12 @@ public class OperationGetKHopNeighbors extends Operation {
 						}
 						
 						objsItr.close();
-						next.add(objs);
+						if (size == 0) {
+							objs.close();
+						}
+						else {
+							next.add(objs);
+						}
 					}
 				}
 				
@@ -237,7 +257,7 @@ public class OperationGetKHopNeighbors extends Operation {
 			
 			for (com.sparsity.dex.gdb.Objects c : curr) {
 				c.close();
-			}*/
+			}
 			
 			
 			setResult(result.size() + ":" + real_hops + ":" + get_ops + ":" + get_vertex);

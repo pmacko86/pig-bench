@@ -135,20 +135,28 @@ public class OperationLocalClusteringCoefficient extends Operation {
 			for (int i = 0; i < types.length; i++) {
 				neighbors[i] = graph.neighbors(start, types[i], d);
 				com.sparsity.dex.gdb.ObjectsIterator objsItr = neighbors[i].iterator();
-						
+				
+				int size = 0;
 				while (objsItr.hasNext()) {
 					get_vertex++;
+					size++;
 					long v = objsItr.nextObject();
 					neighborSet.add(v);
 					unique++;
 				}
-						
+				
 				objsItr.close();
+				if (size == 0) {
+					neighbors[i].close();
+					neighbors[i] = null;
+				}
 			}
 			
 			int triangles = 0;
-			for (int i = 0; i < types.length; i++) {
-				for (int j = 0; j < types.length; j++) {
+			for (int j = 0; j < types.length; j++) {
+				for (int i = 0; i < types.length; i++) {
+					if (neighbors[i] == null) continue;
+					
 					com.sparsity.dex.gdb.Objects objs = graph.neighbors(neighbors[i], types[j], d);
 					com.sparsity.dex.gdb.ObjectsIterator objsItr = objs.iterator();
 						
@@ -171,6 +179,7 @@ public class OperationLocalClusteringCoefficient extends Operation {
 			}
 			
 			for (int i = 0; i < types.length; i++) {
+				if (neighbors[i] == null) continue;
 				get_ops += neighbors[i].count();
 				neighbors[i].close();
 			}
