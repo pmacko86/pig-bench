@@ -79,10 +79,10 @@ public class ChartProperties {
 	
 	
 	/*
-	 * Linear fits
+	 * Linear fits and models
 	 */
 	
-	public Vector<Collection<LinearFunction>> linear_fits = new Vector<Collection<LinearFunction>>();
+	public boolean linear_fits = false;
 	public Vector<Collection<LinearFunction>> predictions = new Vector<Collection<LinearFunction>>();
 	
 	

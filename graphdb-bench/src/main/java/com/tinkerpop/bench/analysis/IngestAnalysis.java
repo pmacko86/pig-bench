@@ -181,7 +181,7 @@ public class IngestAnalysis {
 		
 		
 		/*
-		 * Finish 
+		 * Finish
 		 */
 		
 		return true;

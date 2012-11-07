@@ -254,7 +254,7 @@
 				boolean plotTimeVsMaxDepth = WebUtils.getBooleanParameter(request, "plotTimeVsMaxDepth", false);
 				boolean plotTimeVsRetrievedNeighborhoods = WebUtils.getBooleanParameter(request, "plotTimeVsRetrievedNeighborhoods", false);
 				boolean plotTimeVsRetrievedNeighborhoodNodes = WebUtils.getBooleanParameter(request, "plotTimeVsRetrievedNeighborhoodNodes", false);
-				boolean modelAnalysisLinearFits = WebUtils.getBooleanParameter(request, "modelAnalysisLinearFits", false);
+				boolean linearFits = WebUtils.getBooleanParameter(request, "linearFits", false);
 				boolean modelAnalysisPredictions = WebUtils.getBooleanParameter(request, "modelAnalysisPredictions", false);
 				
 				String boxPlotFilter = WebUtils.getStringParameter(request, "boxplotfilter");
@@ -423,21 +423,21 @@
 							
 							
 							<div style="height:10px"></div>
-							<p class="middle_inner">Model Analysis &ndash; "Execution Time vs. Number of Retrieved Neighborhood Nodes"</p>
+							<p class="middle_inner">Speciality Data Plots &ndash; Additional Display Options</p>
 							
 							<label class="checkbox">
 								<input class="checkbox" type="checkbox"
-										name="modelAnalysisLinearFits" id="modelAnalysisLinearFits"
-										onchange="form_submit();" <%= modelAnalysisLinearFits ? "checked=\"checked\"" : "" %>
+										name="linearFits" id="linearFits"
+										onchange="form_submit();" <%= linearFits ? "checked=\"checked\"" : "" %>
 										value="true"/>
-								Linear Fit
+								Linear Fits
 							</label>
 							<label class="checkbox">
 								<input class="checkbox" type="checkbox"
 										name="modelAnalysisPredictions" id="modelAnalysisPredictions"
 										onchange="form_submit();" <%= modelAnalysisPredictions ? "checked=\"checked\"" : "" %>
 										value="true"/>
-								Model Prediction
+								Model Prediction (on the "Execution Time vs. Number of Retrieved Neighborhood Nodes" plot only)
 							</label>
 							
 				
@@ -459,7 +459,7 @@
 						<input type="hidden" name="plotTimeVsMaxDepth" id="plotTimeVsMaxDepth" value="<%= "" + plotTimeVsMaxDepth %>" />
 						<input type="hidden" name="plotTimeVsRetrievedNeighborhoods" id="plotTimeVsRetrievedNeighborhoods" value="<%= "" + plotTimeVsRetrievedNeighborhoods %>" />
 						<input type="hidden" name="plotTimeVsRetrievedNeighborhoodNodes" id="plotTimeVsRetrievedNeighborhoodNodes" value="<%= "" + plotTimeVsRetrievedNeighborhoodNodes %>" />
-						<input type="hidden" name="modelAnalysisLinearFits" id="modelAnalysisLinearFits" value="<%= "" + modelAnalysisLinearFits %>" />
+						<input type="hidden" name="linearFits" id="linearFits" value="<%= "" + linearFits %>" />
 						<input type="hidden" name="modelAnalysisPredictions" id="modelAnalysisPredictions" value="<%= "" + modelAnalysisPredictions %>" />
 					<%
 				}
@@ -535,12 +535,10 @@
 					}
 				}
 				
-				List<Triple<String, DatabaseEngineAndInstance, Collection<LinearFunction>>> linearFitData
-					= new ArrayList<Triple<String, DatabaseEngineAndInstance, Collection<LinearFunction>>>();
 				List<Triple<String, DatabaseEngineAndInstance, Collection<LinearFunction>>> predictionData
 					= new ArrayList<Triple<String, DatabaseEngineAndInstance, Collection<LinearFunction>>>();
 				
-				if (modelAnalysisLinearFits || modelAnalysisPredictions) {
+				if (modelAnalysisPredictions) {
 					for (String operationName : selectedOperations) {
 						for (Job j : operationsToJobs.get(operationName)) {
 							DatabaseEngineAndInstance dbei = j.getDatabaseEngineAndInstance();
@@ -557,11 +555,11 @@
 										continue;
 									}
 									
-									p = m.SP[k];
+									/*p = m.SP[k];
 									if (p != null) {
 										if (cf == null) cf = new ArrayList<LinearFunction>();
 										cf.add(new LinearFunction(p, bounds[0], bounds[1]));
-									}
+									}*/
 									
 									p = m.SP_prediction[k];
 									if (p != null) {
@@ -569,19 +567,17 @@
 										cm.add(new LinearFunction(p, bounds[0], bounds[1]));
 									}
 								}
-								linearFitData.add(new Triple<String, DatabaseEngineAndInstance, Collection<LinearFunction>>
-									(operationName, dbei, cf));
 								predictionData.add(new Triple<String, DatabaseEngineAndInstance, Collection<LinearFunction>>
 									(operationName, dbei, cm));
 							}
 							else {
-								p = m.getLinearFit(operationName);
+								/*p = m.getLinearFit(operationName);
 								if (p != null) {
 									cf = new ArrayList<LinearFunction>();
 									cf.add(new LinearFunction(p));
 								}
 								linearFitData.add(new Triple<String, DatabaseEngineAndInstance, Collection<LinearFunction>>
-									(operationName, dbei, cf));
+									(operationName, dbei, cf));*/
 								
 								p = m.getPrediction(operationName);
 								if (p != null) {
@@ -668,6 +664,7 @@
 					chartProperties.yvalue = boxPlotYValue;
 					if (logScale) chartProperties.yscale = "log";
 					if (dropExtremes) chartProperties.dropTopBottomExtremes = true;
+					chartProperties.linear_fits = linearFits;
 					chartProperties.xlabel = "Number of Retrieved Unique Nodes";
 					chartProperties.ylabel = "d.time".equals(boxPlotYValue) 
 							? "Execution Time (ms)" : StringEscapeUtils.escapeXml(boxPlotYValue);	// TODO Need better escape
@@ -697,6 +694,7 @@
 					chartProperties.yvalue = boxPlotYValue;
 					if (logScale) chartProperties.yscale = "log";
 					if (dropExtremes) chartProperties.dropTopBottomExtremes = true;
+					chartProperties.linear_fits = linearFits;
 					chartProperties.xlabel = "Maximum Depth";
 					chartProperties.ylabel = "d.time".equals(boxPlotYValue) 
 							? "Execution Time (ms)" : StringEscapeUtils.escapeXml(boxPlotYValue);	// TODO Need better escape
@@ -733,13 +731,6 @@
 					chartProperties.attach = "chart_all_additionalKHopNeighborsPlots_3";
 					chartProperties.xvalue = "d.result[3]";
 					chartProperties.xlabel = "Number of Retrieved Neighborhood Nodes";
-					
-					chartProperties.linear_fits.clear();
-					if (modelAnalysisLinearFits) {
-						for (Triple<String, DatabaseEngineAndInstance, Collection<LinearFunction>> p : linearFitData) {
-							chartProperties.linear_fits.add(p.getThird());
-						}
-					}
 					
 					chartProperties.predictions.clear();
 					if (modelAnalysisPredictions) {

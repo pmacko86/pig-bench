@@ -559,22 +559,46 @@
 			}
 						
 			<%
-				if (!chartProperties.linear_fits.isEmpty()) {
-					int fit_index = -1;
-					for (Collection<LinearFunction> fits : chartProperties.linear_fits) {
-						fit_index++;
-						if (fits == null) continue;
-						for (LinearFunction fit : fits) {
-							if (fit == null) continue;
-							%>
-								add_linear_function(<%= fit.coefficients[0].doubleValue() %>,
-									<%= fit.coefficients.length >= 2 ? fit.coefficients[1].doubleValue() : 0 %>,
-									<%= fit.xmin == null ? "null" : "" + fit.xmin %>,
-									<%= fit.xmax == null ? "null" : "" + fit.xmax %>,
-									<%= fit_index %>, false);
-							<%
+				if (chartProperties.linear_fits) {
+					%>
+			
+						for (var series_index = 0; series_index < series.length; series_index++) {
+							filtered = data.filter(function(d) {
+								return d._series == series[series_index];
+							});
+							
+							var n = filtered.length;
+							var sumx = 0.0;
+							var sumy = 0.0;
+							
+							for (var i = 0; i < n; i++) {
+								var d = filtered[i];
+								sumx += d._xvalue;
+								sumy += d._yvalue;
+							}
+							
+							var xbar = sumx / n;
+							var ybar = sumy / n;
+
+							var xxbar = 0.0;
+							var xybar = 0.0;
+							for (var i = 0; i < n; i++) {
+								var d = filtered[i];
+								xxbar += (d._xvalue - xbar) * (d._xvalue - xbar);
+								xybar += (d._xvalue - xbar) * (d._yvalue - ybar);
+							}
+							
+							var beta1 = xybar / xxbar;
+							var beta0 = ybar - beta1 * xbar;
+							
+							if (xxbar == 0) {
+								beta0 = sumy / n;
+								beta1 = 0;
+							}
+							
+							add_linear_function(beta0, beta1, null, null, series_index, false);
 						}
-					}
+					<%
 				} 
 				if (!chartProperties.predictions.isEmpty()) {
 					int fit_index = -1;
