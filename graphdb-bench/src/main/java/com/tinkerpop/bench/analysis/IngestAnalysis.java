@@ -260,7 +260,7 @@ public class IngestAnalysis {
 			bulkLoadTimePrediction  = 0;
 			bulkLoadTimePrediction += dataset.getNumVertices()         * m.Wv.doubleValue();
 			bulkLoadTimePrediction += dataset.getNumEdges()            * m.We.doubleValue();
-			bulkLoadTimePrediction += dataset.getNumVertices()         * m.Wp.doubleValue() * 3;		// XXX Hard-coded
+			bulkLoadTimePrediction += dataset.getNumVertices()         * m.Wp.doubleValue() * 2;		// XXX Hard-coded
 			bulkLoadTimePrediction += dataset.getNumEdges()            * m.Wp.doubleValue() * 1;		// XXX Hard-coded
 			bulkLoadTimePrediction += dataset.getNumExternalVertices() * m.Rvup.doubleValue();
 		}
@@ -270,7 +270,7 @@ public class IngestAnalysis {
 			incrementalLoadTimePrediction  = 0;
 			incrementalLoadTimePrediction += dataset.getNumVertices()         * m.Wv.doubleValue();
 			incrementalLoadTimePrediction += dataset.getNumEdges()            * m.We.doubleValue();
-			incrementalLoadTimePrediction += dataset.getNumVertices()         * m.Wp.doubleValue() * 3;		// XXX Hard-coded
+			incrementalLoadTimePrediction += dataset.getNumVertices()         * m.Wp.doubleValue() * 2;		// XXX Hard-coded
 			incrementalLoadTimePrediction += dataset.getNumEdges()            * m.Wp.doubleValue() * 1;		// XXX Hard-coded
 			incrementalLoadTimePrediction += dataset.getNumExternalVertices() * m.Rvup.doubleValue();
 		}
