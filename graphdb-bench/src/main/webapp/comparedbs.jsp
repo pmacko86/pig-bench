@@ -268,6 +268,7 @@
 				boolean smallGraphs = WebUtils.getBooleanParameter(request, "smallgraphs", false);
 				boolean barGraphs = WebUtils.getBooleanParameter(request, "bargraphs", false);
 				boolean logScale_barGraphs = WebUtils.getBooleanParameter(request, "logscale_bargraphs", false);
+				boolean patternFill_barGraphs = WebUtils.getBooleanParameter(request, "patternfill_bargraphs", false);
 				boolean separateGraphForEachOperation = WebUtils.getBooleanParameter(request, "eachop", false);
 				boolean boxPlots = WebUtils.getBooleanParameter(request, "boxplots", false);
 				boolean logScale = WebUtils.getBooleanParameter(request, "logscale", false);
@@ -347,6 +348,14 @@
 										onchange="form_submit();" <%= logScale_barGraphs ? "checked=\"checked\"" : "" %>
 										value="true"/>
 								Use log scale on all bar graphs
+							</label>
+							
+							<label class="checkbox">
+								<input class="checkbox" type="checkbox"
+										name="patternfill_bargraphs" id="patternfill_bargraphs"
+										onchange="form_submit();" <%= patternFill_barGraphs ? "checked=\"checked\"" : "" %>
+										value="true"/>
+								Use patterns instead of solid colors (enable for B/W printing)
 							</label>
 							
 							
@@ -473,6 +482,7 @@
 						<input type="hidden" name="smallgraphs" id="smallgraphs" value="<%= "" + smallGraphs %>" />
 						<input type="hidden" name="bargraphs" id="bargraphs" value="<%= "" + barGraphs %>" />
 						<input type="hidden" name="logscale_bargraphs" id="logscale_bargraphs" value="<%= "" + logScale_barGraphs %>" />
+						<input type="hidden" name="patternfill_bargraphs" id="patternfill_bargraphs" value="<%= "" + patternFill_barGraphs %>" />
 						<input type="hidden" name="eachop" id="eachop" value="<%= "" + separateGraphForEachOperation %>" />
 						<input type="hidden" name="boxplots" id="boxplots" value="<%= "" + boxPlots %>" />
 						<input type="hidden" name="logscale" id="logscale" value="<%= "" + logScale %>" />
@@ -620,6 +630,7 @@
 					chartProperties.source = link + "&format=csv";
 					chartProperties.attach = "chart_all";
 					chartProperties.smallGraph = smallGraphs;
+					chartProperties.patternFill = patternFill_barGraphs;
 					chartProperties.yvalue = "d.mean";
 					chartProperties.ylabel = "Execution Time (ms)";
 					if (logScale_barGraphs) chartProperties.yscale = "log";
@@ -834,6 +845,7 @@
 					chartProperties.source = link + "&format=csv";
 					chartProperties.attach = "chart_" + operationName;
 					chartProperties.smallGraph = smallGraphs;
+					chartProperties.patternFill = patternFill_barGraphs;
 					chartProperties.ylabel = "Execution Time (ms)";
 					if (logScale_barGraphs) chartProperties.yscale = "log";
 					chartProperties.group_by = "operation";

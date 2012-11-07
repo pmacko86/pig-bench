@@ -143,6 +143,7 @@
 				// Display options
 				
 				boolean smallGraphs = WebUtils.getBooleanParameter(request, "smallgraphs", false);
+				boolean patternFill = WebUtils.getBooleanParameter(request, "patternfill", false);
 				boolean logScale = WebUtils.getBooleanParameter(request, "logscale", false);
 				boolean byInstance = WebUtils.getBooleanParameter(request, "byinstance", false);
 			%>
@@ -160,18 +161,26 @@
 					
 				<label class="checkbox">
 					<input class="checkbox" type="checkbox"
+							name="byinstance" id="byinstance"
+							onchange="form_submit();" <%= byInstance ? "checked=\"checked\"" : "" %>
+							value="true"/>
+					One graph per instance (in addition to the summary graph)
+				</label>
+					
+				<label class="checkbox">
+					<input class="checkbox" type="checkbox"
 							name="logscale" id="logscale"
 							onchange="form_submit();" <%= logScale ? "checked=\"checked\"" : "" %>
 							value="true"/>
 					Use log scale
 				</label>
-					
+							
 				<label class="checkbox">
 					<input class="checkbox" type="checkbox"
-							name="byinstance" id="byinstance"
-							onchange="form_submit();" <%= byInstance ? "checked=\"checked\"" : "" %>
+							name="patternfill" id="patternfill"
+							onchange="form_submit();" <%= patternFill ? "checked=\"checked\"" : "" %>
 							value="true"/>
-					One graph per instance (in addition to the summary graph)
+					Use patterns instead of solid colors (enable for B/W printing)
 				</label>
 			</div>
 			
@@ -210,6 +219,7 @@
 				chartProperties.stacked = true;
 				chartProperties.yscale = logScale ? "log" : "linear";
 				chartProperties.smallGraph = smallGraphs;
+				chartProperties.patternFill = patternFill;
 				chartProperties.ylabel = "Execution Time (s)";
 				chartProperties.subgroup_by = "dbengine";
 				chartProperties.subgroup_label_function = "return d.dbengine";

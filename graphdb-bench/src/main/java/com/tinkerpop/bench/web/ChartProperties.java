@@ -55,6 +55,7 @@ public class ChartProperties {
 	
 	public boolean smallGraph = false;
 	public boolean stacked = false;
+	public boolean patternFill = false;
 	
 	
 	/*

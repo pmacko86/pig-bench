@@ -204,10 +204,65 @@
 					  .attr("height", chart_inner_height + padding_top + padding_bottom)
 					  .append("g")
 					  	.attr("transform", "translate(" + padding_left + ", " + padding_top + ")");
+				
+		//
+		// Set up fill patterns
+		//
 		
-		//var y = d3.scale.linear()
-		//		  .domain([0, 1.1 * d3.max(data, function(d) { return d.mean + d.stdev; })])
-		//		  .range([chart_inner_height, 0]);
+		var defs = chart.append('svg:defs');
+		var num_patterns = 0;
+
+		for (var pattern_index = 0;
+			pattern_index < d3.max([2<% if (chartProperties.group_by != null) { %>, categories.length<% } %>]);
+			pattern_index++) {
+			num_patterns++;
+			
+			var pmod = pattern_index % 6;
+			var pattern = defs.append("svg:pattern")
+				    .attr("id", "pattern-" + pattern_index)
+				    .attr("x", 0)
+				    .attr("y", 0)
+				    .attr("width" , pmod == 3 || pmod == 5 ? 6 : 8)
+				    .attr("height", pmod == 2 || pmod == 5 ? 6 : 8)
+				    .attr("patternUnits", "userSpaceOnUse")
+				    .append("g")
+				    .style("fill", "none")
+				    .style("stroke", bar_colors(pattern_index))
+				    .style("stroke-width", "1")
+				    .style("stroke-linecap", "square");
+		
+			switch (pmod) {
+			case 0:
+				pattern.append("path")
+				    .attr("d", "M 0 0 L 8 8 M 0 -8 L 8 0 M 0 8 L 8 16");
+				break;		
+			case 1:
+				pattern.append("path")
+				    .attr("d", "M 8 0 L 0 8 M 8 -8 L 0 0 M 8 8 L 0 16");
+				break;			
+			case 2:
+				pattern.append("path")
+				    .attr("d", "M 0 3 L 8 3");
+				break;
+			case 3:
+				pattern.append("path")
+				    .attr("d", "M 3 0 L 3 8");
+				break;
+			case 4:
+				pattern.append("path")
+				    .attr("d", "M 0 0 L 8 8 M 0 -8 L 8 0 M 0 8 L 8 16 M 8 0 L 0 8 M 8 -8 L 0 0 M 8 8 L 0 16");
+				break;			
+			case 5:
+				pattern.append("path")
+				    .attr("d", "M 0 3 L 8 3 M 3 0 L 3 8");
+				break;
+			}
+		}
+		
+		
+		//
+		// X Scale
+		//
 		
 		var x = d3.scale.ordinal()
 				  .domain(stacked ? subgroup_ids : labels)
@@ -365,19 +420,25 @@
 					
 					// Legend
 					
-					for (var i = 0; i < categories.length; i++) {
+					for (var j = 0; j < categories.length; j++) {
+						var i = stacked ? categories.length - j - 1 : j;
 					
 						chart.append("rect")
 							 .attr("x", bar_width * num_bars + bars_margin + chart_margin + legend_padding_left)
-							 .attr("y", i * (legend_bar_height + legend_vertical_spacing) + legend_padding_top)
+							 .attr("y", j * (legend_bar_height + legend_vertical_spacing) + legend_padding_top)
 							 .attr("width", legend_bar_width)
 							 .attr("height", legend_bar_height)
-							 .style("fill", bar_colors(i));
+							<% if (!chartProperties.patternFill) { %>
+								.style("fill", bar_colors(i));
+							<% } else { %>
+								.attr("style", "fill:url(#pattern-" + (i % num_patterns) + ")"
+											+ ";stroke:" + bar_colors(i));
+							<% } %>
 					
 						chart.append("text")
 							 .attr("x", bar_width * num_bars + bars_margin + chart_margin
 							 			+ legend_padding_left + legend_bar_width + legend_bar_padding_right)
-							 .attr("y", (i + 0.5) * (legend_bar_height + legend_vertical_spacing) + legend_padding_top)
+							 .attr("y", (j + 0.5) * (legend_bar_height + legend_vertical_spacing) + legend_padding_top)
 							 .attr("dx", 0)
 						 	 .attr("dy", ".35em") // vertical-align: middle
 							 .text(categories[i]);
@@ -416,15 +477,29 @@
 					var category_index = categories.indexOf(category);
 					
 					var top = y(d.mean + total_so_far);
+					var top_adjusted = top;
+					
+					<% if (chartProperties.patternFill) { %>
+						top_adjusted = top+1;
+					<% } %>
 					
 					chart.append("rect")
 						 .attr("x", subgroup_index * x.rangeBand())
-						 .attr("y", top)
+						 .attr("y", (i == filtered.length-1 ? top : top_adjusted))
 						<% if (chartProperties.group_by != null) { %>
-							.style("fill", category_index < 0 ? "black" : bar_colors(category_index))
+							<% if (!chartProperties.patternFill) { %>
+								.style("fill", category_index < 0 ? "black" : bar_colors(category_index))
+							<% } else { %>
+								.attr("style", "fill:" + (category_index < 0
+									? "black"
+									: "url(#pattern-" + (category_index % num_patterns) + ")")
+								+ ";stroke:" + (category_index < 0
+									? "none"
+									: bar_colors(category_index)))
+							<% } %>
 						<% } %>
 						 .attr("width", x.rangeBand())
-						 .attr("height", bottom - top);
+						 .attr("height", bottom - (i == filtered.length-1 ? top : top_adjusted));
 					
 					bottom = top;
 					total_so_far += d.mean;
@@ -456,11 +531,26 @@
 				 .attr("x", function(d, i) { return i * x.rangeBand(); })
 				 .attr("y", function(d, i) { return y(d.mean); })
 				<% if (chartProperties.group_by != null) { %>
-					.style("fill", function(d, i) {
-						var c = category_label_function(d, i);
-						var index = categories.indexOf(c);
-						return index < 0 ? "black" : bar_colors(index);
-					})
+					<% if (chartProperties.group_by != null) { %>
+						<% if (!chartProperties.patternFill) { %>
+							.style("fill", function(d, i) {
+								var c = category_label_function(d, i);
+								var category_index = categories.indexOf(c);
+								return category_index < 0 ? "black" : bar_colors(category_index);
+							})
+						<% } else { %>
+							.attr("style",  function(d, i) {
+								var c = category_label_function(d, i);
+								var category_index = categories.indexOf(c);
+								return "fill:" + (category_index < 0
+									? "black"
+									: "url(#pattern-" + (category_index % num_patterns) + ")")
+								+ ";stroke:" + (category_index < 0
+									? "none"
+									: bar_colors(category_index));
+							})
+						<% } %>
+					<% } %>
 				<% } %>
 				 .attr("width", x.rangeBand())
 				 .attr("height", function(d, i) { return chart_inner_height - y(d.mean); });
