@@ -86,6 +86,28 @@
 		{
 			var bb = new BlobBuilder;
 			bb.append(document.getElementById(element).innerHTML);
+			bb.append("\n<!-- Source URL: \n");
+			
+			var form = document.getElementById('form');
+			var url = form.action;
+			var url_num_arguments = 0;
+
+			for (var i = 0; i < form.length; i++) {
+				var e = form.elements[i];
+				
+				if (e.name == "refreshed") continue;
+				if (e.type == "radio" || e.type == "checkbox") {
+					if (!e.checked) continue;
+				}
+				
+				if (url_num_arguments == 0) url += "?"; else url += "&";
+				url += encodeURIComponent(e.name) + "=" + encodeURIComponent(e.value);
+				url_num_arguments++;
+			}
+			
+			bb.append(url);
+			
+			bb.append("\n-->\n");
 			saveAs(bb.getBlob("image/svg+xml;charset=utf-8"), file);
 		}
 		
@@ -721,7 +743,7 @@
 					if (plotTimeVsRetrievedNeighborhoods) {
 						%>
 							<div class="chart_outer">
-								<div class="chart chart_all_additionalKHopNeighborsPlots_2" id="chart_all_additionalKHopNeighborsPlots_1"></div>
+								<div class="chart chart_all_additionalKHopNeighborsPlots_2" id="chart_all_additionalKHopNeighborsPlots_2"></div>
 								<%@ include file="include/d3scatterplot.jsp" %>
 								<a class="chart_save" href="javascript:save_svg('chart_all_additionalKHopNeighborsPlots_2', 'plot.svg')">Save</a>
 							</div>
@@ -742,7 +764,7 @@
 					if (plotTimeVsRetrievedNeighborhoodNodes) {
 						%>
 							<div class="chart_outer">
-								<div class="chart chart_all_additionalKHopNeighborsPlots_3" id="chart_all_additionalKHopNeighborsPlots_2"></div>
+								<div class="chart chart_all_additionalKHopNeighborsPlots_3" id="chart_all_additionalKHopNeighborsPlots_3"></div>
 								<%@ include file="include/d3scatterplot.jsp" %>
 								<a class="chart_save" href="javascript:save_svg('chart_all_additionalKHopNeighborsPlots_3', 'plot.svg')">Save</a>
 							</div>
