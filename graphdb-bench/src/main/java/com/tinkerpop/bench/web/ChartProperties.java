@@ -54,6 +54,7 @@ public class ChartProperties {
 	public String ylabel = "";
 	
 	public boolean smallGraph = false;
+	public boolean stacked = false;
 	
 	
 	/*

@@ -490,6 +490,19 @@ public class ModelAnalysis {
 	
 	
 	/**
+	 * Get all jobs for the specified operation
+	 * 
+	 * @param operation the operation type
+	 * @return the jobs sorted by time (ascending), or null if none
+	 */
+	public SortedSet<Job> getJobs(Class<? extends Operation> operation) {
+		SortedSet<Job> operationJobs = operationToJobs.get(operation.getSimpleName());
+		if (operationJobs == null || operationJobs.isEmpty()) return null;
+		return operationJobs;
+	}
+	
+	
+	/**
 	 * Print two columns
 	 * 
 	 * @param cw the column width

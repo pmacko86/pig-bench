@@ -58,6 +58,13 @@ xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns
 	 </servlet>
 	
 	<servlet>
+		<display-name>ShowIngestAnalysis</display-name>
+		<servlet-name>ShowIngestAnalysis</servlet-name>
+		<servlet-class>com.tinkerpop.bench.web.ShowIngestAnalysis</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	 </servlet>
+	
+	<servlet>
 		<display-name>ShowLogFile</display-name>
 		<servlet-name>ShowLogFile</servlet-name>
 		<servlet-class>com.tinkerpop.bench.web.ShowLogFile</servlet-class>
@@ -118,6 +125,11 @@ xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns
 	<servlet-mapping>
 		<servlet-name>RunBenchmark</servlet-name>
 		<url-pattern>/RunBenchmark</url-pattern>
+	</servlet-mapping>
+ 
+	<servlet-mapping>
+		<servlet-name>ShowIngestAnalysis</servlet-name>
+		<url-pattern>/ShowIngestAnalysis</url-pattern>
 	</servlet-mapping>
  
 	<servlet-mapping>

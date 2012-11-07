@@ -60,6 +60,11 @@
 				<% } else { %>
 					<li><p>Simple Model Analysis</p></li>
 				<% } %>
+				<% if (!jsp_page.equals("analyzeingest")) { %>
+					<li><a href="analyzeingest.jsp">Analyze Ingest</a></li>
+				<% } else { %>
+					<li><p>Analyze Ingest</p></li>
+				<% } %>
 			</ul>
 		</div>
 	
