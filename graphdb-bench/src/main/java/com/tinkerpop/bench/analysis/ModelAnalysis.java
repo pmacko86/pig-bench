@@ -26,6 +26,7 @@ import com.tinkerpop.bench.operation.operations.OperationGetManyVertexProperties
 import com.tinkerpop.bench.operation.operations.OperationGetManyVertices;
 import com.tinkerpop.bench.operation.operations.OperationGetNeighborEdgeConditional;
 import com.tinkerpop.bench.operation.operations.OperationGetShortestPath;
+import com.tinkerpop.bench.operation.operations.OperationGetVerticesUsingKeyIndex;
 import com.tinkerpop.bench.operation.operations.OperationLocalClusteringCoefficient;
 import com.tinkerpop.bench.operation.operations.OperationSetManyEdgeProperties;
 import com.tinkerpop.bench.operation.operations.OperationSetManyVertexProperties;
@@ -84,6 +85,9 @@ public class ModelAnalysis {
 	
 	/// The primitive operation runtimes -- writes
 	public Double Wv /* vertex */, We /* edge */, Wp /* property */;
+	
+	/// The primitive operation runtimes -- read a vertex using an index on a unique property
+	public Double Rvup;
 	
 	/// The primitive traversals -- follow the first edge
 	public Double[] T             = new Double[3];
@@ -250,6 +254,8 @@ public class ModelAnalysis {
 		We = getAverageOperationRuntime(OperationAddManyEdges.class);
 		Wp = MathUtils.averageIgnoreNulls(getAverageOperationRuntime(OperationSetManyVertexProperties.class),
 				getAverageOperationRuntime(OperationSetManyEdgeProperties.class));
+		
+		Rvup = getAverageOperationRuntime(OperationGetVerticesUsingKeyIndex.class, "_original_id");
 		
 		
 		/*

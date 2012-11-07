@@ -146,6 +146,7 @@
 				boolean patternFill = WebUtils.getBooleanParameter(request, "patternfill", false);
 				boolean logScale = WebUtils.getBooleanParameter(request, "logscale", false);
 				boolean byInstance = WebUtils.getBooleanParameter(request, "byinstance", false);
+				boolean modelPredictions = WebUtils.getBooleanParameter(request, "modelpredictions", false);
 			%>
 			
 			<div id="select_display_options">
@@ -182,6 +183,14 @@
 							value="true"/>
 					Use patterns instead of solid colors (enable for B/W printing)
 				</label>
+							
+				<label class="checkbox">
+					<input class="checkbox" type="checkbox"
+							name="modelpredictions" id="modelpredictions"
+							onchange="form_submit();" <%= modelPredictions ? "checked=\"checked\"" : "" %>
+							value="true"/>
+					Show model predictions for the incremental ingest time
+				</label>
 			</div>
 			
 			<input type="hidden" name="refreshed" id="refreshed" value="no" />
@@ -207,7 +216,7 @@
 					<h2>Results</h2>
 				<%
 				
-				String link = "/ShowIngestAnalysis?format=csv";
+				String link = "/ShowIngestAnalysis?format=csv&predictions=" + modelPredictions;
 				for (DatabaseEngineAndInstance dbei : selectedDatabaseInstances_sortedByInstance) {
 					link += "&database_engine_instance=" + dbei.getEngine().getShortName() + "|" + dbei.getInstanceSafe("");
 				}
@@ -236,7 +245,8 @@
 				<%
 				
 				StringWriter writer = new StringWriter();
-				ShowIngestAnalysis.printIngestAnalysis(new PrintWriter(writer), selectedDatabaseInstances_sortedByInstance, "html", null);
+				ShowIngestAnalysis.printIngestAnalysis(new PrintWriter(writer), selectedDatabaseInstances_sortedByInstance,
+						"html", modelPredictions, null);
 				%>
 					<%= writer.toString() %>
 				<%

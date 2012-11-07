@@ -3,13 +3,16 @@ package com.tinkerpop.bench.analysis;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.SortedSet;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.tinkerpop.bench.log.SummaryLogEntry;
 import com.tinkerpop.bench.log.SummaryLogReader;
 import com.tinkerpop.bench.operation.operations.OperationCreateKeyIndex;
 import com.tinkerpop.bench.operation.operations.OperationLoadFGF;
+import com.tinkerpop.bench.util.MathUtils;
 import com.tinkerpop.bench.web.DatabaseEngineAndInstance;
 import com.tinkerpop.bench.web.Job;
 import com.tinkerpop.bench.web.JobList;
@@ -25,6 +28,9 @@ public class IngestAnalysis {
 	private static ConcurrentHashMap<DatabaseEngineAndInstance, IngestAnalysis> cache =
 			new ConcurrentHashMap<DatabaseEngineAndInstance, IngestAnalysis>();
 
+	/// The map of datasets descriptions
+	public static final Map<String, DatasetDescription> DATASETS;
+	
 	/// The database and instance pair
 	private DatabaseEngineAndInstance dbEI;
 	
@@ -43,6 +49,61 @@ public class IngestAnalysis {
 	
 	private double createIndexTime = 0;
 	private double createIndexShutdownTime = 0;
+	
+	private double bulkLoadTimePrediction = 0;
+	private double incrementalLoadTimePrediction = 0;
+	
+	
+	static {
+		TreeMap<String, DatasetDescription> m = new TreeMap<String, DatasetDescription>();
+		DatasetDescription d;
+		
+		// XXX This should not be hard-coded
+		
+		d = new DatasetDescription("kron_1k_1el-a" ,     913,     2323,       0); m.put(d.getName(), d);
+		d = new DatasetDescription("kron_1k_1el-b" ,     102,      332,     266); m.put(d.getName(), d);
+		d = new DatasetDescription("kron_1k_2el-a" ,     913,     2323,       0); m.put(d.getName(), d);
+		d = new DatasetDescription("kron_1k_2el-b" ,     102,      332,     266); m.put(d.getName(), d);
+		
+		d = new DatasetDescription("kron_8k_1el-a" ,    7363,    24362,       0); m.put(d.getName(), d);
+		d = new DatasetDescription("kron_8k_1el-b" ,     819,     3919,    2684); m.put(d.getName(), d);
+		d = new DatasetDescription("kron_8k_2el-a" ,    7363,    24362,       0); m.put(d.getName(), d);
+		d = new DatasetDescription("kron_8k_2el-b" ,     819,     3919,    2684); m.put(d.getName(), d);
+		
+		d = new DatasetDescription("kron_1m_1el-a" ,  943717,  5868033,       0); m.put(d.getName(), d);
+		d = new DatasetDescription("kron_1m_1el-b" ,  104858,  1186261,  608288); m.put(d.getName(), d);
+		d = new DatasetDescription("kron_1m_2el-a" ,  943717,  5868033,       0); m.put(d.getName(), d);
+		d = new DatasetDescription("kron_1m_2el-b" ,  104858,  1186261,  608288); m.put(d.getName(), d);
+		
+		d = new DatasetDescription("kron_2m_1el-a" , 1887436, 12867612,       0); m.put(d.getName(), d);
+		d = new DatasetDescription("kron_2m_1el-b" ,  209716,  2651836, 1288514); m.put(d.getName(), d);
+		d = new DatasetDescription("kron_2m_2el-a" , 1887436, 12867612,       0); m.put(d.getName(), d);
+		d = new DatasetDescription("kron_2m_2el-b" ,  209716,  2651836, 1288514); m.put(d.getName(), d);
+		
+		
+		d = new DatasetDescription("barabasi_1k_5k_1el-a"  ,     900,     4495,       0); m.put(d.getName(), d);
+		d = new DatasetDescription("barabasi_1k_5k_1el-b"  ,     100,      500,     378); m.put(d.getName(), d);
+		d = new DatasetDescription("barabasi_1k_5k_2el-a"  ,     900,     4486,       0); m.put(d.getName(), d);
+		d = new DatasetDescription("barabasi_1k_5k_2el-b"  ,     100,      509,     380); m.put(d.getName(), d);
+		
+		d = new DatasetDescription("barabasi_1m_5m_1el-a"  ,  900000,  4499995,       0); m.put(d.getName(), d);
+		d = new DatasetDescription("barabasi_1m_5m_1el-b"  ,  100000,   500000,  357886); m.put(d.getName(), d);
+		d = new DatasetDescription("barabasi_1m_5m_2el-a"  ,  900000,  4499760,       0); m.put(d.getName(), d);
+		d = new DatasetDescription("barabasi_1m_5m_2el-b"  ,  100000,   500235,  358083); m.put(d.getName(), d);
+		
+		d = new DatasetDescription("barabasi_2m_10m_1el-a" , 1800000,  8999995,       0); m.put(d.getName(), d);
+		d = new DatasetDescription("barabasi_2m_10m_1el-b" ,  200000,  1000000,  715848); m.put(d.getName(), d);
+		d = new DatasetDescription("barabasi_2m_10m_2el-a" , 1800000,  8999775,       0); m.put(d.getName(), d);
+		d = new DatasetDescription("barabasi_2m_10m_2el-b" ,  200000,  1000220,  715954); m.put(d.getName(), d);
+		
+		d = new DatasetDescription("barabasi_10m_50m_1el-a", 9000000, 44999995,       0); m.put(d.getName(), d);
+		d = new DatasetDescription("barabasi_10m_50m_1el-b", 1000000,  5000000, 3577880); m.put(d.getName(), d);
+		d = new DatasetDescription("barabasi_10m_50m_2el-a", 9000000, 44998470,       0); m.put(d.getName(), d);
+		d = new DatasetDescription("barabasi_10m_50m_2el-b", 1000000,  5001525, 3580726); m.put(d.getName(), d);
+
+		
+		DATASETS = Collections.unmodifiableMap(m);
+	}
 
 	
 	/**
@@ -111,6 +172,9 @@ public class IngestAnalysis {
 		createIndexTime = 0;
 		createIndexShutdownTime = 0;
 		
+		bulkLoadTimePrediction = 0;
+		incrementalLoadTimePrediction = 0;
+		
 		
 		/*
 		 * Find the load FGF operations
@@ -136,16 +200,21 @@ public class IngestAnalysis {
 								+ "\" for \"" + dbEI + "\"");
 					}
 					
+					String dataset = tags[2];
+					if (tags.length >= 4 && (tags[3].equals("a") || tags[3].equals("b"))) {
+						dataset += "-" + tags[3];
+					}
+					
 					if (thisBulkLoad && bulkLoadJob == null) {
 						bulkLoadJob = j;
 						bulkLoadTime = e.getDefaultRunTimes().getMean() / 1000000.0;	// to ms
-						bulkLoadDataset = tags[2];
+						bulkLoadDataset = dataset;
 					}
 					
 					if (thisIncremental && incrementalLoadJob == null) {
 						incrementalLoadJob = j;
 						incrementalLoadTime = e.getDefaultRunTimes().getMean() / 1000000.0;	// to ms
-						incrementalLoadDataset = tags[2];
+						incrementalLoadDataset = dataset;
 					}
 				}
 				
@@ -177,6 +246,33 @@ public class IngestAnalysis {
 					createIndexShutdownTime += e.getDefaultRunTimes().getMean() / 1000000.0;	// to ms
 				}
 			}
+		}
+		
+		
+		/*
+		 * Make the predictions
+		 */
+		
+		DatasetDescription dataset;
+		
+		dataset = DATASETS.get(bulkLoadDataset);
+		if (dataset != null && MathUtils.ifNeitherIsNull(m.Wv, m.We, m.Wp, m.Rvup) != null) {
+			bulkLoadTimePrediction  = 0;
+			bulkLoadTimePrediction += dataset.getNumVertices()         * m.Wv.doubleValue();
+			bulkLoadTimePrediction += dataset.getNumEdges()            * m.We.doubleValue();
+			bulkLoadTimePrediction += dataset.getNumVertices()         * m.Wp.doubleValue() * 3;		// XXX Hard-coded
+			bulkLoadTimePrediction += dataset.getNumEdges()            * m.Wp.doubleValue() * 1;		// XXX Hard-coded
+			bulkLoadTimePrediction += dataset.getNumExternalVertices() * m.Rvup.doubleValue();
+		}
+		
+		dataset = DATASETS.get(incrementalLoadDataset);
+		if (dataset != null && MathUtils.ifNeitherIsNull(m.Wv, m.We, m.Wp, m.Rvup) != null) {
+			incrementalLoadTimePrediction  = 0;
+			incrementalLoadTimePrediction += dataset.getNumVertices()         * m.Wv.doubleValue();
+			incrementalLoadTimePrediction += dataset.getNumEdges()            * m.We.doubleValue();
+			incrementalLoadTimePrediction += dataset.getNumVertices()         * m.Wp.doubleValue() * 3;		// XXX Hard-coded
+			incrementalLoadTimePrediction += dataset.getNumEdges()            * m.Wp.doubleValue() * 1;		// XXX Hard-coded
+			incrementalLoadTimePrediction += dataset.getNumExternalVertices() * m.Rvup.doubleValue();
 		}
 		
 		
@@ -259,5 +355,93 @@ public class IngestAnalysis {
 		r += incrementalLoadTime + incrementalLoadShutdownTime;
 		r += createIndexTime + createIndexShutdownTime;
 		return r;
+	}
+	
+	
+	/**
+	 * Get the bulk load time prediction
+	 * 
+	 * @return the time in ms, or 0 if none
+	 */
+	public double getBulkLoadTimePrediction() {
+		return bulkLoadTimePrediction;
+	}
+	
+	
+	/**
+	 * Get the incremental load time prediction
+	 * 
+	 * @return the time in ms, or 0 if none
+	 */
+	public double getIncrementalLoadTimePrediction() {
+		return incrementalLoadTimePrediction;
+	}
+	
+	
+	/**
+	 * A dataset description
+	 */
+	public static class DatasetDescription {
+		
+		private String name;
+		private int numVertices;
+		private int numEdges;
+		private int numExternalVertices;
+		
+		
+		/**
+		 * Create an instance of class DatasetDescription
+		 * 
+		 * @param name the dataset name
+		 * @param numVertices the total number of vertices
+		 * @param numEdges the total number of edges
+		 * @param numExternalVertices the total number of externally referenced vertices
+		 */
+		public DatasetDescription(String name, int numVertices, int numEdges, int numExternalVertices) {
+			this.name = name;
+			this.numVertices = numVertices;
+			this.numEdges = numEdges;
+			this.numExternalVertices = numExternalVertices;
+		}
+
+
+		/**
+		 * Return the dataset name
+		 * 
+		 * @return the dataset name
+		 */
+		public String getName() {
+			return name;
+		}
+
+
+		/**
+		 * Return the total number of vertices
+		 * 
+		 * @return the total number of vertices
+		 */
+		public int getNumVertices() {
+			return numVertices;
+		}
+
+
+		/**
+		 * Return the total number of edges
+		 * 
+		 * @return the total number of edges
+		 */
+		public int getNumEdges() {
+			return numEdges;
+		}
+
+
+		/**
+		 * Return the total number of externally referenced vertices
+		 * 
+		 * @return the total number of externally referenced vertices
+		 */
+		public int getNumExternalVertices() {
+			return numExternalVertices;
+		}
 	}
 }

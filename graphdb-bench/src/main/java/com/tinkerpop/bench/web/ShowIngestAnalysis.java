@@ -67,11 +67,13 @@ public class ShowIngestAnalysis extends HttpServlet {
 		String format = WebUtils.getStringParameter(request, "format");
 		if (format == null) format = "plain";
 		
+		boolean predictions = WebUtils.getBooleanParameter(request, "predictions", false);
+		
 		
 		// Get the writer and write out the information
 		
 		PrintWriter writer = response.getWriter();
-		printIngestAnalysis(writer, dbeis, format, response);
+		printIngestAnalysis(writer, dbeis, format, predictions, response);
 	}
 	
 	
@@ -81,9 +83,11 @@ public class ShowIngestAnalysis extends HttpServlet {
 	 * @param writer the writer
 	 * @param dbeis  the database engine name / instance name pairs
 	 * @param format the format
+	 * @param predictions whether to show the model predictions
 	 * @param response the response, or null if none
 	 */
-	public static void printIngestAnalysis(PrintWriter writer, Collection<DatabaseEngineAndInstance> dbeis, String format, HttpServletResponse response) {
+	public static void printIngestAnalysis(PrintWriter writer, Collection<DatabaseEngineAndInstance> dbeis,
+			String format, boolean predictions, HttpServletResponse response) {
 		
 		// Depending on the format type...
 		
@@ -108,6 +112,10 @@ public class ShowIngestAnalysis extends HttpServlet {
 
 			for (DatabaseEngineAndInstance dbei : dbeis) {
 				IngestAnalysis ia = IngestAnalysis.getInstance(dbei);
+				
+				
+				// Data
+				
 				writer.println("<tr>");
 				writer.println("\t<td>" + dbei.getEngine().getLongName() + "</td>");
 				writer.println("\t<td>" + dbei.getInstanceSafe("&lt;default&gt;") + "</td>");
@@ -119,7 +127,24 @@ public class ShowIngestAnalysis extends HttpServlet {
 				writer.println("\t<td class=\"numeric\">" + String.format("%.3f", ia.getCreateIndexShutdownTime()/1000.0) + "</td>");
 				writer.println("\t<td class=\"numeric\">" + String.format("%.3f", ia.getTotalTime()/1000.0) + "</td>");
 				writer.println("</tr>");
+				
+				
+				// Prediction
+				
+				if (!predictions || ia.getIncrementalLoadTimePrediction() == 0) continue;
+				
+				writer.println("<tr>");
+				writer.println("\t<td class=\"na_right\" colspan=\"2\">(prediction)</td>");
+				writer.println("\t<td class=\"na_right\">&mdash;</td>");
+				writer.println("\t<td class=\"na_right\">&mdash;</td>");
+				writer.println("\t<td class=\"numeric\">" + String.format("%.3f", ia.getIncrementalLoadTimePrediction()/1000.0) + "</td>");
+				writer.println("\t<td class=\"na_right\">&mdash;</td>");
+				writer.println("\t<td class=\"na_right\">&mdash;</td>");
+				writer.println("\t<td class=\"na_right\">&mdash;</td>");
+				writer.println("\t<td class=\"na_right\">&mdash;</td>");
+				writer.println("</tr>");
 			}
+			
 			writer.println("</table>");
 		}
 		
@@ -194,6 +219,52 @@ public class ShowIngestAnalysis extends HttpServlet {
 				w.writeNext(buffer);
 				
 				i = index; s = Double.toString(1000000.0 * ia.getIncrementalLoadShutdownTime() / 1000.0 /* HACK, beware! */ );
+				buffer[i++] = "Shutdown after Incremental Load";
+				buffer[i++] = buffer[0] + " : " + buffer[1] + " : " + buffer[3] + " : " + buffer[2];
+				buffer[i++] = s; buffer[i++] = "0"; buffer[i++] = s; buffer[i++] = s;
+				w.writeNext(buffer);
+				
+				i = index; s = Double.toString(1000000.0 * ia.getCreateIndexTime() / 1000.0 /* HACK, beware! */ );
+				buffer[i++] = "Index Creation";
+				buffer[i++] = buffer[0] + " : " + buffer[1] + " : " + buffer[3] + " : " + buffer[2];
+				buffer[i++] = s; buffer[i++] = "0"; buffer[i++] = s; buffer[i++] = s;
+				w.writeNext(buffer);
+				
+				i = index; s = Double.toString(1000000.0 * ia.getCreateIndexShutdownTime() / 1000.0 /* HACK, beware! */ );
+				buffer[i++] = "Shutdown after Index Creation";
+				buffer[i++] = buffer[0] + " : " + buffer[1] + " : " + buffer[3] + " : " + buffer[2];
+				buffer[i++] = s; buffer[i++] = "0"; buffer[i++] = s; buffer[i++] = s;
+				w.writeNext(buffer);
+
+	        	
+	        	// Prediction
+				
+				if (!predictions || ia.getIncrementalLoadTimePrediction() == 0) continue;
+	        	
+	        	index = 0;
+				buffer[index++] = dbei.getEngine().getLongName() + " (pred.)";
+				buffer[index++] = dbei.getInstanceSafe("<default>");
+				buffer[index++] = "predicted";
+				
+				i = index; s = Double.toString(1000000.0 * ia.getBulkLoadTime() / 1000.0 /* HACK, beware! */ );
+				buffer[i++] = "Bulk Load";
+				buffer[i++] = buffer[0] + " : " + buffer[1] + " : " + buffer[3] + " : " + buffer[2];
+				buffer[i++] = s; buffer[i++] = "0"; buffer[i++] = s; buffer[i++] = s;
+				w.writeNext(buffer);
+				
+				i = index; s = Double.toString(1000000.0 * ia.getBulkLoadShutdownTime() / 1000.0 /* HACK, beware! */ );
+				buffer[i++] = "Shutdown after Bulk Load";
+				buffer[i++] = buffer[0] + " : " + buffer[1] + " : " + buffer[3] + " : " + buffer[2];
+				buffer[i++] = s; buffer[i++] = "0"; buffer[i++] = s; buffer[i++] = s;
+				w.writeNext(buffer);
+				
+				i = index; s = Double.toString(1000000.0 * ia.getIncrementalLoadTimePrediction() / 1000.0 /* HACK, beware! */ );
+				buffer[i++] = "Incremental Load";
+				buffer[i++] = buffer[0] + " : " + buffer[1] + " : " + buffer[3] + " : " + buffer[2];
+				buffer[i++] = s; buffer[i++] = "0"; buffer[i++] = s; buffer[i++] = s;
+				w.writeNext(buffer);
+				
+				i = index; s = Double.toString(1000000.0 * 0 / 1000.0 /* HACK, beware! */ );
 				buffer[i++] = "Shutdown after Incremental Load";
 				buffer[i++] = buffer[0] + " : " + buffer[1] + " : " + buffer[3] + " : " + buffer[2];
 				buffer[i++] = s; buffer[i++] = "0"; buffer[i++] = s; buffer[i++] = s;
