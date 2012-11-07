@@ -84,11 +84,18 @@ public class RunAnalysis extends HttpServlet {
 		
 		j.setUnlisted(true);
 		j.start();
+		
+		
+		// Start the response
+		
+        response.setContentType("text/plain");
+        response.setStatus(HttpServletResponse.SC_OK);
 
 
 		// Pretty-print the command-line
 
 		response.getWriter().println(j.toMultilineString(false));
+		response.getWriter().flush();
 		response.flushBuffer();
 
 

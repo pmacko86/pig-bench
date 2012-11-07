@@ -56,11 +56,18 @@ public class PreloadAnalyses extends HttpServlet {
 				dbeis.add(new DatabaseEngineAndInstance(DatabaseEngine.ENGINES.get(p.getFirst()), p.getSecond()));
 			}
 		}
+		
+		
+		// Start the response
+		
+        response.setContentType("text/plain");
+        response.setStatus(HttpServletResponse.SC_OK);
 
 
 		// Run
 
 		response.getWriter().println("Preloading Analyses:");
+		response.getWriter().flush();
 		response.flushBuffer();
 
 		try {
@@ -74,6 +81,7 @@ public class PreloadAnalyses extends HttpServlet {
 				}
 				
 				response.getWriter().println("  " + dbei);
+				response.getWriter().flush();
 				response.flushBuffer();
 				
 				ModelAnalysis.getInstance(dbei);
@@ -82,6 +90,7 @@ public class PreloadAnalyses extends HttpServlet {
 			
 			response.getWriter().println();
 			response.getWriter().println("Done.");
+			response.getWriter().flush();
 			response.flushBuffer();
 		}
 		catch (Exception e) {
