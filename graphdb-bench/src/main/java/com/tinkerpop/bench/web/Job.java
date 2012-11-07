@@ -3,6 +3,7 @@ package com.tinkerpop.bench.web;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -31,6 +32,8 @@ import com.tinkerpop.bench.benchmark.BenchmarkMicro;
  * @author Peter Macko (pmacko@eecs.harvard.edu)
  */
 public class Job implements Comparable<Job> {
+	
+	private static SimpleDateFormat dateTimeFormatter = new SimpleDateFormat("[yyyy/MM/dd HH:mm:ss]");
 	
 	private int id;
 	private List<String> arguments;
@@ -727,6 +730,30 @@ public class Job implements Comparable<Job> {
 	 */
 	public int getId() {
 		return id;
+	}
+	
+	
+	/**
+	 * Get a hopefully unique, persistent ID that does not change every time
+	 * the program starts.
+	 * 
+	 * @return a unique, persistent ID
+	 */
+	public long getPersistentId() {
+		long r = 0;
+		
+		r ^= ((long) arguments.hashCode()) << 0;
+		r ^= ((long) dbEngine .hashCode()) << 10;
+		
+		if (dbInstance != null) {
+			r ^= ((long) dbInstance.hashCode()) << 20;
+		}
+		
+		if (executionTime != null) {
+			r ^= ((long) dateTimeFormatter.format(executionTime).hashCode()) << 30;
+		}
+		
+		return r;
 	}
 	
 	

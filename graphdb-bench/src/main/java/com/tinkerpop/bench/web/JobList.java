@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.tinkerpop.bench.util.ConsoleUtils;
 import com.tinkerpop.bench.util.Pair;
 
 
@@ -34,6 +35,7 @@ public class JobList {
 	
 	// Map: id ---> finished job
 	private HashMap<Integer, Job> finishedJobMap;
+	private HashMap<Long, Job> finishedJobPersistentIdMap;
 	
 	
 	// Job execution control
@@ -59,11 +61,17 @@ public class JobList {
 		
 		finishedJobs = new HashMap<Pair<String,String>, LinkedList<Job>>();
 		finishedJobMap = new HashMap<Integer, Job>();
+		finishedJobPersistentIdMap = new HashMap<Long, Job>();
 		
 		Collection<Pair<String, String>> dbis = WebUtils.getDatabaseInstancePairs();
 		for (Pair<String, String> p : dbis) {
 			LinkedList<Job> l = fetchFinishedJobs(p.first, p.second);
-			for (Job j : l) finishedJobMap.put(j.getId(), j);
+			for (Job j : l) {
+				finishedJobMap.put(j.getId(), j);
+				if (finishedJobPersistentIdMap.put(j.getPersistentId(), j) != null) {
+					ConsoleUtils.warn("Conflict of two persistent job IDs");
+				}
+			}
 			finishedJobs.put(p, l);
 		}
 		
@@ -148,6 +156,17 @@ public class JobList {
 	 */
 	public Job getFinishedJob(int id) {
 		return finishedJobMap.get(id);
+	}
+
+
+	/**
+	 * Get a finished job based on its persistent ID
+	 * 
+	 * @param id the job ID
+	 * @return the finished job, or null if not found, not yet executed, or still running
+	 */
+	public Job getFinishedJobByPersistentId(long id) {
+		return finishedJobPersistentIdMap.get(id);
 	}
 	
 	
@@ -325,6 +344,7 @@ public class JobList {
 							finishedJobs.put(key, l);
 						}
 						finishedJobMap.put(current.getId(), current);
+						finishedJobPersistentIdMap.put(current.getPersistentId(), current);
 					}
 				}
 			}

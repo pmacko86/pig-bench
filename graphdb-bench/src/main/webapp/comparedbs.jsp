@@ -200,8 +200,8 @@
 									TreeSet<Job> selectedJobsForSelectedDatabaseInstanceAndOperation = new TreeSet<Job>();
 									if (params != null) {
 										for (String pm : params) {
-											int jobId = Integer.parseInt(pm);
-											Job job = JobList.getInstance().getFinishedJob(jobId);
+											long jobId = Long.parseLong(pm);
+											Job job = JobList.getInstance().getFinishedJobByPersistentId(jobId);
 											if (job == null) continue;
 											if (!jobs.contains(job)) continue;
 											selectedJobsForSelectedDatabaseInstanceAndOperation.add(job);
@@ -248,7 +248,7 @@
 										String prefix = dateTimeFormatter.format(job.getExecutionTime()) + " ";
 										
 										%>
-											<option value="<%= job.getId() %>"<%= extraTags %>><%= prefix + job.toString() %></option>
+											<option value="<%= job.getPersistentId() %>"<%= extraTags %>><%= prefix + job.toString() %></option>
 										<%
 									}
 									%>
