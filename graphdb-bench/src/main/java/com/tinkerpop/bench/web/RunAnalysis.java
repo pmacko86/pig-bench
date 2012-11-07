@@ -20,7 +20,7 @@ public class RunAnalysis extends HttpServlet {
 	
 	
 	/**
-	 * Create an instance of class DownloadResults
+	 * Create an instance of class RunAnalysis
 	 */
 	public RunAnalysis() {
 	}

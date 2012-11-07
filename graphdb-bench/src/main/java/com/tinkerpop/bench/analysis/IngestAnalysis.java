@@ -166,7 +166,7 @@ public class IngestAnalysis {
 		
 		SortedSet<Job> createIndexJobs = m.getJobs(OperationCreateKeyIndex.class);
 		
-		Job createIndexJob = jobs.isEmpty() ? null : createIndexJobs.last();
+		Job createIndexJob = createIndexJobs == null || createIndexJobs.isEmpty() ? null : createIndexJobs.last();
 		if (createIndexJob != null) {
 			SummaryLogReader reader = new SummaryLogReader(createIndexJob.getSummaryFile());
 			for (SummaryLogEntry e : reader) {

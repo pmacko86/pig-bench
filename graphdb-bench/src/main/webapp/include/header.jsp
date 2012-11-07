@@ -65,6 +65,11 @@
 				<% } else { %>
 					<li><p>Analyze Ingest</p></li>
 				<% } %>
+				<% if (!jsp_page.equals("advanced")) { %>
+					<li><a href="advanced.jsp">Advanced</a></li>
+				<% } else { %>
+					<li><p>Advanced</p></li>
+				<% } %>
 			</ul>
 		</div>
 	

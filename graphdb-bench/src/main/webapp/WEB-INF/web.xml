@@ -44,6 +44,13 @@ xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns
 	 </servlet>
 	
 	<servlet>
+		<display-name>PreloadAnalyses</display-name>
+		<servlet-name>PreloadAnalyses</servlet-name>
+		<servlet-class>com.tinkerpop.bench.web.PreloadAnalyses</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	 </servlet>
+	
+	<servlet>
 		<display-name>RunAnalysis</display-name>
 		<servlet-name>RunAnalysis</servlet-name>
 		<servlet-class>com.tinkerpop.bench.web.RunAnalysis</servlet-class>
@@ -115,6 +122,11 @@ xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns
 	<servlet-mapping>
 		<servlet-name>JobListControl</servlet-name>
 		<url-pattern>/JobListControl</url-pattern>
+	</servlet-mapping>
+ 
+	<servlet-mapping>
+		<servlet-name>PreloadAnalyses</servlet-name>
+		<url-pattern>/PreloadAnalyses</url-pattern>
 	</servlet-mapping>
  
 	<servlet-mapping>
