@@ -276,7 +276,9 @@
 		var y = d3.scale.<%= chartProperties.yscale %>()
 				  .domain([<%= "log".equals(chartProperties.yscale)
 					  ? "0.9 * d3.min(data, function(d) { "
-					    + "  if (d.label.indexOf('----') == 0) return 1000 * 1000 * 1000;"
+						+ "  if (d.label.indexOf('----') == 0) return 1000 * 1000 * 1000;"
+						+ "  if (stacked && d.mean == 0 && d.stdev == 0) return 1000 * 1000 * 1000;"
+						+ "  if (d.mean <= d.stdev) return 1000 * 1000 * 1000;"	// is this correct?
 						+ "  return d.mean - d.stdev < 0 ? 0 : d.mean - d.stdev;"
 					  	+ "})"
 					  : "0" %>, 
@@ -557,6 +559,8 @@
 				 .attr("width", x.rangeBand())
 				 .attr("height", function(d, i) { return chart_inner_height - y(d.mean); });
 					  
+			var y_domain_min = y.domain()[0];
+			
 			chart.selectAll("error_bars_middle")
 				 .data(data)
 				 .enter().append("line")
@@ -564,7 +568,7 @@
 				 .attr("x1", function(d, i) { return (i + 0.5) * x.rangeBand(); })
 				 .attr("x2", function(d, i) { return (i + 0.5) * x.rangeBand(); })
 				 .attr("y1", function(d, i) { return y(d.mean + d.stdev); })
-				 .attr("y2", function(d, i) { return y(d.mean - d.stdev < 0 ? 0 : d.mean - d.stdev); });
+				 .attr("y2", function(d, i) { return y(d.mean - d.stdev < y_domain_min ? y_domain_min : d.mean - d.stdev); });
 					  
 			chart.selectAll("error_bars_top")
 				 .data(data)
@@ -574,15 +578,15 @@
 				 .attr("x2", function(d, i) { return (i + 0.75) * x.rangeBand(); })
 				 .attr("y1", function(d, i) { return y(d.mean + d.stdev); })
 				 .attr("y2", function(d, i) { return y(d.mean + d.stdev); });
-					  
+			
 			chart.selectAll("error_bars_bottom")
 				 .data(data)
 				 .enter().append("line")
 				 .style("stroke", function(d, i) { return isNaN(d.stdev) || d.stdev == 0 ? "none" : "#000" })
 				 .attr("x1", function(d, i) { return (i + 0.25) * x.rangeBand(); })
 				 .attr("x2", function(d, i) { return (i + 0.75) * x.rangeBand(); })
-				 .attr("y1", function(d, i) { return y(d.mean - d.stdev < 0 ? 0 : d.mean - d.stdev); })
-				 .attr("y2", function(d, i) { return y(d.mean - d.stdev < 0 ? 0 : d.mean - d.stdev); });
+				 .attr("y1", function(d, i) { return y(d.mean - d.stdev < y_domain_min ? y_domain_min : d.mean - d.stdev); })
+				 .attr("y2", function(d, i) { return y(d.mean - d.stdev < y_domain_min ? y_domain_min : d.mean - d.stdev); });
 	
 				 
 			<% if (!chartProperties.hideDataLabels) { %>

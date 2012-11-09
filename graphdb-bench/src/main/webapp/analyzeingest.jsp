@@ -147,18 +147,12 @@
 				boolean logScale = WebUtils.getBooleanParameter(request, "logscale", false);
 				boolean byInstance = WebUtils.getBooleanParameter(request, "byinstance", false);
 				boolean modelPredictions = WebUtils.getBooleanParameter(request, "modelpredictions", false);
+				boolean hideDataLabels = WebUtils.getBooleanParameter(request, "hidedatalabels", false);
+				boolean hideIndexCreation = WebUtils.getBooleanParameter(request, "hideindexcreation", false);
 			%>
 			
 			<div id="select_display_options">
 				<p class="middle">2) Select display options:</p>
-					
-				<label class="checkbox">
-					<input class="checkbox" type="checkbox"
-							name="smallgraphs" id="smallgraphs"
-							onchange="form_submit();" <%= smallGraphs ? "checked=\"checked\"" : "" %>
-							value="true"/>
-					Produce smaller graphs
-				</label>
 					
 				<label class="checkbox">
 					<input class="checkbox" type="checkbox"
@@ -167,6 +161,8 @@
 							value="true"/>
 					One graph per instance (in addition to the summary graph)
 				</label>
+							
+				<div class="medium_spacer"></div>
 					
 				<label class="checkbox">
 					<input class="checkbox" type="checkbox"
@@ -174,6 +170,14 @@
 							onchange="form_submit();" <%= logScale ? "checked=\"checked\"" : "" %>
 							value="true"/>
 					Use log scale
+				</label>
+					
+				<label class="checkbox">
+					<input class="checkbox" type="checkbox"
+							name="smallgraphs" id="smallgraphs"
+							onchange="form_submit();" <%= smallGraphs ? "checked=\"checked\"" : "" %>
+							value="true"/>
+					Produce smaller graphs
 				</label>
 							
 				<label class="checkbox">
@@ -186,10 +190,28 @@
 							
 				<label class="checkbox">
 					<input class="checkbox" type="checkbox"
+							name="hidedatalabels" id="hidedatalabels"
+							onchange="form_submit();" <%= hideDataLabels ? "checked=\"checked\"" : "" %>
+							value="true"/>
+					Hide data labels
+				</label>
+							
+				<div class="medium_spacer"></div>
+							
+				<label class="checkbox">
+					<input class="checkbox" type="checkbox"
 							name="modelpredictions" id="modelpredictions"
 							onchange="form_submit();" <%= modelPredictions ? "checked=\"checked\"" : "" %>
 							value="true"/>
 					Show model predictions for the incremental ingest time
+				</label>
+							
+				<label class="checkbox">
+					<input class="checkbox" type="checkbox"
+							name="hideindexcreation" id="hideindexcreation"
+							onchange="form_submit();" <%= hideIndexCreation ? "checked=\"checked\"" : "" %>
+							value="true"/>
+					Hide index creation, both from the plots and from the data table
 				</label>
 			</div>
 			
@@ -216,7 +238,9 @@
 					<h2>Results</h2>
 				<%
 				
-				String link = "/ShowIngestAnalysis?format=csv&predictions=" + modelPredictions;
+				String linkCore = "/ShowIngestAnalysis?format=csv&predictions=" + modelPredictions
+									+ "&hide_index_creation=" + hideIndexCreation;
+				String link = linkCore;
 				for (DatabaseEngineAndInstance dbei : selectedDatabaseInstances_sortedByInstance) {
 					link += "&database_engine_instance=" + dbei.getEngine().getShortName() + "|" + dbei.getInstanceSafe("");
 				}
@@ -229,6 +253,7 @@
 				chartProperties.yscale = logScale ? "log" : "linear";
 				chartProperties.smallGraph = smallGraphs;
 				chartProperties.patternFill = patternFill;
+				chartProperties.hideDataLabels = hideDataLabels;
 				chartProperties.ylabel = "Execution Time (s)";
 				chartProperties.subgroup_by = "dbengine";
 				chartProperties.subgroup_label_function = "return d.dbengine";
@@ -246,7 +271,7 @@
 				
 				StringWriter writer = new StringWriter();
 				ShowIngestAnalysis.printIngestAnalysis(new PrintWriter(writer), selectedDatabaseInstances_sortedByInstance,
-						"html", modelPredictions, null);
+						"html", modelPredictions, !hideIndexCreation /* show index creation */, null);
 				%>
 					<%= writer.toString() %>
 				<%
@@ -267,7 +292,7 @@
 					}
 					
 					for (String instance : instanceToSelectedDBEIs.keySet()) {
-						link = "/ShowIngestAnalysis?format=csv";
+						link = linkCore;
 						for (DatabaseEngineAndInstance d : instanceToSelectedDBEIs.get(instance)) {
 							link += "&database_engine_instance=" + d.getEngine().getShortName() + "|" + d.getInstanceSafe("");
 						}

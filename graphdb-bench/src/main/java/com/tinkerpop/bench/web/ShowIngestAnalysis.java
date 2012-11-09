@@ -15,6 +15,7 @@ import au.com.bytecode.opencsv.CSVWriter;
 
 import com.tinkerpop.bench.DatabaseEngine;
 import com.tinkerpop.bench.analysis.IngestAnalysis;
+import com.tinkerpop.bench.util.MathUtils;
 
 
 /**
@@ -68,12 +69,13 @@ public class ShowIngestAnalysis extends HttpServlet {
 		if (format == null) format = "plain";
 		
 		boolean predictions = WebUtils.getBooleanParameter(request, "predictions", false);
+		boolean hideIndexCreation = WebUtils.getBooleanParameter(request, "hide_index_creation", false);
 		
 		
 		// Get the writer and write out the information
 		
 		PrintWriter writer = response.getWriter();
-		printIngestAnalysis(writer, dbeis, format, predictions, response);
+		printIngestAnalysis(writer, dbeis, format, predictions, !hideIndexCreation, response);
 	}
 	
 	
@@ -84,10 +86,11 @@ public class ShowIngestAnalysis extends HttpServlet {
 	 * @param dbeis  the database engine name / instance name pairs
 	 * @param format the format
 	 * @param predictions whether to show the model predictions
+	 * @param showIndexCreation whether to show the index creation
 	 * @param response the response, or null if none
 	 */
 	public static void printIngestAnalysis(PrintWriter writer, Collection<DatabaseEngineAndInstance> dbeis,
-			String format, boolean predictions, HttpServletResponse response) {
+			String format, boolean predictions, boolean showIndexCreation, HttpServletResponse response) {
 		
 		// Depending on the format type...
 		
@@ -105,10 +108,14 @@ public class ShowIngestAnalysis extends HttpServlet {
 			writer.println("\t<th>Shutdown after Bulk Load (ms)</th>");
 			writer.println("\t<th>Incremental Load (s)</th>");
 			writer.println("\t<th>Shutdown after Incremental Load (s)</th>");
-			writer.println("\t<th>Index Creation (s)</th>");
-			writer.println("\t<th>Shutdown after Index Creation (s)</th>");
+			if (showIndexCreation) {
+				writer.println("\t<th>Index Creation (s)</th>");
+				writer.println("\t<th>Shutdown after Index Creation (s)</th>");
+			}
 			writer.println("\t<th>Total (s)</th>");
 			writer.println("</tr>");
+			
+			double[] data = new double[6 - (showIndexCreation ? 0 : 2)];
 
 			for (DatabaseEngineAndInstance dbei : dbeis) {
 				IngestAnalysis ia = IngestAnalysis.getInstance(dbei);
@@ -116,16 +123,24 @@ public class ShowIngestAnalysis extends HttpServlet {
 				
 				// Data
 				
+				int index = 0;
+				data[index++] = ia.getBulkLoadTime();
+				data[index++] = ia.getBulkLoadShutdownTime();
+				data[index++] = ia.getIncrementalLoadTime();
+				data[index++] = ia.getIncrementalLoadShutdownTime();
+				if (showIndexCreation) {
+					data[index++] = ia.getCreateIndexTime();
+					data[index++] = ia.getCreateIndexShutdownTime();
+				}
+				
 				writer.println("<tr>");
 				writer.println("\t<td>" + dbei.getEngine().getLongName() + "</td>");
 				writer.println("\t<td>" + dbei.getInstanceSafe("&lt;default&gt;") + "</td>");
-				writer.println("\t<td class=\"numeric\">" + String.format("%.3f", ia.getBulkLoadTime()/1000.0) + "</td>");
-				writer.println("\t<td class=\"numeric\">" + String.format("%.3f", ia.getBulkLoadShutdownTime()/1000.0) + "</td>");
-				writer.println("\t<td class=\"numeric\">" + String.format("%.3f", ia.getIncrementalLoadTime()/1000.0) + "</td>");
-				writer.println("\t<td class=\"numeric\">" + String.format("%.3f", ia.getIncrementalLoadShutdownTime()/1000.0) + "</td>");
-				writer.println("\t<td class=\"numeric\">" + String.format("%.3f", ia.getCreateIndexTime()/1000.0) + "</td>");
-				writer.println("\t<td class=\"numeric\">" + String.format("%.3f", ia.getCreateIndexShutdownTime()/1000.0) + "</td>");
-				writer.println("\t<td class=\"numeric\">" + String.format("%.3f", ia.getTotalTime()/1000.0) + "</td>");
+				
+				for (int i = 0; i < data.length; i++) {
+					writer.println("\t<td class=\"numeric\">" + String.format("%.3f", data[i]/1000.0) + "</td>");
+				}
+				writer.println("\t<td class=\"numeric\">" + String.format("%.3f", MathUtils.sum(data)/1000.0) + "</td>");
 				writer.println("</tr>");
 				
 				
@@ -139,8 +154,10 @@ public class ShowIngestAnalysis extends HttpServlet {
 				writer.println("\t<td class=\"na_right\">&mdash;</td>");
 				writer.println("\t<td class=\"numeric\">" + String.format("%.3f", ia.getIncrementalLoadTimePrediction()/1000.0) + "</td>");
 				writer.println("\t<td class=\"na_right\">&mdash;</td>");
-				writer.println("\t<td class=\"na_right\">&mdash;</td>");
-				writer.println("\t<td class=\"na_right\">&mdash;</td>");
+				if (showIndexCreation) {
+					writer.println("\t<td class=\"na_right\">&mdash;</td>");
+					writer.println("\t<td class=\"na_right\">&mdash;</td>");
+				}
 				writer.println("\t<td class=\"na_right\">&mdash;</td>");
 				writer.println("</tr>");
 			}
@@ -224,17 +241,19 @@ public class ShowIngestAnalysis extends HttpServlet {
 				buffer[i++] = s; buffer[i++] = "0"; buffer[i++] = s; buffer[i++] = s;
 				w.writeNext(buffer);
 				
-				i = index; s = Double.toString(1000000.0 * ia.getCreateIndexTime() / 1000.0 /* HACK, beware! */ );
-				buffer[i++] = "Index Creation";
-				buffer[i++] = buffer[0] + " : " + buffer[1] + " : " + buffer[3] + " : " + buffer[2];
-				buffer[i++] = s; buffer[i++] = "0"; buffer[i++] = s; buffer[i++] = s;
-				w.writeNext(buffer);
-				
-				i = index; s = Double.toString(1000000.0 * ia.getCreateIndexShutdownTime() / 1000.0 /* HACK, beware! */ );
-				buffer[i++] = "Shutdown after Index Creation";
-				buffer[i++] = buffer[0] + " : " + buffer[1] + " : " + buffer[3] + " : " + buffer[2];
-				buffer[i++] = s; buffer[i++] = "0"; buffer[i++] = s; buffer[i++] = s;
-				w.writeNext(buffer);
+				if (showIndexCreation) {
+					i = index; s = Double.toString(1000000.0 * ia.getCreateIndexTime() / 1000.0 /* HACK, beware! */ );
+					buffer[i++] = "Index Creation";
+					buffer[i++] = buffer[0] + " : " + buffer[1] + " : " + buffer[3] + " : " + buffer[2];
+					buffer[i++] = s; buffer[i++] = "0"; buffer[i++] = s; buffer[i++] = s;
+					w.writeNext(buffer);
+					
+					i = index; s = Double.toString(1000000.0 * ia.getCreateIndexShutdownTime() / 1000.0 /* HACK, beware! */ );
+					buffer[i++] = "Shutdown after Index Creation";
+					buffer[i++] = buffer[0] + " : " + buffer[1] + " : " + buffer[3] + " : " + buffer[2];
+					buffer[i++] = s; buffer[i++] = "0"; buffer[i++] = s; buffer[i++] = s;
+					w.writeNext(buffer);
+				}
 
 	        	
 	        	// Prediction
@@ -270,17 +289,19 @@ public class ShowIngestAnalysis extends HttpServlet {
 				buffer[i++] = s; buffer[i++] = "0"; buffer[i++] = s; buffer[i++] = s;
 				w.writeNext(buffer);
 				
-				i = index; s = Double.toString(1000000.0 * ia.getCreateIndexTime() / 1000.0 /* HACK, beware! */ );
-				buffer[i++] = "Index Creation";
-				buffer[i++] = buffer[0] + " : " + buffer[1] + " : " + buffer[3] + " : " + buffer[2];
-				buffer[i++] = s; buffer[i++] = "0"; buffer[i++] = s; buffer[i++] = s;
-				w.writeNext(buffer);
-				
-				i = index; s = Double.toString(1000000.0 * ia.getCreateIndexShutdownTime() / 1000.0 /* HACK, beware! */ );
-				buffer[i++] = "Shutdown after Index Creation";
-				buffer[i++] = buffer[0] + " : " + buffer[1] + " : " + buffer[3] + " : " + buffer[2];
-				buffer[i++] = s; buffer[i++] = "0"; buffer[i++] = s; buffer[i++] = s;
-				w.writeNext(buffer);
+				if (showIndexCreation) {
+					i = index; s = Double.toString(1000000.0 * ia.getCreateIndexTime() / 1000.0 /* HACK, beware! */ );
+					buffer[i++] = "Index Creation";
+					buffer[i++] = buffer[0] + " : " + buffer[1] + " : " + buffer[3] + " : " + buffer[2];
+					buffer[i++] = s; buffer[i++] = "0"; buffer[i++] = s; buffer[i++] = s;
+					w.writeNext(buffer);
+					
+					i = index; s = Double.toString(1000000.0 * ia.getCreateIndexShutdownTime() / 1000.0 /* HACK, beware! */ );
+					buffer[i++] = "Shutdown after Index Creation";
+					buffer[i++] = buffer[0] + " : " + buffer[1] + " : " + buffer[3] + " : " + buffer[2];
+					buffer[i++] = s; buffer[i++] = "0"; buffer[i++] = s; buffer[i++] = s;
+					w.writeNext(buffer);
+				}
 			}
 		}
 		
