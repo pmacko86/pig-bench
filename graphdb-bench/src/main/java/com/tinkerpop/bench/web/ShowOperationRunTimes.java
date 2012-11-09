@@ -2,11 +2,14 @@ package com.tinkerpop.bench.web;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.regex.Pattern;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -16,11 +19,13 @@ import javax.servlet.http.HttpServletResponse;
 import au.com.bytecode.opencsv.CSVWriter;
 
 import com.tinkerpop.bench.DatabaseEngine;
+import com.tinkerpop.bench.analysis.AnalysisUtils;
 import com.tinkerpop.bench.log.GraphRunTimes;
 import com.tinkerpop.bench.log.OperationLogEntry;
 import com.tinkerpop.bench.log.OperationLogReader;
 import com.tinkerpop.bench.log.SummaryLogEntry;
 import com.tinkerpop.bench.log.SummaryLogReader;
+import com.tinkerpop.bench.util.Pair;
 import com.tinkerpop.bench.util.Triple;
 
 
@@ -79,6 +84,25 @@ public class ShowOperationRunTimes extends HttpServlet {
 		}
 		
 		
+		// Custom series (applicable to show == "details" only)
+		
+		Map<String, String> customSeriesPatterns = new TreeMap<String, String>();
+		
+		String[] customSeries = WebUtils.getStringParameterValues(request, "custom_series");
+		if (customSeries != null) {
+			for (String cs : customSeries) {
+				String[] kv = cs.split("=", 2);
+				if (kv.length != 2) {
+			        response.setContentType("text/plain");
+			        response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
+			        response.getWriter().println("Error: Invalid argument for \"custom_series\"");
+			        return;
+				}
+				customSeriesPatterns.put(kv[0], kv[1]);
+			}
+		}
+		
+		
 		// Other parameters
 		
 		String format = WebUtils.getStringParameter(request, "format");
@@ -89,11 +113,13 @@ public class ShowOperationRunTimes extends HttpServlet {
 		String show = WebUtils.getStringParameter(request, "show");
 		if (show == null) show = "summary";
 		
+		boolean convertManyOperations = WebUtils.getBooleanParameter(request, "convert_many_operations", false);
+		
 		
 		// Get the writer and write out the log file
 		
 		PrintWriter writer = response.getWriter();
-		printRunTimes(writer, operationsToJobs, format, response, groupBy, show);
+		printRunTimes(writer, operationsToJobs, format, response, groupBy, show, convertManyOperations, customSeriesPatterns);
 	}
 	
 	
@@ -107,7 +133,7 @@ public class ShowOperationRunTimes extends HttpServlet {
 	 */
 	public static void printRunTimes(PrintWriter writer, Map<String, Collection<Job>> operationsToJobs,
 			String format, HttpServletResponse response) {
-		printRunTimes(writer, operationsToJobs, format, response, null, "summary");
+		printRunTimes(writer, operationsToJobs, format, response, null, "summary", false, null);
 	}
 	
 	
@@ -120,12 +146,20 @@ public class ShowOperationRunTimes extends HttpServlet {
 	 * @param response the response, or null if none
 	 * @param groupBy the group by column, or null if none
 	 * @param show what type of data to show (e.g. "summary" or "details")
+	 * @param convertManyOperations whether convert the "Many" operations into the single operations
+	 * @param customSeriesPatterns specify custom series; a map (series name &mdash;&gt; regex defining the series);
+	 *                             for show == "details" only
 	 */
 	public static void printRunTimes(PrintWriter writer, Map<String, Collection<Job>> operationsToJobs,
-			String format, HttpServletResponse response, String groupBy, String show) {
+			String format, HttpServletResponse response, String groupBy, String show, boolean convertManyOperations,
+			Map<String, String> customSeriesPatterns) {
 		
-		if ("summary".equals(show)) printRunTimesSummary(writer, operationsToJobs, format, response, groupBy);
-		else if ("details".equals(show)) printRunTimesDetails(writer, operationsToJobs, format, response, groupBy);
+		if ("summary".equals(show)) {
+			printRunTimesSummary(writer, operationsToJobs, format, response, groupBy, convertManyOperations);
+		}
+		else if ("details".equals(show)) {
+			printRunTimesDetails(writer, operationsToJobs, format, response, groupBy, convertManyOperations, customSeriesPatterns);
+		}
 		else {
 			if (response != null) {
 		        response.setContentType("text/plain");
@@ -144,9 +178,10 @@ public class ShowOperationRunTimes extends HttpServlet {
 	 * @param format the format
 	 * @param response the response, or null if none
 	 * @param groupBy the group by column, or null if none
+	 * @param convertManyOperations whether convert the "Many" operations into the single operations
 	 */
 	public static void printRunTimesSummary(PrintWriter writer, Map<String, Collection<Job>> operationsToJobs,
-			String format, HttpServletResponse response, String groupBy) {
+			String format, HttpServletResponse response, String groupBy, boolean convertManyOperations) {
 		
 		
 		// Get the run time for each job
@@ -166,12 +201,13 @@ public class ShowOperationRunTimes extends HttpServlet {
 			for (Job job : operationsToJobs.get(operationName)) {
 				
 				SummaryLogReader reader = new SummaryLogReader(job.getSummaryFile());
-				GraphRunTimes g = null;
+				GraphRunTimes g = null; SummaryLogEntry entry = null;
 				if (operationName.endsWith("*")) {
 					String m = operationName.substring(0, operationName.length() - 1);
 					for (SummaryLogEntry e : reader) {
 						if (e.getName().startsWith(m)) {
 							g = e.getDefaultRunTimes();
+							entry = e;
 						}
 					}
 				}
@@ -179,6 +215,7 @@ public class ShowOperationRunTimes extends HttpServlet {
 					for (SummaryLogEntry e : reader) {
 						if (e.getName().equals(operationName)) {
 							g = e.getDefaultRunTimes();
+							entry = e;
 						}
 					}
 				}
@@ -204,8 +241,13 @@ public class ShowOperationRunTimes extends HttpServlet {
 			        return;
 				}
 				
+				if (convertManyOperations && AnalysisUtils.isManyOperation(operationName)) {
+					entry = AnalysisUtils.convertLogEntryForManyOperation(entry, job);
+					g = entry.getDefaultRunTimes();
+				}
+				
 				// XXX Hack
-				String s = operationName;
+				String s = entry.getName();
 				if ("run".equals(groupBy)) {
 					String d = differenceStrigns.get(job);
 					if ("".equals(d)) d = "<default>";
@@ -216,6 +258,7 @@ public class ShowOperationRunTimes extends HttpServlet {
 						s += " " + d;
 					}
 				}
+				
 				operationsJobsRunTimes.add(new Triple<String, Job, GraphRunTimes>(s, job, g));
 				
 				if (firstJob == null) {
@@ -379,11 +422,24 @@ public class ShowOperationRunTimes extends HttpServlet {
 	 * @param format the format
 	 * @param response the response, or null if none
 	 * @param groupBy the group by column, or null if none
+	 * @param convertManyOperations whether convert the "Many" operations into the single operations
+	 * @param customSeriesPatterns specify custom series; a map (series name &mdash;&gt; regex defining the series)
 	 */
 	public static void printRunTimesDetails(PrintWriter writer, Map<String, Collection<Job>> operationsToJobs,
-			String format, HttpServletResponse response, String groupBy) {
+			String format, HttpServletResponse response, String groupBy, boolean convertManyOperations,
+			Map<String, String> customSeriesPatterns) {
 		
 		long start = System.currentTimeMillis();
+		
+		
+		// Compile the custom regexs
+		
+		List<Pair<String, Pattern>> customSeriesNamesAndCompiledPatterns = new ArrayList<Pair<String, Pattern>>();
+		if (customSeriesPatterns != null) {
+			for (Map.Entry<String, String> e : customSeriesPatterns.entrySet()) {
+				customSeriesNamesAndCompiledPatterns.add(new Pair<String, Pattern>(e.getKey(), Pattern.compile(e.getValue())));
+			}
+		}
 		
 		
 		// Get the run time for each job
@@ -405,8 +461,13 @@ public class ShowOperationRunTimes extends HttpServlet {
 				OperationLogReader reader = new OperationLogReader(job.getLogFile(), operationName);
 				for (OperationLogEntry e : reader) {
 					if (e.getName().equals(operationName)) {
+						
+						if (convertManyOperations && AnalysisUtils.isManyOperation(operationName)) {
+							e = AnalysisUtils.convertLogEntryForManyOperation(e);
+						}
+						
 						// XXX Hack
-						String s = operationName;
+						String s = e.getName();
 						if ("run".equals(groupBy)) {
 							String d = differenceStrigns.get(job);
 							if ("".equals(d)) d = "<default>";
@@ -417,6 +478,14 @@ public class ShowOperationRunTimes extends HttpServlet {
 								s += " " + d;
 							}
 						}
+						
+						for (Pair<String, Pattern> p : customSeriesNamesAndCompiledPatterns) {
+							if (p.getSecond().matcher(s).matches()) {
+								s = p.getFirst();
+								break;
+							}
+						}
+						
 						operationsJobsRunTimes.add(new Triple<String, Job, OperationLogEntry>(s, job, e));
 					}
 				}

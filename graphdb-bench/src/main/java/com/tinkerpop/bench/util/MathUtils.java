@@ -100,6 +100,20 @@ public class MathUtils {
 	
 	
 	/**
+	 * Compute standard deviation
+	 * 
+	 * @param a the array
+	 * @return the standard deviation
+	 */
+	public static double stdev(double[] a) {
+		double mean = average(a);
+		double s = 0;
+		for (double x : a) s += sqr(x - mean);
+		return Math.sqrt(s / a.length);
+	}
+	
+	
+	/**
 	 * Adjust the elements in the array, so that they sum up approximately to
 	 * the given value, and so that each element is at least the specified
 	 * minimum value. This method expects all numbers in the array to be

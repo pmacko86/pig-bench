@@ -1,4 +1,5 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<%@page import="org.apache.commons.lang.StringUtils"%>
 <%@ page import="com.tinkerpop.bench.Bench"%>
 <%@ page import="com.tinkerpop.bench.DatabaseEngine"%>
 <%@ page import="com.tinkerpop.bench.Workload"%>
@@ -11,6 +12,7 @@
 <%@ page import="com.tinkerpop.bench.web.ChartProperties.LinearFunction"%>
 <%@ page import="java.io.*"%>
 <%@ page import="java.text.SimpleDateFormat"%>
+<%@ page import="java.util.regex.Pattern"%>
 <%@ page import="java.util.*"%>
 <%@ page import="au.com.bytecode.opencsv.CSVReader"%>
 <%@ page import="org.apache.commons.lang.StringEscapeUtils"%>
@@ -266,6 +268,7 @@
 				// Display options
 				
 				boolean smallGraphs = WebUtils.getBooleanParameter(request, "smallgraphs", false);
+				boolean convertManyOperations = WebUtils.getBooleanParameter(request, "convertmanyoperations", false);
 				boolean barGraphs = WebUtils.getBooleanParameter(request, "bargraphs", false);
 				boolean logScale_barGraphs = WebUtils.getBooleanParameter(request, "logscale_bargraphs", false);
 				boolean patternFill_barGraphs = WebUtils.getBooleanParameter(request, "patternfill_bargraphs", false);
@@ -280,6 +283,7 @@
 				boolean plotTimeVsRetrievedNeighborhoodNodes = WebUtils.getBooleanParameter(request, "plotTimeVsRetrievedNeighborhoodNodes", false);
 				boolean linearFits = WebUtils.getBooleanParameter(request, "linearFits", false);
 				boolean modelAnalysisPredictions = WebUtils.getBooleanParameter(request, "modelAnalysisPredictions", false);
+				boolean mergeKHops = WebUtils.getBooleanParameter(request, "mergeKHops", false);
 				
 				String boxPlotFilter = WebUtils.getStringParameter(request, "boxplotfilter");
 				if (boxPlotFilter == null) boxPlotFilter = "true";
@@ -317,7 +321,7 @@
 							<p class="middle">4) Select display options:</p>
 								
 							<div style="height:10px"></div>
-							<p class="middle_inner">Generic Options</p>
+							<p class="middle_inner">Generic Options for All Plots</p>
 								
 							<label class="checkbox">
 								<input class="checkbox" type="checkbox"
@@ -325,6 +329,14 @@
 										onchange="form_submit();" <%= smallGraphs ? "checked=\"checked\"" : "" %>
 										value="true"/>
 								Produce smaller graphs
+							</label>
+								
+							<label class="checkbox">
+								<input class="checkbox" type="checkbox"
+										name="convertmanyoperations" id="convertmanyoperations"
+										onchange="form_submit();" <%= convertManyOperations ? "checked=\"checked\"" : "" %>
+										value="true"/>
+								Convert "Many" operations to the equivalent micro operations that they consist of
 							</label>
 							
 							
@@ -375,17 +387,7 @@
 							
 							
 							<div style="height:20px"></div>
-							<p class="middle_inner">Data Box Plots</p>
-							
-							<label class="checkbox">
-								<input class="checkbox" type="checkbox"
-										name="boxplots" id="boxplots"
-										onchange="form_submit();" <%= boxPlots ? "checked=\"checked\"" : "" %>
-										value="true"/>
-								Display the summary box plot
-							</label>
-							
-							<div class="medium_spacer"></div>
+							<p class="middle_inner">Generic Options for Data Plots</p>
 							
 							<label class="checkbox">
 								<input class="checkbox" type="checkbox"
@@ -424,6 +426,18 @@
 							<input type="text" name="boxplotyvalue" id="boxplotyvalue"
 									onchange="form_submit();"
 									value="<%= StringEscapeUtils.escapeHtml(boxPlotYValue) %>"/>
+							
+							
+							<div style="height:20px"></div>
+							<p class="middle_inner">Data Box Plots</p>
+							
+							<label class="checkbox">
+								<input class="checkbox" type="checkbox"
+										name="boxplots" id="boxplots"
+										onchange="form_submit();" <%= boxPlots ? "checked=\"checked\"" : "" %>
+										value="true"/>
+								Display the summary box plot
+							</label>
 							
 							
 							<div style="height:20px"></div>
@@ -472,14 +486,21 @@
 										name="linearFits" id="linearFits"
 										onchange="form_submit();" <%= linearFits ? "checked=\"checked\"" : "" %>
 										value="true"/>
-								Linear Fits
+								Linear fits
 							</label>
 							<label class="checkbox">
 								<input class="checkbox" type="checkbox"
 										name="modelAnalysisPredictions" id="modelAnalysisPredictions"
 										onchange="form_submit();" <%= modelAnalysisPredictions ? "checked=\"checked\"" : "" %>
 										value="true"/>
-								Model Prediction (on the "Execution Time vs. Number of Retrieved Neighborhood Nodes" plot only)
+								Model prediction (on the "Execution Time vs. Number of Retrieved Neighborhood Nodes" plot only)
+							</label>
+							<label class="checkbox">
+								<input class="checkbox" type="checkbox"
+										name="mergeKHops" id="mergeKHops"
+										onchange="form_submit();" <%= mergeKHops ? "checked=\"checked\"" : "" %>
+										value="true"/>
+								Merge the k-hops plots that have different values of k, but other than that, they have the same configuration
 							</label>
 							
 				
@@ -491,6 +512,7 @@
 				else {
 					%>
 						<input type="hidden" name="smallgraphs" id="smallgraphs" value="<%= "" + smallGraphs %>" />
+						<input type="hidden" name="convertmanyoperations" id="convertmanyoperations" value="<%= "" + convertManyOperations %>" />
 						<input type="hidden" name="bargraphs" id="bargraphs" value="<%= "" + barGraphs %>" />
 						<input type="hidden" name="logscale_bargraphs" id="logscale_bargraphs" value="<%= "" + logScale_barGraphs %>" />
 						<input type="hidden" name="patternfill_bargraphs" id="patternfill_bargraphs" value="<%= "" + patternFill_barGraphs %>" />
@@ -505,6 +527,7 @@
 						<input type="hidden" name="plotTimeVsRetrievedNeighborhoodNodes" id="plotTimeVsRetrievedNeighborhoodNodes" value="<%= "" + plotTimeVsRetrievedNeighborhoodNodes %>" />
 						<input type="hidden" name="linearFits" id="linearFits" value="<%= "" + linearFits %>" />
 						<input type="hidden" name="modelAnalysisPredictions" id="modelAnalysisPredictions" value="<%= "" + modelAnalysisPredictions %>" />
+						<input type="hidden" name="mergeKHops" id="mergeKHops" value="<%= "" + mergeKHops %>" />
 					<%
 				}
 			%>
@@ -559,9 +582,10 @@
 				<%
 				
 				StringWriter writer = new StringWriter();
-				ShowOperationRunTimes.printRunTimes(new PrintWriter(writer), operationsToJobs, "html", null);
+				ShowOperationRunTimes.printRunTimesSummary(new PrintWriter(writer), operationsToJobs,
+						"html", null, null, convertManyOperations);
 				
-				String link = "/ShowOperationRunTimes?group_by=operation";
+				String link = "/ShowOperationRunTimes?group_by=operation&convert_many_operations=" + convertManyOperations;
 				boolean sameDbInstance = true;
 				Job firstJob = null;
 				
@@ -599,12 +623,6 @@
 										continue;
 									}
 									
-									/*p = m.SP[k];
-									if (p != null) {
-										if (cf == null) cf = new ArrayList<LinearFunction>();
-										cf.add(new LinearFunction(p, bounds[0], bounds[1]));
-									}*/
-									
 									p = m.SP_prediction[k];
 									if (p != null) {
 										if (cm == null) cm = new ArrayList<LinearFunction>();
@@ -615,13 +633,6 @@
 									(operationName, dbei, cm));
 							}
 							else {
-								/*p = m.getLinearFit(operationName);
-								if (p != null) {
-									cf = new ArrayList<LinearFunction>();
-									cf.add(new LinearFunction(p));
-								}
-								linearFitData.add(new Triple<String, DatabaseEngineAndInstance, Collection<LinearFunction>>
-									(operationName, dbei, cf));*/
 								
 								p = m.getPrediction(operationName);
 								if (p != null) {
@@ -633,6 +644,39 @@
 							}
 						}
 					}
+				}
+				
+				String additonalScatterPlotRequestFlags = "";
+				
+				if (mergeKHops) {
+					StringBuilder sb = new StringBuilder();
+					HashSet<String> seenNames = new HashSet<String>();
+					
+					for (String operationName : selectedOperations) {
+						if (!operationName.contains("GetKHop")) continue;
+						
+						String[] s = operationName.split("-");
+						List<String> n = new ArrayList<String>();
+						
+						for (int i = 0; i < s.length; i++) {
+							if (s[i].length() == 1 && Character.isDigit(s[i].charAt(0))) {
+								s[i] = "[0-9]";
+							}
+							else {
+								n.add(s[i]);
+								// TODO Need to quote the pattern -- too bad Pattern.quote() does not work.
+								// s[i] = Pattern.quote(s[i]);
+							}
+						}
+						
+						String name = StringUtils.join(n, "-");
+						if (seenNames.add(name)) {
+							sb.append("&custom_series=");
+							sb.append(StringEscapeUtils.escapeCsv(name + "=^" + StringUtils.join(s, "-") + "$"));
+						}
+					}
+					
+					additonalScatterPlotRequestFlags += sb.toString();
 				}
 				
 				
@@ -699,10 +743,11 @@
 					<%
 				}
 				
-				if (plotTimeVsRetrievedNodes && benchmarksWithExtendedInfo) {
+				if (benchmarksWithExtendedInfo) {
+					
 					ChartProperties chartProperties = new ChartProperties();
 					
-					chartProperties.source = link + "&show=details&format=csv";
+					chartProperties.source = link + "&show=details&format=csv" + additonalScatterPlotRequestFlags;
 					chartProperties.attach = "chart_all_plotTimeVsRetrievedNodes";
 					chartProperties.smallGraph = smallGraphs;
 					chartProperties.filter = boxPlotFilter;
@@ -711,7 +756,7 @@
 					if (logScale) chartProperties.yscale = "log";
 					if (dropExtremes) chartProperties.dropTopBottomExtremes = true;
 					chartProperties.linear_fits = linearFits;
-					chartProperties.xlabel = "Number of Retrieved Unique Nodes";
+					chartProperties.xlabel = "Number of Retrieved or Returned Unique Nodes";
 					chartProperties.ylabel = "d.time".equals(boxPlotYValue) 
 							? "Execution Time (ms)" : StringEscapeUtils.escapeXml(boxPlotYValue);	// TODO Need better escape
 					chartProperties.series_column = "label";
@@ -720,35 +765,19 @@
 						chartProperties.series_label_function += ".replace(/^[^-]*-/, '')";
 					}
 			
-					%>
-						<div class="chart_outer">
-							<div class="chart chart_all_plotTimeVsRetrievedNodes" id="chart_all_plotTimeVsRetrievedNodes"></div>
-							<%@ include file="include/d3scatterplot.jsp" %>
-							<a class="chart_save" href="javascript:save_svg('chart_all_plotTimeVsRetrievedNodes', 'plot.svg')">Save</a>
-						</div>
-					<%
-				}
-				
-				if ((plotTimeVsRetrievedNeighborhoodNodes || plotTimeVsRetrievedNeighborhoods || plotTimeVsMaxDepth) && benchmarksWithExtendedInfo) {
-					ChartProperties chartProperties = new ChartProperties();
-					
-					chartProperties.source = link + "&show=details&format=csv";
-					chartProperties.attach = "chart_all_additionalKHopNeighborsPlots_1";
-					chartProperties.smallGraph = smallGraphs;
-					chartProperties.filter = boxPlotFilter;
-					chartProperties.xvalue = "d.result[1]";
-					chartProperties.yvalue = boxPlotYValue;
-					if (logScale) chartProperties.yscale = "log";
-					if (dropExtremes) chartProperties.dropTopBottomExtremes = true;
-					chartProperties.linear_fits = linearFits;
-					chartProperties.xlabel = "Maximum Depth";
-					chartProperties.ylabel = "d.time".equals(boxPlotYValue) 
-							? "Execution Time (ms)" : StringEscapeUtils.escapeXml(boxPlotYValue);	// TODO Need better escape
-					chartProperties.series_column = "label";
-					chartProperties.series_label_function = "return d.label.replace(/^Operation/, '')";
-					if (sameOperationBaseName && selectedOperations.size() > 1) {
-						chartProperties.series_label_function += ".replace(/^[^-]*-/, '')";
+					if (plotTimeVsRetrievedNodes) {
+						%>
+							<div class="chart_outer">
+								<div class="chart chart_all_plotTimeVsRetrievedNodes" id="chart_all_plotTimeVsRetrievedNodes"></div>
+								<%@ include file="include/d3scatterplot.jsp" %>
+								<a class="chart_save" href="javascript:save_svg('chart_all_plotTimeVsRetrievedNodes', 'plot.svg')">Save</a>
+							</div>
+						<%
 					}
+					
+					chartProperties.attach = "chart_all_additionalKHopNeighborsPlots_1";
+					chartProperties.xvalue = "d.result[1]";
+					chartProperties.xlabel = "Maximum Depth";
 					
 					if (plotTimeVsMaxDepth) {
 						%>

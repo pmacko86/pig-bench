@@ -692,26 +692,8 @@ public class ModelAnalysis {
 	 */
 	private Double getAverageOperationRuntime(String operationName, String... tags) {
 		
-		boolean many = operationName.contains("GetMany")
-				|| operationName.contains("AddMany")
-				|| operationName.contains("SetMany");
-		
-		int opCountArg = -1;
-		if (many) {
-			if (operationName.equals("OperationGetManyVertices"          )) opCountArg = 0;
-			if (operationName.equals("OperationGetManyEdges"             )) opCountArg = 0;
-			if (operationName.equals("OperationGetManyVertexProperties"  )) opCountArg = 1;
-			if (operationName.equals("OperationGetManyEdgeProperties"    )) opCountArg = 1;
-			if (operationName.equals("OperationGetManyVertexPropertySets")) opCountArg = 1;
-			if (operationName.equals("OperationGetManyEdgePropertySets"  )) opCountArg = 1;
-			if (operationName.equals("OperationAddManyVertices"          )) opCountArg = 0;
-			if (operationName.equals("OperationAddManyEdges"             )) opCountArg = 0;
-			if (operationName.equals("OperationSetManyVertexProperties"  )) opCountArg = 1;
-			if (operationName.equals("OperationSetManyEdgeProperties"    )) opCountArg = 1;
-			if (opCountArg < 0) {
-				throw new IllegalArgumentException("Unsupported \"GetMany\" operation " + operationName);
-			}
-		}
+		boolean many = AnalysisUtils.isManyOperation(operationName);
+		int opCountArg = !many ? -1 : AnalysisUtils.getManyOperationOpCountArgumentIndex(operationName);
 		
 		
 		// Find the correct job
