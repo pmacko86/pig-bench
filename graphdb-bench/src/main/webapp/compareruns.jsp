@@ -247,7 +247,8 @@
 				<%
 				
 				StringWriter writer = new StringWriter();
-				ShowOperationRunTimes.printRunTimesSummary(new PrintWriter(writer), operationsToJobs, "html", null, "run");
+				ShowOperationRunTimes.printRunTimesSummary(new PrintWriter(writer), operationsToJobs,
+						"html", null, "run", false);
 				
 				String link = "/ShowOperationRunTimes?group_by=run";
 				boolean sameDbInstance = true;
