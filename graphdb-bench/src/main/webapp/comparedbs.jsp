@@ -269,6 +269,7 @@
 				boolean barGraphs = WebUtils.getBooleanParameter(request, "bargraphs", false);
 				boolean logScale_barGraphs = WebUtils.getBooleanParameter(request, "logscale_bargraphs", false);
 				boolean patternFill_barGraphs = WebUtils.getBooleanParameter(request, "patternfill_bargraphs", false);
+				boolean hideDataLabels_barGraphs = WebUtils.getBooleanParameter(request, "hidedatalabels_bargraphs", false);
 				boolean separateGraphForEachOperation = WebUtils.getBooleanParameter(request, "eachop", false);
 				boolean boxPlots = WebUtils.getBooleanParameter(request, "boxplots", false);
 				boolean logScale = WebUtils.getBooleanParameter(request, "logscale", false);
@@ -315,6 +316,9 @@
 						<div id="select_job">
 							<p class="middle">4) Select display options:</p>
 								
+							<div style="height:10px"></div>
+							<p class="middle_inner">Generic Options</p>
+								
 							<label class="checkbox">
 								<input class="checkbox" type="checkbox"
 										name="smallgraphs" id="smallgraphs"
@@ -324,6 +328,7 @@
 							</label>
 							
 							
+							<div style="height:20px"></div>
 							<p class="middle_inner">Summary Bar Graphs</p>
 							
 							<label class="checkbox">
@@ -342,6 +347,8 @@
 								Display a bar graph and a data table for each operation 
 							</label>
 							
+							<div class="medium_spacer"></div>
+							
 							<label class="checkbox">
 								<input class="checkbox" type="checkbox"
 										name="logscale_bargraphs" id="logscale_bargraphs"
@@ -358,9 +365,27 @@
 								Use patterns instead of solid colors (enable for B/W printing)
 							</label>
 							
+							<label class="checkbox">
+								<input class="checkbox" type="checkbox"
+										name="hidedatalabels_bargraphs" id="hidedatalabels_bargraphs"
+										onchange="form_submit();" <%= hideDataLabels_barGraphs ? "checked=\"checked\"" : "" %>
+										value="true"/>
+								Hide data labels
+							</label>
 							
-							<div style="height:10px"></div>
-							<p class="middle_inner">Data Plots &ndash; Generic Options</p>
+							
+							<div style="height:20px"></div>
+							<p class="middle_inner">Data Plots</p>
+							
+							<label class="checkbox">
+								<input class="checkbox" type="checkbox"
+										name="boxplots" id="boxplots"
+										onchange="form_submit();" <%= boxPlots ? "checked=\"checked\"" : "" %>
+										value="true"/>
+								Display the summary box plot
+							</label>
+							
+							<div class="medium_spacer"></div>
 							
 							<label class="checkbox">
 								<input class="checkbox" type="checkbox"
@@ -376,18 +401,6 @@
 										onchange="form_submit();" <%= dropExtremes ? "checked=\"checked\"" : "" %>
 										value="true"/>
 								Drop top and bottom 5% of values
-							</label>
-							
-							
-							<div style="height:10px"></div>
-							<p class="middle_inner">Data Plots &ndash; Box Plots</p>
-							
-							<label class="checkbox">
-								<input class="checkbox" type="checkbox"
-										name="boxplots" id="boxplots"
-										onchange="form_submit();" <%= boxPlots ? "checked=\"checked\"" : "" %>
-										value="true"/>
-								Display the summary box plot
 							</label>
 							
 							<div style="height:10px"></div>
@@ -413,7 +426,7 @@
 									value="<%= StringEscapeUtils.escapeHtml(boxPlotYValue) %>"/>
 							
 							
-							<div style="height:10px"></div>
+							<div style="height:20px"></div>
 							<p class="middle_inner">Data Plots &ndash; Specialty Plots (selected workload types only)</p>
 							
 							<label class="checkbox">
@@ -451,10 +464,8 @@
 										value="true"/>
 								Execution Time vs. Number of Retrieved Neighborhood Nodes
 							</label>
-							
-							
-							<div style="height:10px"></div>
-							<p class="middle_inner">Speciality Data Plots &ndash; Additional Display Options</p>
+														
+							<div class="medium_spacer"></div>
 							
 							<label class="checkbox">
 								<input class="checkbox" type="checkbox"
@@ -483,6 +494,7 @@
 						<input type="hidden" name="bargraphs" id="bargraphs" value="<%= "" + barGraphs %>" />
 						<input type="hidden" name="logscale_bargraphs" id="logscale_bargraphs" value="<%= "" + logScale_barGraphs %>" />
 						<input type="hidden" name="patternfill_bargraphs" id="patternfill_bargraphs" value="<%= "" + patternFill_barGraphs %>" />
+						<input type="hidden" name="hidedatalabels_bargraphs" id="hidedatalabels_bargraphs" value="<%= "" + hideDataLabels_barGraphs %>" />
 						<input type="hidden" name="eachop" id="eachop" value="<%= "" + separateGraphForEachOperation %>" />
 						<input type="hidden" name="boxplots" id="boxplots" value="<%= "" + boxPlots %>" />
 						<input type="hidden" name="logscale" id="logscale" value="<%= "" + logScale %>" />
@@ -631,6 +643,7 @@
 					chartProperties.attach = "chart_all";
 					chartProperties.smallGraph = smallGraphs;
 					chartProperties.patternFill = patternFill_barGraphs;
+					chartProperties.hideDataLabels = hideDataLabels_barGraphs;
 					chartProperties.yvalue = "d.mean";
 					chartProperties.ylabel = "Execution Time (ms)";
 					if (logScale_barGraphs) chartProperties.yscale = "log";
@@ -846,6 +859,7 @@
 					chartProperties.attach = "chart_" + operationName;
 					chartProperties.smallGraph = smallGraphs;
 					chartProperties.patternFill = patternFill_barGraphs;
+					chartProperties.hideDataLabels = hideDataLabels_barGraphs;
 					chartProperties.ylabel = "Execution Time (ms)";
 					if (logScale_barGraphs) chartProperties.yscale = "log";
 					chartProperties.group_by = "operation";

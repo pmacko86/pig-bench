@@ -506,20 +506,22 @@
 				}
 				
 								
-				var fixed_length = 3;
-				if (total_so_far > 10) fixed_length = 2;
-				if (total_so_far > 100) fixed_length = 1;
-				if (total_so_far > 1000) fixed_length = 0;
-					 
-				chart.append("text")
-				 .attr("x", 0)
-				 .attr("y", 0)
-				 .attr("dx", 0)
-				 .attr("dy", ".35em") // vertical-align: middle
-				 .attr("transform", "translate("
-				 	+ (x.rangeBand() * subgroup_index + x.rangeBand() / 2) + ", "
-				 	+ (top - 10)  + ") rotate(-90)")
-				 .text("" + total_so_far.toFixed(fixed_length) + " s");
+				<% if (!chartProperties.hideDataLabels) { %>
+					var fixed_length = 3;
+					if (total_so_far > 10) fixed_length = 2;
+					if (total_so_far > 100) fixed_length = 1;
+					if (total_so_far > 1000) fixed_length = 0;
+						 
+					chart.append("text")
+					 .attr("x", 0)
+					 .attr("y", 0)
+					 .attr("dx", 0)
+					 .attr("dy", ".35em") // vertical-align: middle
+					 .attr("transform", "translate("
+					 	+ (x.rangeBand() * subgroup_index + x.rangeBand() / 2) + ", "
+					 	+ (top - 10)  + ") rotate(-90)")
+					 .text("" + total_so_far.toFixed(fixed_length) + " s");
+				<% } %>
 			}
 		
 		}
@@ -583,41 +585,44 @@
 				 .attr("y2", function(d, i) { return y(d.mean - d.stdev < 0 ? 0 : d.mean - d.stdev); });
 	
 				 
-			data.forEach(function(d, i) {
+			<% if (!chartProperties.hideDataLabels) { %>
 			
-				if (d.label.indexOf("----") == 0) return;
-			
-				<%
-					if (chartProperties.group_by == null) {
-						%>
-							chart.append("text")
-							 .attr("x", 0)
-							 .attr("y", 0)
-							 .attr("dx", 0) // padding-right
-							 .attr("dy", ".35em") // vertical-align: middle
-							 .attr("transform", "translate("
-							 	+ (x.rangeBand() * i + x.rangeBand() / 2) + ", "
-							 	+ (chart_inner_height + chart_margin)  + ") rotate(45)")
-							 .text(d.label);
-						<%
-					}
-				%>
+				data.forEach(function(d, i) {
 				
-				var fixed_length = 3;
-				if (d.mean > 10) fixed_length = 2;
-				if (d.mean > 100) fixed_length = 1;
-				if (d.mean > 1000) fixed_length = 0;
-					 
-				chart.append("text")
-				 .attr("x", 0)
-				 .attr("y", 0)
-				 .attr("dx", 0)
-				 .attr("dy", ".35em") // vertical-align: middle
-				 .attr("transform", "translate("
-				 	+ (x.rangeBand() * i + x.rangeBand() / 2) + ", "
-				 	+ (y(d.mean + d.stdev) - 10)  + ") rotate(-90)")
-				 .text("" + d.mean.toFixed(fixed_length) + " ms");
-			});
+					if (d.label.indexOf("----") == 0) return;
+				
+					<%
+						if (chartProperties.group_by == null) {
+							%>
+								chart.append("text")
+								 .attr("x", 0)
+								 .attr("y", 0)
+								 .attr("dx", 0) // padding-right
+								 .attr("dy", ".35em") // vertical-align: middle
+								 .attr("transform", "translate("
+								 	+ (x.rangeBand() * i + x.rangeBand() / 2) + ", "
+								 	+ (chart_inner_height + chart_margin)  + ") rotate(45)")
+								 .text(d.label);
+							<%
+						}
+					%>
+					
+					var fixed_length = 3;
+					if (d.mean > 10) fixed_length = 2;
+					if (d.mean > 100) fixed_length = 1;
+					if (d.mean > 1000) fixed_length = 0;
+						 
+					chart.append("text")
+					 .attr("x", 0)
+					 .attr("y", 0)
+					 .attr("dx", 0)
+					 .attr("dy", ".35em") // vertical-align: middle
+					 .attr("transform", "translate("
+					 	+ (x.rangeBand() * i + x.rangeBand() / 2) + ", "
+					 	+ (y(d.mean + d.stdev) - 10)  + ") rotate(-90)")
+					 .text("" + d.mean.toFixed(fixed_length) + " ms");
+				});
+			<% } %>
 		}
 
 
