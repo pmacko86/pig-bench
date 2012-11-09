@@ -1,5 +1,6 @@
 package com.tinkerpop.bench.operation;
 
+import java.lang.management.CompilationMXBean;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 
@@ -295,6 +296,13 @@ public abstract class Operation {
             if (time  >= 0) startGarbageCollectionTime += time;
         }
         
+        long startCompilationTime = 0;
+        if (true) {
+        	CompilationMXBean c = ManagementFactory.getCompilationMXBean();
+            long time = c.getTotalCompilationTime();
+            if (time  >= 0) startCompilationTime += time;
+        }
+       
 		StatisticsHelper.stopMemory();	//XXX multi-threaded???
 		long start = System.nanoTime();
 		
@@ -344,6 +352,13 @@ public abstract class Operation {
 		
 		time = System.nanoTime() - start;
 		memory = StatisticsHelper.stopMemory();
+        
+        long stopCompilationTime = 0;
+        if (true) {
+        	CompilationMXBean c = ManagementFactory.getCompilationMXBean();
+            long time = c.getTotalCompilationTime();
+            if (time  >= 0) stopCompilationTime += time;
+        }
 		
         long stopTotalGarbageCollections = 0;
         long stopGarbageCollectionTime = 0;
@@ -357,6 +372,10 @@ public abstract class Operation {
         
         totalGarbageCollections = stopTotalGarbageCollections - startTotalGarbageCollections;
         garbageCollectionTime = stopGarbageCollectionTime - startGarbageCollectionTime;
+        
+        @SuppressWarnings("unused")
+		long ct = stopCompilationTime - startCompilationTime;
+        //if (ct > 0) System.err.println("\nRecompilation: " + ct + " ms");
 
 		onFinalize();
 	}

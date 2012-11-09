@@ -122,7 +122,7 @@ find.benchmark.results.file <- function(database.name, database.instance, worklo
 
 
 #
-# Function load.benchmark.results
+# Function load
 #
 # Description:
 #   Load GraphDB benchmark results for the given database engine name,
@@ -130,9 +130,9 @@ find.benchmark.results.file <- function(database.name, database.instance, worklo
 #   a data frame. Convert time to ms and memory to MB.
 #
 # Usage:
-#   load.benchmark.results(database.name, database.instance, workload.argument)
+#   load.results(database.name, database.instance, workload.argument)
 #
-load.benchmark.results <- function(database.name, database.instance, workload.argument,... ) {
+load.results <- function(database.name, database.instance, workload.argument,... ) {
 
 	data <- read.csv(find.benchmark.results.file(database.name, database.instance, workload.argument,... ))
 	
@@ -154,17 +154,60 @@ load.benchmark.results <- function(database.name, database.instance, workload.ar
 
 
 #
-# Function load.benchmark.results.khop
+# Function load.all.neighbors
+#
+# Description:
+#   Load GraphDB benchmark results for OperationGetAllNeighbors
+#
+# Usage:
+#   load.all.neighbors(database.name, database.instance)
+#
+load.all.neighbors <- function(database.name,
+		database.instance, keep.outliers=FALSE, direction="both",... ) {
+
+	data <- load.results(database.name, database.instance, "get",... )
+
+	
+	# Isolate and parse OperationGetAllNeighbors
+	
+	data           <- data[data$name == paste("OperationGetAllNeighbors", direction, sep="-"), ]
+	data$direction <- direction
+	
+	
+	# Parse the statistics
+	
+	data$result            <- lapply(strsplit(as.character(data$result), ":"), as.numeric)
+	data$unique.vertices   <- as.numeric(lapply(data$result, function(x) x[1]))
+	data$real.hops         <- as.numeric(lapply(data$result, function(x) x[2]))
+	data$get.vertices      <- as.numeric(lapply(data$result, function(x) x[3]))
+	data$get.vertices.next <- as.numeric(lapply(data$result, function(x) x[4]))
+	
+	data$retrieved.vertices      <- data$get.vertices.next
+	data$retrieved.neighborhoods <- data$get.vertices
+	
+	
+	# Remove outliers
+	
+	if (!keep.outliers) {
+		data <- data[!outlier(data$time, logical=TRUE), ]
+	}
+	
+	data
+}
+
+
+#
+# Function load.khop
 #
 # Description:
 #   Load GraphDB benchmark results for OperationGetKHopNeighbors
 #
 # Usage:
-#   load.benchmark.results.khop(database.name, database.instance)
+#   load.khop(database.name, database.instance)
 #
-load.benchmark.results.khop <- function(database.name, database.instance, keep.outliers=FALSE, directed=TRUE,... ) {
+load.khop <- function(database.name, database.instance, keep.outliers=FALSE, directed=TRUE,... ) {
 
-	data <- load.benchmark.results(database.name, database.instance, "get-k",... )
+	data <- load.results(database.name, database.instance, "get-k",... )
 
 	
 	# Isolate and parse OperationGetKHopNeighbors
@@ -209,30 +252,30 @@ load.benchmark.results.khop <- function(database.name, database.instance, keep.o
 
 
 #
-# Function load.benchmark.results.khop.undirected
+# Function load.khop.undirected
 #
 # Description:
 #   Load GraphDB benchmark results for OperationGetKHopNeighbors
 #
 # Usage:
-#   load.benchmark.results.khop.undirected(database.name, database.instance)
+#   load.khop.undirected(database.name, database.instance)
 #
-load.benchmark.results.khop.undirected <- function(database.name, database.instance, keep.outliers=FALSE,... ) {
+load.khop.undirected <- function(database.name, database.instance, keep.outliers=FALSE,... ) {
 
-	load.benchmark.results.khop(database.name, database.instance, keep.outliers=keep.outliers, directed=FALSE,... )
+	load.khop(database.name, database.instance, keep.outliers=keep.outliers, directed=FALSE,... )
 }
 
 
 #
-# Function load.benchmark.results.parse.op.stat(data, start.index=2)
+# Function load.parse.op.stat(data, start.index=2)
 #
 # Description:
 #   Parse GraphUtils.OpStat structure in data$result
 #
 # Usage:
-#   load.benchmark.results.parse.op.stat(data)
+#   load.parse.op.stat(data)
 #
-load.benchmark.results.parse.op.stat <- function(data, start.index=2) {
+load.parse.op.stat <- function(data, start.index=2) {
 	
 	stopifnot(unlist(strsplit(unlist(data[1,]$result)[start.index + 0],"="))[1] == "getVertices")
 	data$get.vertices <- as.numeric(lapply(data$result, function(x) unlist(strsplit(x[start.index + 0], "="))[2]))
@@ -260,17 +303,17 @@ load.benchmark.results.parse.op.stat <- function(data, start.index=2) {
 
 
 #
-# Function load.benchmark.results.global.clustering.coefficient
+# Function load.global.clustering.coefficient
 #
 # Description:
 #   Load GraphDB benchmark results for OperationGlobalClusteringCoefficient
 #
 # Usage:
-#   load.benchmark.results.global.clustering.coefficient(database.name, database.instance)
+#   load.global.clustering.coefficient(database.name, database.instance)
 #
-load.benchmark.results.global.clustering.coefficient <- function(database.name, database.instance,... ) {
+load.global.clustering.coefficient <- function(database.name, database.instance,... ) {
 
-	data <- load.benchmark.results(database.name, database.instance, "clustering-coeff",... )
+	data <- load.results(database.name, database.instance, "clustering-coeff",... )
 
 	
 	# Isolate and parse OperationGlobalClusteringCoefficient
@@ -280,24 +323,24 @@ load.benchmark.results.global.clustering.coefficient <- function(database.name, 
 	data$result <- strsplit(as.character(data$result), ":")
 	data$coefficient  <- as.numeric(lapply(data$result, function(x) x[1]))
 	
-	data <- load.benchmark.results.parse.op.stat(data)
+	data <- load.parse.op.stat(data)
 	
 	data
 }
 
 
 #
-# Function load.benchmark.results.network.average.clustering.coefficient
+# Function load.network.average.clustering.coefficient
 #
 # Description:
 #   Load GraphDB benchmark results for OperationNetworkAverageClusteringCoefficient
 #
 # Usage:
-#   load.benchmark.results.network.average.clustering.coefficient(database.name, database.instance)
+#   load.network.average.clustering.coefficient(database.name, database.instance)
 #
-load.benchmark.results.network.average.clustering.coefficient <- function(database.name, database.instance,... ) {
+load.network.average.clustering.coefficient <- function(database.name, database.instance,... ) {
 
-	data <- load.benchmark.results(database.name, database.instance, "clustering-coeff",... )
+	data <- load.results(database.name, database.instance, "clustering-coeff",... )
 
 	
 	# Isolate and parse OperationNetworkAverageClusteringCoefficient
@@ -307,58 +350,31 @@ load.benchmark.results.network.average.clustering.coefficient <- function(databa
 	data$result <- strsplit(as.character(data$result), ":")
 	data$coefficient  <- as.numeric(lapply(data$result, function(x) x[1]))
 	
-	data <- load.benchmark.results.parse.op.stat(data)
+	data <- load.parse.op.stat(data)
 	
 	data
 }
 
 
 #
-# Function load.benchmark.results.all.neighbors
-#
-# Description:
-#   Load GraphDB benchmark results for OperationGetAllNeighbors
-#
-# Usage:
-#   load.benchmark.results.all.neighbors(database.name, database.instance)
-#
-load.benchmark.results.all.neighbors <- function(database.name, database.instance, keep.outliers=FALSE,... ) {
-
-	data <- load.benchmark.results(database.name, database.instance, "get",... )
-
-
-	# Isolate and parse OperationGetAllNeighbors
-
-	data              <- data[data$name == "OperationGetAllNeighbors", ]
-	data$unique.vertices <- as.numeric(as.character(data$result))
-	
-	if (!keep.outliers) {
-		data <- data[!outlier(data$time, logical=TRUE), ]
-	}
-
-	data
-}
-
-
-#
-# Function load.benchmark.results.shortest.path
+# Function load.shortest.path
 #
 # Description:
 #   Load GraphDB benchmark results for OperationGetShortestPath or OperationGetShortestPathProperty
 #
 # Usage:
-#   load.benchmark.results.shortest.path(database.name, database.instance)
+#   load.shortest.path(database.name, database.instance)
 #
-load.benchmark.results.shortest.path <- function(database.name, database.instance, keep.outliers=FALSE, property=FALSE,... ) {
+load.shortest.path <- function(database.name, database.instance, keep.outliers=FALSE, property=FALSE,... ) {
 	
 	# Isolate and parse OperationGetShortestPath or OperationGetShortestPathProperty
 	
 	if (property) {
-		data <- load.benchmark.results(database.name, database.instance, "shortest-path-prop",... )
+		data <- load.results(database.name, database.instance, "shortest-path-prop",... )
 		data <- data[data$name == "OperationGetShortestPathProperty", ]
 	}
 	else {
-		data <- load.benchmark.results(database.name, database.instance, "shortest-path",... )
+		data <- load.results(database.name, database.instance, "shortest-path",... )
 		data <- data[data$name == "OperationGetShortestPath", ]
 	}
 	data$directed <- FALSE
@@ -398,24 +414,24 @@ load.benchmark.results.shortest.path <- function(database.name, database.instanc
 
 
 #
-# Function load.benchmark.results.sssp
+# Function load.sssp
 #
 # Description:
 #   Load GraphDB benchmark results for OperationGetSingleSourceShortestPath or OperationGetSingleSourceShortestPathProperty
 #
 # Usage:
-#   load.benchmark.results.sssp(database.name, database.instance)
+#   load.sssp(database.name, database.instance)
 #
-load.benchmark.results.sssp <- function(database.name, database.instance, keep.outliers=FALSE, property=FALSE,... ) {
+load.sssp <- function(database.name, database.instance, keep.outliers=FALSE, property=FALSE,... ) {
 	
 	# Isolate and parse OperationGetShortestPath or OperationGetShortestPathProperty
 	
 	if (property) {
-		data <- load.benchmark.results(database.name, database.instance, "sssp-prop",... )
+		data <- load.results(database.name, database.instance, "sssp-prop",... )
 		data <- data[data$name == "OperationGetSingleSourceShortestPathProperty", ]
 	}
 	else {
-		data <- load.benchmark.results(database.name, database.instance, "sssp",... )
+		data <- load.results(database.name, database.instance, "sssp",... )
 		data <- data[data$name == "OperationGetSingleSourceShortestPath", ]
 	}
 	data$directed <- FALSE
@@ -830,6 +846,42 @@ plot.khops <- function(khop.data, x, y=NULL, kmin=NA, kmax=NA, k=NULL, real.hops
 	plot.results(data, x, y=y, legend.prefix="k = ",
 	             category.colors=colors, category.stable=TRUE, category.column=k.column,
 	             order.asc=order.k.asc, ...)
+}
+
+
+#
+# Function plot.time.vs.unique.vertices
+#
+# Description:
+#   Plot time vs. unique vertices 
+#
+plot.time.vs.unique.vertices <- function(data, ...) {
+
+	plot.results(data, data$unique.vertices, xlab="Unique Vertices", ...)
+}
+
+
+#
+# Function plot.time.vs.retrieved.vertices
+#
+# Description:
+#   Plot time vs. retrieved vertices 
+#
+plot.time.vs.retrieved.vertices <- function(data, ...) {
+	
+	plot.results(data, data$get.vertices.next, xlab="Retrieved Vertices", ...)
+}
+
+
+#
+# Function plot.time.vs.retrieved.neighborhoods
+#
+# Description:
+#   Plot time vs. retrieved neighborhoods 
+#
+plot.time.vs.retrieved.neighborhoods <- function(data, ...) {
+	
+	plot.results(data, data$get.vertices, xlab="Retrieved Neighborhoods", ...)
 }
 
 

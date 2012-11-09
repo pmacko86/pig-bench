@@ -349,6 +349,7 @@
 						var subgroup_lengths = [];
 						var subgroup_columns = [];
 						var subgroup_offsets = [];
+						var subgroup_labels = [];
 						
 						var categories = [];
 						
@@ -406,6 +407,7 @@
 									if (__last_subgroup_length > 0) {
 										subgroup_columns.push(__last_subgroup_column)
 										subgroup_lengths.push(__last_subgroup_length)
+										subgroup_labels.push(subgroup_label_function(data[i-1], i-1));
 									}
 									if (__last_subgroup_length == -1) {
 										subgroup_offsets.push(0);
@@ -425,6 +427,8 @@
 							if (__last_subgroup_length > 0) {
 								subgroup_columns.push(__last_subgroup_column)
 								subgroup_lengths.push(__last_subgroup_length)
+								subgroup_labels.push(
+									subgroup_label_function(data[data.length-1], data.length-1));
 							}
 						<% } %>
 						
@@ -438,7 +442,7 @@
 							for (var i = 0; i < subgroup_columns.length; i++) {
 								if (subgroup_columns[i] == "" || subgroup_columns[i].indexOf("----") == 0) continue;
 								var p = subgroup_offsets[i] + 0.5 * subgroup_lengths[i] - 0.5;
-								var t = subgroup_label_function(data[subgroup_offsets[i]], subgroup_offsets[i]);
+								var t = subgroup_labels[i];
 								if (t.length > __longest_subgroup_name.length) __longest_subgroup_name = t;
 								//console.log("" + p + " --> " + t);
 								
