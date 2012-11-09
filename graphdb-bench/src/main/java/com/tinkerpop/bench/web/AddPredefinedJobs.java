@@ -260,15 +260,12 @@ public class AddPredefinedJobs extends HttpServlet {
 			
 			// Get the warmup dataset name
 			
-			String warmupDataset = dataset;
-			if (!fields[0].equals("1k")) {
-				warmupDataset = "barabasi_10k_50k";
-				for (int i = 2; i < fields.length; i++) {
-					warmupDataset += "_" + fields[i];
-				}
-				if (partial) warmupDataset += "-a";
-				warmupDataset += ".fgf";
+			String warmupDataset = "barabasi_10k_50k";
+			for (int i = 2; i < fields.length; i++) {
+				warmupDataset += "_" + fields[i];
 			}
+			if (partial) warmupDataset += "-a";
+			warmupDataset += ".fgf";
 			
 			
 			// Create the jobs
@@ -329,15 +326,12 @@ public class AddPredefinedJobs extends HttpServlet {
 			
 			// Get the warmup dataset name
 			
-			String warmupDataset = dataset;
-			if (!fields[0].equals("1k")) {
-				warmupDataset = "kron_8k";
-				for (int i = 1; i < fields.length; i++) {
-					warmupDataset += "_" + fields[i];
-				}
-				if (partial) warmupDataset += "-a";
-				warmupDataset += ".fgf";
+			String warmupDataset = "kron_8k";
+			for (int i = 1; i < fields.length; i++) {
+				warmupDataset += "_" + fields[i];
 			}
+			if (partial) warmupDataset += "-a";
+			warmupDataset += ".fgf";
 			
 			
 			// Create the jobs
