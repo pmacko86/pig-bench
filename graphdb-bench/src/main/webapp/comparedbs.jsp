@@ -375,7 +375,7 @@
 							
 							
 							<div style="height:20px"></div>
-							<p class="middle_inner">Data Plots</p>
+							<p class="middle_inner">Data Box Plots</p>
 							
 							<label class="checkbox">
 								<input class="checkbox" type="checkbox"
@@ -427,7 +427,7 @@
 							
 							
 							<div style="height:20px"></div>
-							<p class="middle_inner">Data Plots &ndash; Specialty Plots (selected workload types only)</p>
+							<p class="middle_inner">Data Scatter Plots (selected workload types only)</p>
 							
 							<label class="checkbox">
 								<input class="checkbox" type="checkbox"

@@ -34,6 +34,7 @@
 		
 		var padding_left = 100;
 		var padding_right = 300;
+		var padding_right_without_legend = 25;
 		var padding_top = 50;
 		var padding_bottom = 150;
 		
@@ -137,6 +138,114 @@
 				if (d._value == Infinity || isNaN(d._value)) return false;
 				return <%= chartProperties.filter %>;
 			});
+			
+			
+			
+			//
+			// Group by
+			//
+			
+			<%
+				if (chartProperties.group_label_function == null) {
+					chartProperties.group_label_function = "return d." + chartProperties.group_by;
+				}
+			%>
+				
+			<% if (chartProperties.group_by != null) { %>
+			
+				// Get the groups and the categories 
+				
+				var group_lengths = [];
+				var group_columns = [];
+				var group_offsets = [];
+				var group_labels = [];
+				
+				var subgroup_lengths = [];
+				var subgroup_columns = [];
+				var subgroup_offsets = [];
+				var subgroup_labels = [];
+				
+				var categories = [];
+				
+				var __last_group_column = "";
+				var __last_group_label = "";
+				var __last_group_length = -1;
+				
+				data.forEach(function(d, i) {
+				
+					var g = d.<%= chartProperties.group_by %>;
+					if (g != __last_group_column) {
+						if (__last_group_length > 0) {
+							group_columns.push(__last_group_column);
+							group_lengths.push(__last_group_length);
+							group_labels.push(group_label_function(data[i-1], i-1));
+						}
+						if (__last_group_length == -1) {
+							group_offsets.push(0);
+						}
+						else {
+							group_offsets.push(group_offsets[group_offsets.length-1] + __last_group_length);
+						}
+						__last_group_column = g;
+						__last_group_length = 0;
+					}
+					if (__last_group_label != d.label) __last_group_length++;
+					
+					if (g != "" && g.indexOf("----") != 0) {
+						var c = category_label_function(d, i);
+						if (categories.indexOf(c) < 0) categories.push(c);
+					}
+					
+					__last_group_label = d.label;
+				});
+				
+				if (__last_group_length > 0) {
+					group_columns.push(__last_group_column)
+					group_lengths.push(__last_group_length)
+					group_labels.push(
+						group_label_function(data[data.length-1], data.length-1));
+				}
+			
+			
+				<% if (chartProperties.subgroup_by != null) { %>
+				
+					var __last_subgroup_column = "";
+					var __last_subgroup_length = -1;
+					var __last_subgroup_label = "";
+					var __last_subgroup_column_major = "";
+					
+					data.forEach(function(d, i) {
+					
+						var g = d.<%= chartProperties.subgroup_by %>;
+						if (g != __last_subgroup_column || d.<%= chartProperties.group_by %> != __last_subgroup_column_major) {
+							if (__last_subgroup_length > 0) {
+								subgroup_columns.push(__last_subgroup_column)
+								subgroup_lengths.push(__last_subgroup_length)
+								subgroup_labels.push(subgroup_label_function(data[i-1], i-1));
+							}
+							if (__last_subgroup_length == -1) {
+								subgroup_offsets.push(0);
+							}
+							else {
+								subgroup_offsets.push(subgroup_offsets[subgroup_offsets.length-1] + __last_subgroup_length);
+							}
+							__last_subgroup_column = g;
+							__last_subgroup_length = 0;
+							__last_subgroup_column_major = d.<%= chartProperties.group_by %>;
+						}
+						if (__last_subgroup_label != d.label) __last_subgroup_length++;
+						
+						__last_subgroup_label = d.label;
+					});
+					
+					if (__last_subgroup_length > 0) {
+						subgroup_columns.push(__last_subgroup_column)
+						subgroup_lengths.push(__last_subgroup_length)
+						subgroup_labels.push(
+							subgroup_label_function(data[data.length-1], data.length-1));
+					}
+				<% } %>
+			<% } %>		
 	
 	
 		
@@ -158,30 +267,11 @@
 			
 			var chart = d3.select(".<%= chartProperties.attach %>").append("svg")
 						  .attr("class", "chart")
-						  .attr("width",  band_width * x.domain().length + padding_left + padding_right)
+						  .attr("width",  band_width * x.domain().length + padding_left
+						  			+ (categories.length > 1 ? padding_right : padding_right_without_legend))
 						  .attr("height", chart_inner_height + padding_top + padding_bottom)
 						  .append("g")
 						  	.attr("transform", "translate(" + padding_left + ", " + padding_top + ")");
-			
-			
-			draw_chart(data, chart, x);
-		});
-			
-		
-		
-		//
-		// Function to draw the data
-		//
-		
-		function draw_chart(data, chart, x) {
-		
-			//
-			// Set up fill patterns
-			//
-			
-			// TODO
-			//   http://www.carto.net/svg/samples/patterns.shtml
-			//   http://bl.ocks.org/1178682
 			
 				
 			//
@@ -319,221 +409,117 @@
 				 .attr("transform", "translate("
 				 	+ (-bands_margin*2 - ylabel_from_chart_margin) + ", "
 				 	+ (chart_inner_height/2)  + ") rotate(-90)")
-				 .text("<%= chartProperties.ylabel %>");
-			
+				 .text("<%= chartProperties.ylabel %>");			
 			
 			
 			//
 			// Group labels and legend
 			//
 			
-			<%
-				// Group labels and legend
+			<% if (chartProperties.group_by != null) { %>
 				
-				// TODO Bars within a group need different colors + we need a legend
+				var __longest_subgroup_name = "";
 				
-				if (chartProperties.group_label_function == null) {
-					chartProperties.group_label_function = "return d." + chartProperties.group_by;
+				<% if (chartProperties.subgroup_by != null) { %>
+				
+					// Subgroup labels
+					
+					for (var i = 0; i < subgroup_columns.length; i++) {
+						if (subgroup_columns[i] == "" || subgroup_columns[i].indexOf("----") == 0) continue;
+						var p = subgroup_offsets[i] + 0.5 * subgroup_lengths[i] - 0.5;
+						var t = subgroup_labels[i];
+						if (t.length > __longest_subgroup_name.length) __longest_subgroup_name = t;
+						//console.log("" + p + " --> " + t);
+						
+						chart.append("text")
+						 .attr("x", 0)
+						 .attr("y", 0)
+						 .attr("dx", 0)
+						 .attr("dy", ".35em") // vertical-align: middle
+						 .attr("transform", "translate("
+						 	+ (x.rangeBand() * p + x.rangeBand() / 2) + ", "
+						 	+ (chart_inner_height + chart_margin)  + ") rotate(45)")
+						 .text(t);
+					}
+				<% } %>
+				
+				var __dy = 0;
+				
+				if (__longest_subgroup_name != "") {
+					__dy = __longest_subgroup_name.length * 5 + 10;
 				}
 				
-				if (chartProperties.group_by != null) {
-					%>
+				
+				// Group labels
+				
+				for (var i = 0; i < group_columns.length; i++) {
+					if (group_columns[i] == "" || group_columns[i].indexOf("----") == 0) continue;
+					var p = group_offsets[i] + 0.5 * group_lengths[i] - 0.5;
 					
-						// Get the groups and the categories 
-						
-						var group_lengths = [];
-						var group_columns = [];
-						var group_offsets = [];
-						var group_labels = [];
-						
-						var subgroup_lengths = [];
-						var subgroup_columns = [];
-						var subgroup_offsets = [];
-						var subgroup_labels = [];
-						
-						var categories = [];
-						
-						var __last_group_column = "";
-						var __last_group_label = "";
-						var __last_group_length = -1;
-						
-						data.forEach(function(d, i) {
-						
-							var g = d.<%= chartProperties.group_by %>;
-							if (g != __last_group_column) {
-								if (__last_group_length > 0) {
-									group_columns.push(__last_group_column);
-									group_lengths.push(__last_group_length);
-									group_labels.push(group_label_function(data[i-1], i-1));
-								}
-								if (__last_group_length == -1) {
-									group_offsets.push(0);
-								}
-								else {
-									group_offsets.push(group_offsets[group_offsets.length-1] + __last_group_length);
-								}
-								__last_group_column = g;
-								__last_group_length = 0;
-							}
-							if (__last_group_label != d.label) __last_group_length++;
-							
-							if (g != "" && g.indexOf("----") != 0) {
-								var c = category_label_function(d, i);
-								if (categories.indexOf(c) < 0) categories.push(c);
-							}
-							
-							__last_group_label = d.label;
-						});
-						
-						if (__last_group_length > 0) {
-							group_columns.push(__last_group_column)
-							group_lengths.push(__last_group_length)
-							group_labels.push(
-								group_label_function(data[data.length-1], data.length-1));
-						}
-					
-					
-						<% if (chartProperties.subgroup_by != null) { %>
-						
-							var __last_subgroup_column = "";
-							var __last_subgroup_length = -1;
-							var __last_subgroup_label = "";
-							var __last_subgroup_column_major = "";
-							
-							data.forEach(function(d, i) {
-							
-								var g = d.<%= chartProperties.subgroup_by %>;
-								if (g != __last_subgroup_column || d.<%= chartProperties.group_by %> != __last_subgroup_column_major) {
-									if (__last_subgroup_length > 0) {
-										subgroup_columns.push(__last_subgroup_column)
-										subgroup_lengths.push(__last_subgroup_length)
-										subgroup_labels.push(subgroup_label_function(data[i-1], i-1));
-									}
-									if (__last_subgroup_length == -1) {
-										subgroup_offsets.push(0);
-									}
-									else {
-										subgroup_offsets.push(subgroup_offsets[subgroup_offsets.length-1] + __last_subgroup_length);
-									}
-									__last_subgroup_column = g;
-									__last_subgroup_length = 0;
-									__last_subgroup_column_major = d.<%= chartProperties.group_by %>;
-								}
-								if (__last_subgroup_label != d.label) __last_subgroup_length++;
-								
-								__last_subgroup_label = d.label;
-							});
-							
-							if (__last_subgroup_length > 0) {
-								subgroup_columns.push(__last_subgroup_column)
-								subgroup_lengths.push(__last_subgroup_length)
-								subgroup_labels.push(
-									subgroup_label_function(data[data.length-1], data.length-1));
-							}
-						<% } %>
-						
-							
-						var __longest_subgroup_name = "";
-						
-						<% if (chartProperties.subgroup_by != null) { %>
-						
-							// Subgroup labels
-							
-							for (var i = 0; i < subgroup_columns.length; i++) {
-								if (subgroup_columns[i] == "" || subgroup_columns[i].indexOf("----") == 0) continue;
-								var p = subgroup_offsets[i] + 0.5 * subgroup_lengths[i] - 0.5;
-								var t = subgroup_labels[i];
-								if (t.length > __longest_subgroup_name.length) __longest_subgroup_name = t;
-								//console.log("" + p + " --> " + t);
-								
-								chart.append("text")
-								 .attr("x", 0)
-								 .attr("y", 0)
-								 .attr("dx", 0)
-								 .attr("dy", ".35em") // vertical-align: middle
-								 .attr("transform", "translate("
-								 	+ (x.rangeBand() * p + x.rangeBand() / 2) + ", "
-								 	+ (chart_inner_height + chart_margin)  + ") rotate(45)")
-								 .text(t);
-							}
-						<% } %>
-						
-						var __dy = 0;
-						
-						if (__longest_subgroup_name != "") {
-							__dy = __longest_subgroup_name.length * 5 + 10;
-						}
-						
-						
-						// Group labels
-						
-						for (var i = 0; i < group_columns.length; i++) {
-							if (group_columns[i] == "" || group_columns[i].indexOf("----") == 0) continue;
-							var p = group_offsets[i] + 0.5 * group_lengths[i] - 0.5;
-							
-							if (__longest_subgroup_name != "" && __last_subgroup_length >= 6) {
-								chart.append("text")
-								 .attr("x", 0)
-								 .attr("y", 0)
-								 .attr("dx", 0)
-								 .attr("dy", ".35em") // vertical-align: middle
-								 .attr("text-anchor", "middle")
-								 .attr("transform", "translate("
-								 	+ (x.rangeBand() * p + x.rangeBand() / 2) + ", "
-								 	+ (chart_inner_height + chart_margin + __dy)  + ") rotate(0)")
-								 .text(group_labels[i]);
-							}
-							else {
-								chart.append("text")
-								 .attr("x", 0)
-								 .attr("y", 0)
-								 .attr("dx", 0)
-								 .attr("dy", ".35em") // vertical-align: middle
-								 .attr("transform", "translate("
-								 	+ (x.rangeBand() * p + x.rangeBand() / 2) + ", "
-								 	+ (chart_inner_height + chart_margin + __dy)  + ") rotate(45)")
-								 .text(group_labels[i]);
-							}	 
-						}
-						
-						
-						// Lines separating the variuos groups
-						
-						for (var i = 0; i < group_columns.length; i++) {
-							if (group_columns[i] == "" || group_columns[i].indexOf("----") == 0) continue;
-							var p = group_offsets[i] + 1 * group_lengths[i] + 0.5;
-							
-							chart.append("line")
-								 .attr("x1", x.rangeBand() * p)
-								 .attr("x2", x.rangeBand() * p)
-								 .attr("y1", 0)
-								 .attr("y2", chart_inner_height)
-								 .style("stroke", "#ccc");
-						}
-						
-						
-						// Legend
-						
-						for (var i = 0; i < categories.length; i++) {
-						
-							chart.append("rect")
-								 .attr("x", band_width * x.domain().length + bands_margin + chart_margin + legend_padding_left)
-								 .attr("y", i * (legend_band_height + legend_vertical_spacing) + legend_padding_top)
-								 .attr("width", legend_band_width)
-								 .attr("height", legend_band_height)
-								 .style("fill", band_colors(i));
-						
-							chart.append("text")
-								 .attr("x", band_width * x.domain().length + bands_margin + chart_margin
-								 			+ legend_padding_left + legend_band_width + legend_band_padding_right)
-								 .attr("y", (i + 0.5) * (legend_band_height + legend_vertical_spacing) + legend_padding_top)
-								 .attr("dx", 0)
-							 	 .attr("dy", ".35em") // vertical-align: middle
-								 .text(categories[i]);
-						}
-					<%
+					if (__longest_subgroup_name != "" && __last_subgroup_length >= 6) {
+						chart.append("text")
+						 .attr("x", 0)
+						 .attr("y", 0)
+						 .attr("dx", 0)
+						 .attr("dy", ".35em") // vertical-align: middle
+						 .attr("text-anchor", "middle")
+						 .attr("transform", "translate("
+						 	+ (x.rangeBand() * p + x.rangeBand() / 2) + ", "
+						 	+ (chart_inner_height + chart_margin + __dy)  + ") rotate(0)")
+						 .text(group_labels[i]);
+					}
+					else {
+						chart.append("text")
+						 .attr("x", 0)
+						 .attr("y", 0)
+						 .attr("dx", 0)
+						 .attr("dy", ".35em") // vertical-align: middle
+						 .attr("transform", "translate("
+						 	+ (x.rangeBand() * p + x.rangeBand() / 2) + ", "
+						 	+ (chart_inner_height + chart_margin + __dy)  + ") rotate(45)")
+						 .text(group_labels[i]);
+					}	 
 				}
-			%>
+				
+				
+				// Lines separating the variuos groups
+				
+				for (var i = 0; i < group_columns.length; i++) {
+					if (group_columns[i] == "" || group_columns[i].indexOf("----") == 0) continue;
+					var p = group_offsets[i] + 1 * group_lengths[i] + 0.5;
+					
+					chart.append("line")
+						 .attr("x1", x.rangeBand() * p)
+						 .attr("x2", x.rangeBand() * p)
+						 .attr("y1", 0)
+						 .attr("y2", chart_inner_height)
+						 .style("stroke", "#ccc");
+				}
+
+		
+				// Legend
+				
+				if (categories.length > 1) {
+					for (var i = 0; i < categories.length; i++) {
+					
+						chart.append("rect")
+							 .attr("x", band_width * x.domain().length + bands_margin + chart_margin + legend_padding_left)
+							 .attr("y", i * (legend_band_height + legend_vertical_spacing) + legend_padding_top)
+							 .attr("width", legend_band_width)
+							 .attr("height", legend_band_height)
+							 .style("fill", band_colors(i));
+					
+						chart.append("text")
+							 .attr("x", band_width * x.domain().length + bands_margin + chart_margin
+							 			+ legend_padding_left + legend_band_width + legend_band_padding_right)
+							 .attr("y", (i + 0.5) * (legend_band_height + legend_vertical_spacing) + legend_padding_top)
+							 .attr("dx", 0)
+						 	 .attr("dy", ".35em") // vertical-align: middle
+							 .text(categories[i]);
+					}
+				}
+				
+			<% } %>
 			
 			
 			
@@ -632,41 +618,7 @@
 				 .attr("x2", band_width * x.domain().length + bands_margin)
 				 .attr("y2", chart_inner_height)
 				 .style("stroke", "#000");
-			
-			
-			
-			// TODO
-	
-			function redraw() {
-			
-				/*data.forEach(function(d, i) {
-					d.time += 0.1;
-					d._value += 0.1;
-				});*/
-		 
-				chart.selectAll("rect")
-					.transition()
-					.duration(100)
-					.remove();
-		 
-				chart.selectAll("line")
-					.transition()
-					.duration(100)
-					.remove();
-		 
-				chart.selectAll("text")
-					.transition()
-					.duration(100)
-					.remove();
-		 
-				chart.selectAll("circle")
-					.transition()
-					.duration(200)
-					.remove();
-					
-				draw_chart(data, chart, x);
-			}
-		}
+		});
 	
 	};
 	

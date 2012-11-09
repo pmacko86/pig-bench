@@ -14,6 +14,7 @@
 		
 		var padding_left = 100;
 		var padding_right = 300;
+		var padding_right_without_legend = 25;
 		var padding_top = 50;
 		var padding_bottom = 100;
 		
@@ -115,7 +116,8 @@
 			
 			var chart = d3.select(".<%= chartProperties.attach %>").append("svg")
 						  .attr("class", "chart")
-						  .attr("width",  chart_inner_width + padding_left + padding_right)
+						  .attr("width",  chart_inner_width + padding_left
+						  					+ (series.length > 1 ? padding_right : padding_right_without_legend))
 						  .attr("height", chart_inner_height + padding_top + padding_bottom)
 						  .append("g")
 						  	.attr("transform", "translate(" + padding_left + ", " + padding_top + ")");

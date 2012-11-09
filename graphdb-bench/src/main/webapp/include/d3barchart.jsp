@@ -9,6 +9,7 @@
 	
 	var padding_left = 100;
 	var padding_right = 300;
+	var padding_right_without_legend = 25;
 	var padding_top = 75;
 	var padding_bottom = 150;
 	
@@ -200,7 +201,8 @@
 		var num_bars = (stacked ? subgroup_ids.length : data.length);
 		var chart = d3.select(".<%= chartProperties.attach %>").append("svg")
 					  .attr("class", "chart")
-					  .attr("width",  bar_width * num_bars + padding_left + padding_right)
+					  .attr("width",  bar_width * num_bars + padding_left
+					  					+ (categories.length > 1 ? padding_right : padding_right_without_legend))
 					  .attr("height", chart_inner_height + padding_top + padding_bottom)
 					  .append("g")
 					  	.attr("transform", "translate(" + padding_left + ", " + padding_top + ")");
@@ -422,28 +424,30 @@
 					
 					// Legend
 					
-					for (var j = 0; j < categories.length; j++) {
-						var i = stacked ? categories.length - j - 1 : j;
-					
-						chart.append("rect")
-							 .attr("x", bar_width * num_bars + bars_margin + chart_margin + legend_padding_left)
-							 .attr("y", j * (legend_bar_height + legend_vertical_spacing) + legend_padding_top)
-							 .attr("width", legend_bar_width)
-							 .attr("height", legend_bar_height)
-							<% if (!chartProperties.patternFill) { %>
-								.style("fill", bar_colors(i));
-							<% } else { %>
-								.attr("style", "fill:url(#pattern-" + (i % num_patterns) + ")"
-											+ ";stroke:" + bar_colors(i));
-							<% } %>
-					
-						chart.append("text")
-							 .attr("x", bar_width * num_bars + bars_margin + chart_margin
-							 			+ legend_padding_left + legend_bar_width + legend_bar_padding_right)
-							 .attr("y", (j + 0.5) * (legend_bar_height + legend_vertical_spacing) + legend_padding_top)
-							 .attr("dx", 0)
-						 	 .attr("dy", ".35em") // vertical-align: middle
-							 .text(categories[i]);
+					if (categories.length > 1) {
+						for (var j = 0; j < categories.length; j++) {
+							var i = stacked ? categories.length - j - 1 : j;
+						
+							chart.append("rect")
+								 .attr("x", bar_width * num_bars + bars_margin + chart_margin + legend_padding_left)
+								 .attr("y", j * (legend_bar_height + legend_vertical_spacing) + legend_padding_top)
+								 .attr("width", legend_bar_width)
+								 .attr("height", legend_bar_height)
+								<% if (!chartProperties.patternFill) { %>
+									.style("fill", bar_colors(i));
+								<% } else { %>
+									.attr("style", "fill:url(#pattern-" + (i % num_patterns) + ")"
+												+ ";stroke:" + bar_colors(i));
+								<% } %>
+						
+							chart.append("text")
+								 .attr("x", bar_width * num_bars + bars_margin + chart_margin
+								 			+ legend_padding_left + legend_bar_width + legend_bar_padding_right)
+								 .attr("y", (j + 0.5) * (legend_bar_height + legend_vertical_spacing) + legend_padding_top)
+								 .attr("dx", 0)
+							 	 .attr("dy", ".35em") // vertical-align: middle
+								 .text(categories[i]);
+						}
 					}
 				<%
 			}
