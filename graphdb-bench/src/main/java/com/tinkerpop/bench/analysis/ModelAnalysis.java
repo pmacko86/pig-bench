@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.Vector;
@@ -71,6 +72,9 @@ public class ModelAnalysis {
 	
 	/// The map of operations to finished jobs
 	private HashMap<String, SortedSet<Job>> operationToJobs;
+	
+	/// The map of operations with tags to finished jobs
+	private HashMap<String, SortedSet<Job>> operationWithTagsToJobs;
 	
 	/// The map of x bounds
 	private HashMap<String, Double[]> xBounds;
@@ -188,6 +192,7 @@ public class ModelAnalysis {
 	
 		finishedJobs = new ArrayList<Job>();
 		operationToJobs = new HashMap<String, SortedSet<Job>>();
+		operationWithTagsToJobs = new HashMap<String, SortedSet<Job>>();
 		numFinishedJobs = jobs.size();
 		
 		for (Job job : jobs) {
@@ -221,10 +226,17 @@ public class ModelAnalysis {
 						|| name.equals("OperationDoGC")
 						|| name.equals("OperationShutdownGraph")) continue;
 				
+				SortedSet<Job> ojs = operationWithTagsToJobs.get(name);
+				if (ojs == null) {
+					ojs = new TreeSet<Job>();
+					operationWithTagsToJobs.put(name, ojs);
+				}
+				ojs.add(job);
+				
 				int tagStart = name.indexOf('-');
 				if (tagStart > 0) name = name.substring(0, tagStart);
 				
-				SortedSet<Job> ojs = operationToJobs.get(name);
+				ojs = operationToJobs.get(name);
 				if (ojs == null) {
 					ojs = new TreeSet<Job>();
 					operationToJobs.put(name, ojs);
@@ -523,6 +535,26 @@ public class ModelAnalysis {
 	
 	
 	/**
+	 * Get all successfully finished jobs
+	 * 
+	 * @return the jobs, or null if none
+	 */
+	public List<Job> getJobs() {
+		return finishedJobs;
+	}
+	
+	
+	/**
+	 * Get all successfully finished jobs for each operation name including tags
+	 * 
+	 * @return the map of operations to a sorted set of jobs by time (ascending)
+	 */
+	public Map<String, SortedSet<Job>> getJobsForAllOperationsWithTags() {
+		return operationWithTagsToJobs;
+	}
+	
+	
+	/**
 	 * Print two columns
 	 * 
 	 * @param cw the column width
@@ -739,7 +771,7 @@ public class ModelAnalysis {
 			}
 			
 			if (many) {
-				String s = e.getArgs()[opCountArg];
+				String s = e.getArgs()[opCountArg >= 0 ? opCountArg : e.getArgs().length + opCountArg];
 				int opCount = Integer.parseInt(s);
 				if (!s.equals("" + opCount)) throw new NumberFormatException(s);
 				count += opCount;

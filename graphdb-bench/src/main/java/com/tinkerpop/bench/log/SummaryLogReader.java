@@ -48,6 +48,17 @@ public class SummaryLogReader implements Iterable<SummaryLogEntry> {
 					"Could not create SummaryLogReaderLogEntryIterator: Cannot open '" + logFile + "'", e.getCause());
 		}
 	}
+	
+	public static SummaryLogEntry getEntryForOperation(File logFile, String operationName) {
+		SummaryLogReader reader = new SummaryLogReader(logFile);
+		SummaryLogEntry r = null;
+		for (SummaryLogEntry e : reader) {
+			if (e.getName().equals(operationName)) {
+				r = e;
+			}
+		}
+		return r;
+	}
 
 	private class SummaryLogEntryIterator implements
 			Iterator<SummaryLogEntry> {

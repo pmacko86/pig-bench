@@ -3,6 +3,8 @@ package com.tinkerpop.bench.analysis;
 import java.util.HashMap;
 import java.util.Vector;
 
+import org.apache.commons.lang.StringUtils;
+
 import com.tinkerpop.bench.log.GraphRunTimes;
 import com.tinkerpop.bench.log.OperationLogEntry;
 import com.tinkerpop.bench.log.OperationLogReader;
@@ -50,8 +52,8 @@ public class AnalysisUtils {
 		if (s.equals("OperationGetManyEdges"             )) return 0;
 		if (s.equals("OperationGetManyVertexProperties"  )) return 1;
 		if (s.equals("OperationGetManyEdgeProperties"    )) return 1;
-		if (s.equals("OperationGetManyVertexPropertySets")) return 1;
-		if (s.equals("OperationGetManyEdgePropertySets"  )) return 1;
+		if (s.equals("OperationGetManyVertexPropertySets")) return -1;
+		if (s.equals("OperationGetManyEdgePropertySets"  )) return -1;
 		if (s.equals("OperationAddManyVertices"          )) return 0;
 		if (s.equals("OperationAddManyEdges"             )) return 0;
 		if (s.equals("OperationSetManyVertexProperties"  )) return 1;
@@ -75,10 +77,15 @@ public class AnalysisUtils {
 		s = s.replaceFirst("OperationAddMany", "OperationAdd");
 		s = s.replaceFirst("OperationSetMany", "OperationSet");
 		
-		s = s.replaceFirst("Edges$"     , "Edge"    );
-		s = s.replaceFirst("Vertices$"  , "Vertex"  );
-		s = s.replaceFirst("Properties$", "Property");
-		s = s.replaceFirst("Sets$"      , "Set"     );
+		s = s.replaceFirst("Edges$"     , "Edge"     );
+		s = s.replaceFirst("Vertices$"  , "Vertex"   );
+		s = s.replaceFirst("Properties$", "Property" );
+		s = s.replaceFirst("Sets$"      , "Set"      );
+		
+		s = s.replaceFirst("Edges-"     , "Edge-"    );
+		s = s.replaceFirst("Vertices-"  , "Vertex-"  );
+		s = s.replaceFirst("Properties-", "Property-");
+		s = s.replaceFirst("Sets-"      , "Set-"     );
 		
 		return s;
 	}
@@ -147,8 +154,14 @@ public class AnalysisUtils {
 		
 		OperationLogReader reader = new OperationLogReader(job.getLogFile(), entry.getName());
 		for (OperationLogEntry e : reader) {
-			String s = e.getArgs()[opCountArg];
-			int opCount = Integer.parseInt(s);
+			String s = e.getArgs()[opCountArg >= 0 ? opCountArg : e.getArgs().length + opCountArg];
+			int opCount;
+			try {
+				opCount = Integer.parseInt(s);
+			}
+			catch (NumberFormatException ex) {
+				throw new RuntimeException("Cannot parse argument " + opCountArg + " of: " + StringUtils.join(e.getArgs(), ", "), ex);
+			}
 			
 			double t = e.getTime() / (double) opCount;
 			if (count == 0 || t < min) min = t;
