@@ -65,6 +65,20 @@ xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns
 	 </servlet>
 	
 	<servlet>
+		<display-name>Show3dPlot</display-name>
+		<servlet-name>Show3dPlot</servlet-name>
+		<servlet-class>com.tinkerpop.bench.web.Show3dPlot</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	 </servlet>
+	
+	<servlet>
+		<display-name>ShowCustomData</display-name>
+		<servlet-name>ShowCustomData</servlet-name>
+		<servlet-class>com.tinkerpop.bench.web.ShowCustomData</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	 </servlet>
+	
+	<servlet>
 		<display-name>ShowIngestAnalysis</display-name>
 		<servlet-name>ShowIngestAnalysis</servlet-name>
 		<servlet-class>com.tinkerpop.bench.web.ShowIngestAnalysis</servlet-class>
@@ -137,6 +151,16 @@ xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns
 	<servlet-mapping>
 		<servlet-name>RunBenchmark</servlet-name>
 		<url-pattern>/RunBenchmark</url-pattern>
+	</servlet-mapping>
+ 
+	<servlet-mapping>
+		<servlet-name>Show3dPlot</servlet-name>
+		<url-pattern>/Show3dPlot</url-pattern>
+	</servlet-mapping>
+ 
+	<servlet-mapping>
+		<servlet-name>ShowCustomData</servlet-name>
+		<url-pattern>/ShowCustomData</url-pattern>
 	</servlet-mapping>
  
 	<servlet-mapping>

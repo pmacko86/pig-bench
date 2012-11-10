@@ -1477,7 +1477,16 @@ public class BenchmarkMicro extends Benchmark {
 		
 		List<String> vertexKeys = new ArrayList<String>();
 		List<String> edgeKeys = new ArrayList<String>();
+		
 		if (options.hasArgument(argument)) {
+			
+			if (options.valuesOf(argument).size() == 1) {
+				if (options.valueOf(argument).toString().equalsIgnoreCase("none")
+						|| options.valueOf(argument).toString().equalsIgnoreCase("none,:none")) {
+					return new Pair<List<String>, List<String>>(vertexKeys, edgeKeys);
+				}
+			}
+			
 			for (Object l : options.valuesOf(argument)) {
 				for (String s : l.toString().split(",")) {
 					if ("".equals(s)) continue;
