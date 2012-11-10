@@ -43,16 +43,19 @@ public class AnalysisUtils {
 	 */
 	public static int getManyOperationOpCountArgumentIndex(String operationName) {
 		
-		if (operationName.equals("OperationGetManyVertices"          )) return 0;
-		if (operationName.equals("OperationGetManyEdges"             )) return 0;
-		if (operationName.equals("OperationGetManyVertexProperties"  )) return 1;
-		if (operationName.equals("OperationGetManyEdgeProperties"    )) return 1;
-		if (operationName.equals("OperationGetManyVertexPropertySets")) return 1;
-		if (operationName.equals("OperationGetManyEdgePropertySets"  )) return 1;
-		if (operationName.equals("OperationAddManyVertices"          )) return 0;
-		if (operationName.equals("OperationAddManyEdges"             )) return 0;
-		if (operationName.equals("OperationSetManyVertexProperties"  )) return 1;
-		if (operationName.equals("OperationSetManyEdgeProperties"    )) return 1;
+		String s = operationName;
+		if (s.indexOf('-') > 0) s = s.substring(0, s.indexOf('-'));
+		
+		if (s.equals("OperationGetManyVertices"          )) return 0;
+		if (s.equals("OperationGetManyEdges"             )) return 0;
+		if (s.equals("OperationGetManyVertexProperties"  )) return 1;
+		if (s.equals("OperationGetManyEdgeProperties"    )) return 1;
+		if (s.equals("OperationGetManyVertexPropertySets")) return 1;
+		if (s.equals("OperationGetManyEdgePropertySets"  )) return 1;
+		if (s.equals("OperationAddManyVertices"          )) return 0;
+		if (s.equals("OperationAddManyEdges"             )) return 0;
+		if (s.equals("OperationSetManyVertexProperties"  )) return 1;
+		if (s.equals("OperationSetManyEdgeProperties"    )) return 1;
 		
 		throw new IllegalArgumentException("Invalid or unsupported \"Many\" operation " + operationName);
 	}
