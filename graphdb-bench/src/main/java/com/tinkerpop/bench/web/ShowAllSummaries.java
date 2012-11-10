@@ -80,6 +80,34 @@ public class ShowAllSummaries extends HttpServlet {
 		}
 		
 		
+		// Short case?
+		
+		boolean shortCase = WebUtils.getBooleanParameter(request, "short", false);
+		if (shortCase) {
+			operationNames.clear();
+			operationNames.add("OperationGetManyVertices");
+			operationNames.add("OperationGetManyEdges");
+			operationNames.add("OperationGetManyEdgeProperties-time");
+			operationNames.add("OperationGetManyVertexProperties-age");
+			operationNames.add("OperationGetManyVertexProperties-name");
+			operationNames.add("OperationGetFirstNeighbor-both");
+			operationNames.add("OperationGetFirstNeighbor-in");
+			operationNames.add("OperationGetFirstNeighbor-out");
+			operationNames.add("OperationGetKHopNeighbors-both-1");
+			operationNames.add("OperationGetKHopNeighbors-both-2");
+			operationNames.add("OperationGetKHopNeighbors-both-3");
+			operationNames.add("OperationGetKHopNeighbors-both-4");
+			operationNames.add("OperationGetKHopNeighbors-both-5");
+			operationNames.add("OperationGetShortestPath");
+			operationNames.add("OperationLocalClusteringCoefficient");
+			operationNames.add("OperationAddManyVertices");
+			operationNames.add("OperationAddManyEdges");
+			operationNames.add("OperationSetManyEdgeProperties");
+			operationNames.add("OperationSetManyVertexProperties");
+			operationNames.add("OperationGetVerticesUsingKeyIndex-_original_id");
+		}
+		
+		
 		// Start the response
 		
         response.setContentType("text/plain");
