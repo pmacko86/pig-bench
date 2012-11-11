@@ -1,0 +1,6 @@
+"id","name","type","args","time","result","memory","gccount","gctime"
+"0","OperationOpenGraph","com.tinkerpop.bench.operation.OperationOpenGraph","[DEFAULT]","24551216362","DONE","23417159","0","0"
+"101","OperationDoGC","com.tinkerpop.bench.operation.OperationDoGC","[]","1396484050","DONE","21081495","8","1"
+"102","OperationDoGC","com.tinkerpop.bench.operation.OperationDoGC","[]","1377099367","DONE","20938503","8","1"
+"1","OperationGetShortestPath","com.tinkerpop.bench.operation.operations.OperationGetShortestPath$DEX","[8093878, 75674]","2754945426821","4990454:6:384841:9100486","835891431","15","3096"
+"2","OperationGetShortestPath","com.tinkerpop.bench.operation.operations.OperationGetShortestPath$DEX","[2894616, 191641]","2878492860972","6530684:6:629628:14320433","931197399","36","5990"

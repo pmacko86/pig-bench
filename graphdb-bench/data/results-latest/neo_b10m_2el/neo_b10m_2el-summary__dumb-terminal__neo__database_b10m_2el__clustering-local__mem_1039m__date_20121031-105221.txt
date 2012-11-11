@@ -1,0 +1,5 @@
+operation                           neo-mean (ms)   neo-stdev (ms)  neo-min (ms)    neo-max (ms)    
+OperationOpenGraph                        309.867            0.000       309.867         309.867    
+OperationDoGC                            1715.021          336.640      1474.500        2191.092    
+OperationLocalClusteringCoefficient         2.170            2.262         0.476          18.725    
+OperationShutdownGraph                   1844.531            0.000      1844.531        1844.531    

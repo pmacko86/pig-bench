@@ -1,0 +1,7 @@
+"operation","dex-mean","dex-stdev","dex-min","dex-max"
+"OperationOpenGraph","4.3756267E7","0.0","4.3756267E7","4.3756267E7"
+"OperationDoGC","1.376034101E9","4417621.325410446","1.370465768E9","1.384071121E9"
+"OperationCreateKeyIndex-vertex-title","3.767873673E9","0.0","3.767873673E9","3.767873673E9"
+"OperationCreateKeyIndex-vertex-salesrank","6.053524E8","0.0","6.053524E8","6.053524E8"
+"OperationCreateKeyIndex-vertex-group","4.60304384E8","0.0","4.60304384E8","4.60304384E8"
+"OperationShutdownGraph","3.370660573E9","0.0","3.370660573E9","3.370660573E9"

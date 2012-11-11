@@ -1,0 +1,5 @@
+operation                                   dex-mean (ms)   dex-stdev (ms)  dex-min (ms)    dex-max (ms)    
+OperationOpenGraph                                 51.949            0.000        51.949          51.949    
+OperationDoGC                                    1400.983           30.316      1375.395        1443.569    
+OperationLoadFGF-incremental-amazon0312-b        4713.038            0.000      4713.038        4713.038    
+OperationShutdownGraph                          13264.803            0.000     13264.803       13264.803    

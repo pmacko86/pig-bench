@@ -1,0 +1,5 @@
+"operation","dex-mean","dex-stdev","dex-min","dex-max"
+"OperationOpenGraph","5.3321817E7","0.0","5.3321817E7","5.3321817E7"
+"OperationDoGC","1.3823761886666667E9","1231377.0862039875","1.38077771E9","1.383773829E9"
+"OperationGetShortestPath","9732209.03","4550739.208524843","373561.0","1.8208472E7"
+"OperationShutdownGraph","1.05256839E8","0.0","1.05256839E8","1.05256839E8"

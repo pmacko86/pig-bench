@@ -1,0 +1,5 @@
+operation                                           dex-mean (ms)   dex-stdev (ms)  dex-min (ms)    dex-max (ms)    
+OperationOpenGraph                                      15078.499            0.000     15078.499       15078.499    
+OperationDoGC                                            3067.689         2382.618      1378.585        6437.216    
+OperationLoadFGF-incremental-barabasi_10m_50m_2el-b   4617636.626            0.000   4617636.626     4617636.626    
+OperationShutdownGraph                                 264387.697            0.000    264387.697      264387.697    

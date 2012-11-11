@@ -1,0 +1,4 @@
+operation                   dex-mean (ms)   dex-stdev (ms)  dex-min (ms)    dex-max (ms)    
+OperationOpenGraph              24551.216            0.000     24551.216       24551.216    
+OperationDoGC                    1386.792            9.692      1377.099        1396.484    
+OperationGetShortestPath      2816719.144        61773.717   2754945.427     2878492.861    

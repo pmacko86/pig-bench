@@ -1,0 +1,6 @@
+operation                                           neo-mean (ms)   neo-stdev (ms)  neo-min (ms)    neo-max (ms)    
+OperationOpenGraph                                       1374.265            0.000      1374.265        1374.265    
+OperationDoGC                                            1619.021          312.593      1453.443        2244.063    
+OperationDeleteGraph                                     2659.754            0.000      2659.754        2659.754    
+OperationLoadFGF-bulkload-barabasi_10m_50m_2el-a      6267183.722            0.000   6267183.722     6267183.722    
+OperationShutdownGraph                                 760313.931            0.000    760313.931      760313.931    

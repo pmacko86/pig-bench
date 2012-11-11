@@ -1,0 +1,7 @@
+"operation","neo-mean","neo-stdev","neo-min","neo-max"
+"OperationOpenGraph","1.01981919E8","0.0","1.01981919E8","1.01981919E8"
+"OperationDoGC","2.048562995142857E9","3.629479688628941E8","1.522710577E9","2.418512631E9"
+"OperationCreateKeyIndex-vertex-title","4.7046250858E10","0.0","4.7046250858E10","4.7046250858E10"
+"OperationCreateKeyIndex-vertex-salesrank","4.3383421434E10","0.0","4.3383421434E10","4.3383421434E10"
+"OperationCreateKeyIndex-vertex-group","4.5721475441E10","0.0","4.5721475441E10","4.5721475441E10"
+"OperationShutdownGraph","2.078743871E9","0.0","2.078743871E9","2.078743871E9"

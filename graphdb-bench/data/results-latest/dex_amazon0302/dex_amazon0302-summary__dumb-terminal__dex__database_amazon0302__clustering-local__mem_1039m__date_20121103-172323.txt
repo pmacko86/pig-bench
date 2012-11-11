@@ -1,0 +1,5 @@
+operation                           dex-mean (ms)   dex-stdev (ms)  dex-min (ms)    dex-max (ms)    
+OperationOpenGraph                        453.675            0.000       453.675         453.675    
+OperationDoGC                            1382.676            5.838      1376.076        1390.271    
+OperationLocalClusteringCoefficient         0.534            0.197         0.221           1.154    
+OperationShutdownGraph                    191.302            0.000       191.302         191.302    

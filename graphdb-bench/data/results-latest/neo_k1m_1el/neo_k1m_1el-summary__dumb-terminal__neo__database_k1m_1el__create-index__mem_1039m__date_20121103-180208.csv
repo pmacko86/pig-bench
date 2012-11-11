@@ -1,0 +1,7 @@
+"operation","neo-mean","neo-stdev","neo-min","neo-max"
+"OperationOpenGraph","1.08140416E8","0.0","1.08140416E8","1.08140416E8"
+"OperationDoGC","2.0636829307142856E9","3.183225346574284E8","1.504887622E9","2.382900884E9"
+"OperationCreateKeyIndex-vertex-name","1.86901228903E11","0.0","1.86901228903E11","1.86901228903E11"
+"OperationCreateKeyIndex-vertex-age","1.75276412054E11","0.0","1.75276412054E11","1.75276412054E11"
+"OperationCreateKeyIndex-edge-time","1.298455778079E12","0.0","1.298455778079E12","1.298455778079E12"
+"OperationShutdownGraph","2.32256118E9","0.0","2.32256118E9","2.32256118E9"
