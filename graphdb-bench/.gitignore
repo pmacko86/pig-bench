@@ -17,7 +17,8 @@ doc/old wiki entries/
 .idea/
 graphdb-bench.iml
 JRatOutput/
-data/datasets/*.graphml
-data/results/Micro/*
+data/datasets/*
+data/results/*
 .directory
+dex.cfg
 
