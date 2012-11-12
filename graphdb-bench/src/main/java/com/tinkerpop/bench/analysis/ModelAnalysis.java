@@ -1,19 +1,12 @@
 package com.tinkerpop.bench.analysis;
 
-import java.io.File;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.tinkerpop.bench.log.OperationLogEntry;
 import com.tinkerpop.bench.log.OperationLogReader;
-import com.tinkerpop.bench.log.SummaryLogEntry;
-import com.tinkerpop.bench.log.SummaryLogReader;
 import com.tinkerpop.bench.operation.Operation;
 import com.tinkerpop.bench.operation.operations.OperationAddManyEdges;
 import com.tinkerpop.bench.operation.operations.OperationAddManyVertices;
@@ -37,12 +30,11 @@ import com.tinkerpop.bench.util.OutputUtils;
 import com.tinkerpop.bench.util.Pair;
 import com.tinkerpop.bench.web.DatabaseEngineAndInstance;
 import com.tinkerpop.bench.web.Job;
-import com.tinkerpop.bench.web.JobList;
 import com.tinkerpop.blueprints.Direction;
 
 
 /**
- * A context for database introspection 
+ * Analysis using Margo's database introspection model 
  * 
  * @author Peter Macko (pmacko@eecs.harvard.edu)
  */
@@ -64,17 +56,8 @@ public class ModelAnalysis {
 	/// The database and instance pair
 	private DatabaseEngineAndInstance dbEI;
 	
-	/// The number of all finished jobs (for cache purposes)
-	private int numFinishedJobs;
-	
-	/// The list of relevant successfully finished jobs
-	private List<Job> finishedJobs;
-	
-	/// The map of operations to finished jobs
-	private HashMap<String, SortedSet<Job>> operationToJobs;
-	
-	/// The map of operations with tags to finished jobs
-	private HashMap<String, SortedSet<Job>> operationWithTagsToJobs;
+	/// The analysis context
+	private AnalysisContext context;
 	
 	/// The map of x bounds
 	private HashMap<String, Double[]> xBounds;
@@ -148,7 +131,7 @@ public class ModelAnalysis {
 	protected ModelAnalysis(DatabaseEngineAndInstance dbEI) {
 		
 		this.dbEI = dbEI;
-		this.numFinishedJobs = -1;
+		this.context = null;
 		
 		update();
 	}
@@ -176,78 +159,32 @@ public class ModelAnalysis {
 	
 	
 	/**
+	 * Get the analysis context
+	 * 
+	 * @return the context
+	 */
+	public AnalysisContext getContext() {
+		return context;
+	}
+	
+	
+	/**
 	 * Recompute if necessary
 	 * 
 	 * @return true if it was recomputed
 	 */
 	public boolean update() {
 		
-		List<Job> jobs = JobList.getInstance().getFinishedJobs(dbEI);
-		if (jobs.size() == numFinishedJobs) return false;
-		
-		
-		/*
-		 * Compute the generic job maps
-		 */
-	
-		finishedJobs = new ArrayList<Job>();
-		operationToJobs = new HashMap<String, SortedSet<Job>>();
-		operationWithTagsToJobs = new HashMap<String, SortedSet<Job>>();
-		numFinishedJobs = jobs.size();
-		
-		for (Job job : jobs) {
-			numFinishedJobs++;
-			
-			
-			// Exclude failed or unfinished jobs
-			
-			if (job.getExecutionCount() < 0 || job.getLastStatus() != 0 || job.isRunning()) continue;
-			File summaryFile = job.getSummaryFile();
-			if (summaryFile == null) continue;
-			if (job.getExecutionTime() == null) continue;
-			
-			
-			// Exclude jobs with some command-line arguments
-			
-			if (job.getArguments().contains("--use-stored-procedures")) continue;
-			
-			
-			// We found a relevant job!
-			
-			finishedJobs.add(job);
-			
-			
-			// Operation Maps
-			
-			SummaryLogReader reader = new SummaryLogReader(summaryFile);
-			for (SummaryLogEntry e : reader) {
-				String name = e.getName();
-				if (name.equals("OperationOpenGraph")
-						|| name.equals("OperationDoGC")
-						|| name.equals("OperationShutdownGraph")) continue;
-				
-				SortedSet<Job> ojs = operationWithTagsToJobs.get(name);
-				if (ojs == null) {
-					ojs = new TreeSet<Job>();
-					operationWithTagsToJobs.put(name, ojs);
-				}
-				ojs.add(job);
-				
-				int tagStart = name.indexOf('-');
-				if (tagStart > 0) name = name.substring(0, tagStart);
-				
-				ojs = operationToJobs.get(name);
-				if (ojs == null) {
-					ojs = new TreeSet<Job>();
-					operationToJobs.put(name, ojs);
-				}
-				ojs.add(job);
-			}
+		if (context == null) {
+			context = AnalysisContext.getInstance(dbEI);
 		}
-		
+		else {
+			if (!context.update()) return false;
+		}
+
 		
 		/*
-		 * More initialization
+		 * Initialize
 		 */
 		
 		xBounds = new HashMap<String, Double[]>();
@@ -505,54 +442,7 @@ public class ModelAnalysis {
 		
 		return null;
 	}
-	
-	
-	/**
-	 * Get all jobs for the specified operation
-	 * 
-	 * @param operation the operation type
-	 * @return the jobs sorted by time (ascending), or null if none
-	 */
-	public SortedSet<Job> getJobs(Class<? extends Operation> operation) {
-		SortedSet<Job> operationJobs = operationToJobs.get(operation.getSimpleName());
-		if (operationJobs == null || operationJobs.isEmpty()) return null;
-		return operationJobs;
-	}
-	
-	
-	/**
-	 * Get all jobs for the specified operation (base name, not with tags)
-	 * 
-	 * @param operationName the operation type
-	 * @return the jobs sorted by time (ascending), or null if none
-	 */
-	public SortedSet<Job> getJobs(String operationName) {
-		String s = operationName.indexOf('-') > 0 ? operationName.substring(0, operationName.indexOf('-')) : operationName;
-		SortedSet<Job> operationJobs = operationToJobs.get(s);
-		if (operationJobs == null || operationJobs.isEmpty()) return null;
-		return operationJobs;
-	}
-	
-	
-	/**
-	 * Get all successfully finished jobs
-	 * 
-	 * @return the jobs, or null if none
-	 */
-	public List<Job> getJobs() {
-		return finishedJobs;
-	}
-	
-	
-	/**
-	 * Get all successfully finished jobs for each operation name including tags
-	 * 
-	 * @return the map of operations to a sorted set of jobs by time (ascending)
-	 */
-	public Map<String, SortedSet<Job>> getJobsForAllOperationsWithTags() {
-		return operationWithTagsToJobs;
-	}
-	
+
 	
 	/**
 	 * Print two columns
@@ -744,7 +634,7 @@ public class ModelAnalysis {
 		
 		// Find the correct job
 		
-		SortedSet<Job> operationJobs = operationToJobs.get(operationName);
+		SortedSet<Job> operationJobs = context.operationToJobs.get(operationName);
 		if (operationJobs == null || operationJobs.isEmpty()) return null;
 		Job job = operationJobs.last();
 		
@@ -838,7 +728,7 @@ public class ModelAnalysis {
 		
 		// Find the correct job
 		
-		SortedSet<Job> operationJobs = operationToJobs.get(operationName);
+		SortedSet<Job> operationJobs = context.operationToJobs.get(operationName);
 		if (operationJobs == null || operationJobs.isEmpty()) return null;
 		Job job = operationJobs.last();
 		

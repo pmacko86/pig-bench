@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -15,12 +16,17 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import scala.actors.threadpool.Arrays;
+
 import com.tinkerpop.bench.DatabaseEngine;
+import com.tinkerpop.bench.analysis.AnalysisContext;
 import com.tinkerpop.bench.analysis.AnalysisUtils;
 import com.tinkerpop.bench.analysis.ModelAnalysis;
 import com.tinkerpop.bench.log.OperationLogEntry;
 import com.tinkerpop.bench.log.OperationLogReader;
+import com.tinkerpop.bench.util.OutputUtils;
 import com.tinkerpop.bench.util.Triple;
+import com.tinkerpop.blueprints.Direction;
 
 
 /**
@@ -78,31 +84,9 @@ public class ShowCustomData extends HttpServlet {
 		
 		// The operation names
 		
-		String[] operationNames = WebUtils.getStringParameterValues(request, "operations");
-		
-				
-		// Get the list of jobs for each operation name
-
-		TreeMap<String, Collection<Job>> operationsToJobs = new TreeMap<String, Collection<Job>>();
-		
-		for (String operationName : operationNames) {
-			String[] jobIds = WebUtils.getStringParameterValues(request, "jobs-" + operationName);
-			LinkedList<Job> jobs = new LinkedList<Job>();
-			
-			if (jobIds != null) {
-				for (String j : jobIds) {
-					jobs.add(JobList.getInstance().getFinishedJob(Integer.parseInt(j)));
-				}
-			}
-			else {
-				for (DatabaseEngineAndInstance dbei : dbeis) {
-					SortedSet<Job> j = ModelAnalysis.getInstance(dbei).getJobs(operationName);
-					if (j != null && !j.isEmpty()) jobs.add(j.last());
-				}
-			}
-			
-			operationsToJobs.put(operationName, jobs);
-		}
+		String[] a_operationNames = WebUtils.getStringParameterValues(request, "operations");
+		@SuppressWarnings("unchecked")
+		List<String> operationNames = a_operationNames == null ? Collections.EMPTY_LIST : Arrays.asList(a_operationNames);
 		
 		
 		// Columns
@@ -124,10 +108,76 @@ public class ShowCustomData extends HttpServlet {
 		// Other parameters
 		
 		String delimiter = WebUtils.getStringParameter(request, "delimiter");
-		if (delimiter == null) delimiter = " ";
+		if (delimiter == null) delimiter = "\t";
 		
-		boolean printHeader = WebUtils.getBooleanParameter(request, "print_header", false);
+		boolean printHeader = WebUtils.getBooleanParameter(request, "header", false);
 		boolean convertManyOperations = WebUtils.getBooleanParameter(request, "convert_many_operations", false);
+		
+		
+		// Presets
+		
+		String preset = WebUtils.getStringParameter(request, "preset");
+		if (preset != null) {
+			if (preset.startsWith("margo")) {
+				
+				columns = new String[] { "#bname", "#type", "#edgelabels", "#size", "opname", "direction",
+						"k", "#nodes", "#unique", "#neighborhoods", "time_ms" };
+				
+				dbeis = new ArrayList<DatabaseEngineAndInstance>(WebUtils.getAllDatabaseEnginesAndInstances());
+				operationNames = new ArrayList<String>();
+				convertManyOperations = true;
+				printHeader = true;
+				delimiter = ",";
+				
+				if (preset.equals("margo-khops")) {
+					for (Direction d : ModelAnalysis.DIRECTIONS) {
+						String dt = OutputUtils.toTag(d);
+						operationNames.add("OperationGetAllNeighbors-" + dt);
+						for (int k = 1; k <= 5; k++) {
+							operationNames.add("OperationGetKHopNeighbors-" + dt + "-" + k);
+						}
+					}
+				}
+				else {
+			        response.setContentType("text/plain");
+			        response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
+					PrintWriter writer = response.getWriter();
+					writer.println("Error: Invalid preset " + preset);
+					return;	
+				}
+			}
+			else {
+		        response.setContentType("text/plain");
+		        response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
+				PrintWriter writer = response.getWriter();
+				writer.println("Error: Invalid preset " + preset);
+				return;	
+			}
+		}
+		
+		
+		// Get the list of jobs for each operation name
+
+		TreeMap<String, Collection<Job>> operationsToJobs = new TreeMap<String, Collection<Job>>();
+		
+		for (String operationName : operationNames) {
+			String[] jobIds = WebUtils.getStringParameterValues(request, "jobs-" + operationName);
+			LinkedList<Job> jobs = new LinkedList<Job>();
+			
+			if (jobIds != null) {
+				for (String j : jobIds) {
+					jobs.add(JobList.getInstance().getFinishedJob(Integer.parseInt(j)));
+				}
+			}
+			else {
+				for (DatabaseEngineAndInstance dbei : dbeis) {
+					SortedSet<Job> j = AnalysisContext.getInstance(dbei).getJobs(operationName);
+					if (j != null && !j.isEmpty()) jobs.add(j.last());
+				}
+			}
+			
+			operationsToJobs.put(operationName, jobs);
+		}
 		
 		
 		// Get the writer and write out the log file
@@ -198,19 +248,79 @@ public class ShowCustomData extends HttpServlet {
 		
 		// Print the data
 		
+		int row_index = -1;
+		
 		for (Triple<String, Job, OperationLogEntry> data : operationsJobsEntries) {
-			
+			OperationLogEntry entry = data.getThird();
+			Job job = data.getSecond();
+			DatabaseEngineAndInstance dbei = job.getDatabaseEngineAndInstance();
+			row_index++;
+		
 			for (int i = 0; i < columns.length; i++) {
 				if (i != 0) writer.print(delimiter);
 				String column = columns[i];
-				OperationLogEntry entry = data.getThird();
 				
-				if      ("name"     .equalsIgnoreCase(column)) writer.print(entry.getName());
-				else if ("type"     .equalsIgnoreCase(column)) writer.print(entry.getType());
-				else if ("time_ns"  .equalsIgnoreCase(column)) writer.print(entry.getTime());
-				else if ("time_ms"  .equalsIgnoreCase(column)) writer.print(entry.getTime() / 1000000.0);
-				else if ("time_s"   .equalsIgnoreCase(column)) writer.print(entry.getTime() / 1000000000.0);
-				else if ("result"   .equalsIgnoreCase(column)) writer.print(entry.getResult());
+				
+				// Column name aliases
+				
+				if      ("#unique"       .equalsIgnoreCase(column)) column = "result[0]";
+				else if ("#depth"        .equalsIgnoreCase(column)) column = "result[1]";
+				else if ("#neighborhoods".equalsIgnoreCase(column)) column = "result[2]";
+				else if ("#nodes"        .equalsIgnoreCase(column)) column = "result[3]";
+				
+				if (entry.getName().startsWith("OperationGetShortestPath")) {
+					if ("k".equalsIgnoreCase(column) ||  "#length".equalsIgnoreCase(column)) column = "result[1]";
+				}
+				
+				if (entry.getName().startsWith("OperationLocalClusteringCoefficient")) {
+					if ("k".equalsIgnoreCase(column)) column = "result[1]";
+				}
+				
+				
+				
+				// Depending on the column...
+				
+				if      ("name"       .equalsIgnoreCase(column)) writer.print(entry.getName());
+				if      ("opname"     .equalsIgnoreCase(column)) writer.print(entry.getName());
+				else if ("optype"     .equalsIgnoreCase(column)) writer.print(entry.getType());
+				else if ("#bname"     .equalsIgnoreCase(column)) writer.print(dbei.getEngine().getLongName());
+				else if ("#type"      .equalsIgnoreCase(column) || "type".equalsIgnoreCase(column)) {
+					String s = dbei.getInstanceSafe("default");
+					if (s.startsWith("b") && s.length() >= 2 && Character.isDigit(s.charAt(1))) writer.print("b");
+					else if (s.startsWith("k") && s.length() >= 2 && Character.isDigit(s.charAt(1))) writer.print("k");
+					else if (s.startsWith("amazon")) writer.print("amazon");
+					else writer.print(s);
+				}
+				else if ("#edgelabels".equalsIgnoreCase(column) || "edgelabels".equalsIgnoreCase(column)) {
+					String s = dbei.getInstanceSafe("");
+					String[] t = s.split("_"); String el = t[t.length-1];
+					writer.print(el.equals("1el") || el.equals("2el") ? el : "none");
+				}
+				else if ("#size"      .equalsIgnoreCase(column)) {
+					String s = dbei.getInstanceSafe(""); String[] t = s.split("_");
+					if (s.startsWith("b") && s.length() >= 2 && Character.isDigit(s.charAt(1))) writer.print(t[0].substring(1));
+					else if (s.startsWith("k") && s.length() >= 2 && Character.isDigit(s.charAt(1))) writer.print(t[0].substring(1));
+					else if (s.startsWith("amazon")) writer.print(s.substring("amazon".length()));
+					else writer.print("none");
+				}
+				else if ("direction"  .equalsIgnoreCase(column)) {
+					String s = entry.getName();
+					if (s.contains("-in")) writer.print("in");
+					else if (s.contains("-out")) writer.print("out");
+					else if (s.contains("-both")) writer.print("both");
+					else writer.print("none");
+				}
+				else if ("k"          .equalsIgnoreCase(column)) {
+					String s = entry.getName(); String[] t = s.split("-"); String k = "none";
+					for (String x : t) if (x.length() == 1 && Character.isDigit(x.charAt(0))) { k = x; break; }
+					if (s.startsWith("OperationGetAllNeighbors")) writer.print("0");
+					else if (s.startsWith("OperationGetKHopNeighbors")) writer.print(k);
+					else writer.print("none");
+				}
+				else if ("time_ns"    .equalsIgnoreCase(column)) writer.print(entry.getTime());
+				else if ("time_ms"    .equalsIgnoreCase(column)) writer.print(entry.getTime() / 1000000.0);
+				else if ("time_s"     .equalsIgnoreCase(column)) writer.print(entry.getTime() / 1000000000.0);
+				else if ("result"     .equalsIgnoreCase(column)) writer.print(entry.getResult());
 				else if (column.startsWith("result")) {
 					String r = column.substring("result".length());
 					if (r.startsWith("[") && r.endsWith("]")) r = r.substring(1, r.length() - 1);
@@ -238,6 +348,7 @@ public class ShowCustomData extends HttpServlet {
 			}
 			
 			writer.println();
+			if (row_index % 100 == 0) writer.flush();
 		}
 	}
 	
@@ -250,7 +361,7 @@ public class ShowCustomData extends HttpServlet {
 	 */
 	public static String getColumnLabel(String column) {
 		if      ("name"     .equalsIgnoreCase(column)) return "Operation Name";
-		else if ("type"     .equalsIgnoreCase(column)) return "Operation Type";
+		else if ("optype"   .equalsIgnoreCase(column)) return "Operation Type";
 		else if ("time_ns"  .equalsIgnoreCase(column)) return "Time (ns)";
 		else if ("time_ms"  .equalsIgnoreCase(column)) return "Time (ms)";
 		else if ("time_s"   .equalsIgnoreCase(column)) return "Time (s)";

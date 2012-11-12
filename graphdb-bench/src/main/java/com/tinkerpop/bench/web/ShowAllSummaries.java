@@ -15,9 +15,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.tinkerpop.bench.DatabaseEngine;
+import com.tinkerpop.bench.analysis.AnalysisContext;
 import com.tinkerpop.bench.analysis.AnalysisUtils;
 import com.tinkerpop.bench.analysis.IngestAnalysis;
-import com.tinkerpop.bench.analysis.ModelAnalysis;
 import com.tinkerpop.bench.log.SummaryLogEntry;
 import com.tinkerpop.bench.log.SummaryLogReader;
 import com.tinkerpop.bench.util.Pair;
@@ -73,7 +73,7 @@ public class ShowAllSummaries extends HttpServlet {
 		SortedSet<String> operationNames = new TreeSet<String>();
 		
 		for (DatabaseEngineAndInstance dbei : dbeis) {
-			ModelAnalysis m = ModelAnalysis.getInstance(dbei);
+			AnalysisContext m = AnalysisContext.getInstance(dbei);
 			Map<String, SortedSet<Job>> map = m.getJobsForAllOperationsWithTags();
 			dbeiOperationMap.put(dbei, map);
 			operationNames.addAll(map.keySet());

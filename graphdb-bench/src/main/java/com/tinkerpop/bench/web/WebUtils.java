@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 
@@ -323,6 +324,26 @@ public class WebUtils {
 		}
 		
 		return r;
+	}
+	
+	
+	/**
+	 * Get a collection of existing database engine / instance pairs
+	 * 
+	 * @return the set of all database engine / instance name pairs, sorted first by the engine, then by the instance
+	 */
+	public static SortedSet<DatabaseEngineAndInstance> getAllDatabaseEnginesAndInstances() {
+		
+		Collection<Pair<String, String>> pairs = getDatabaseInstancePairs();
+		SortedSet<DatabaseEngineAndInstance> dbeis = new TreeSet<DatabaseEngineAndInstance>();
+		
+		if (pairs != null) {
+			for (Pair<String, String> p : pairs) {
+				dbeis.add(new DatabaseEngineAndInstance(DatabaseEngine.ENGINES.get(p.getFirst()), p.getSecond()));
+			}
+		}
+		
+		return dbeis;
 	}
 	
 	

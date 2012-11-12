@@ -20,7 +20,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.tinkerpop.bench.DatabaseEngine;
-import com.tinkerpop.bench.analysis.ModelAnalysis;
+import com.tinkerpop.bench.analysis.AnalysisContext;
 
 
 /**
@@ -96,7 +96,7 @@ public class Show3dPlot extends HttpServlet {
 			}
 			else {
 				for (DatabaseEngineAndInstance dbei : dbeis) {
-					SortedSet<Job> j = ModelAnalysis.getInstance(dbei).getJobs(operationName);
+					SortedSet<Job> j = AnalysisContext.getInstance(dbei).getJobs(operationName);
 					if (j != null && !j.isEmpty()) jobs.add(j.last());
 				}
 			}
