@@ -1,0 +1,8 @@
+operation                           dex-mean (ms)   dex-stdev (ms)  dex-min (ms)    dex-max (ms)    
+OperationOpenGraph                      22265.760            0.000     22265.760       22265.760    
+OperationDoGC                            1398.353           26.144      1365.932        1453.965    
+OperationAddManyVertices                    1.597            5.524         0.493          56.512    
+OperationSetManyVertexProperties            3.451            1.060         1.653           4.645    
+OperationAddManyEdges                    1636.762          144.845      1276.119        2112.651    
+OperationSetManyEdgeProperties              3.236            1.033         1.630           4.617    
+OperationShutdownGraph                  75634.565            0.000     75634.565       75634.565    

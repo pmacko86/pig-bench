@@ -1,0 +1,18 @@
+operation                           neo-mean (ms)   neo-stdev (ms)  neo-min (ms)    neo-max (ms)    
+OperationOpenGraph                        237.482            0.000       237.482         237.482    
+OperationDoGC                            2351.886          236.697      1498.466        2691.734    
+OperationGetKHopNeighbors-out-1             2.775            5.914         0.132          34.173    
+OperationGetKHopNeighbors-out-2             7.812           20.026         0.132         143.023    
+OperationGetKHopNeighbors-out-3            32.926           91.528         0.126         732.989    
+OperationGetKHopNeighbors-out-4            67.801          408.912         0.102        4034.797    
+OperationGetKHopNeighbors-out-5            63.418          264.211         0.092        1914.537    
+OperationGetKHopNeighbors-in-1              1.523            4.484         0.087          32.727    
+OperationGetKHopNeighbors-in-2             25.613           29.432         0.220         205.407    
+OperationGetKHopNeighbors-in-3             90.198           76.619         3.414         401.650    
+OperationGetKHopNeighbors-in-4             41.593           46.181         8.861         232.613    
+OperationGetKHopNeighbors-in-5             61.975           19.147        37.757         132.125    
+OperationGetKHopNeighbors-both-1            0.193            0.048         0.111           0.371    
+OperationGetKHopNeighbors-both-2            0.828            0.781         0.258           7.160    
+OperationGetKHopNeighbors-both-3           10.987           12.467         1.687          73.892    
+OperationGetKHopNeighbors-both-4          177.846          329.203        19.864        2487.684    
+OperationGetKHopNeighbors-both-5         2341.579         1070.547       837.111        3691.914    

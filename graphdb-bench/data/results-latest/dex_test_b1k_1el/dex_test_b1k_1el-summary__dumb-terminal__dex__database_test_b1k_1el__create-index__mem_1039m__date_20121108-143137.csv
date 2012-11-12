@@ -1,0 +1,7 @@
+"operation","dex-mean","dex-stdev","dex-min","dex-max"
+"OperationOpenGraph","4.3320398E7","0.0","4.3320398E7","4.3320398E7"
+"OperationDoGC","1.3744004164285715E9","3936088.182089161","1.370765154E9","1.381606519E9"
+"OperationCreateKeyIndex-vertex-name","9376040.0","0.0","9376040.0","9376040.0"
+"OperationCreateKeyIndex-vertex-age","2313221.0","0.0","2313221.0","2313221.0"
+"OperationCreateKeyIndex-edge-time","4882253.0","0.0","4882253.0","4882253.0"
+"OperationShutdownGraph","2.88850401E8","0.0","2.88850401E8","2.88850401E8"

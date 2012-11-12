@@ -1,0 +1,5 @@
+"operation","dex-mean","dex-stdev","dex-min","dex-max"
+"OperationOpenGraph","2.1035649457E10","0.0","2.1035649457E10","2.1035649457E10"
+"OperationDoGC","1.386321585E9","8461022.91144544","1.377452886E9","1.397712442E9"
+"OperationLocalClusteringCoefficient","2.1415634632E8","1.7496303221172407E8","4.2366973E7","1.027272217E9"
+"OperationShutdownGraph","2.34808846E8","0.0","2.34808846E8","2.34808846E8"

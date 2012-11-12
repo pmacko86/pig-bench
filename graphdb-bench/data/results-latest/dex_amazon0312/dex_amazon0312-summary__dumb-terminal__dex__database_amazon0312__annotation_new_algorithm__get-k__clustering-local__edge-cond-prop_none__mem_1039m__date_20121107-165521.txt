@@ -1,0 +1,20 @@
+operation                           dex-mean (ms)   dex-stdev (ms)  dex-min (ms)    dex-max (ms)    
+OperationOpenGraph                        817.601            0.000       817.601         817.601    
+OperationDoGC                            1390.943            5.271      1384.508        1407.494    
+OperationGetKHopNeighbors-out-1             0.112            0.016         0.090           0.150    
+OperationGetKHopNeighbors-out-2             0.351            0.092         0.130           0.533    
+OperationGetKHopNeighbors-out-3             0.851            0.391         0.092           1.953    
+OperationGetKHopNeighbors-out-4             2.327            1.511         0.299           7.693    
+OperationGetKHopNeighbors-out-5             5.773            4.178         0.087          17.596    
+OperationGetKHopNeighbors-in-1              0.121            0.024         0.089           0.269    
+OperationGetKHopNeighbors-in-2              0.370            0.233         0.155           1.747    
+OperationGetKHopNeighbors-in-3              0.976            1.341         0.183          10.445    
+OperationGetKHopNeighbors-in-4              2.286            2.974         0.231          19.614    
+OperationGetKHopNeighbors-in-5              5.351            6.055         0.378          41.706    
+OperationGetKHopNeighbors-both-1            0.127            0.027         0.088           0.259    
+OperationGetKHopNeighbors-both-2            1.020            1.073         0.160           7.782    
+OperationGetKHopNeighbors-both-3            8.454           10.067         0.350          53.862    
+OperationGetKHopNeighbors-both-4           47.220           66.997         0.410         377.277    
+OperationGetKHopNeighbors-both-5          222.480          208.765         1.764        1178.138    
+OperationLocalClusteringCoefficient         1.325            1.431         0.196           7.493    
+OperationShutdownGraph                    179.290            0.000       179.290         179.290    

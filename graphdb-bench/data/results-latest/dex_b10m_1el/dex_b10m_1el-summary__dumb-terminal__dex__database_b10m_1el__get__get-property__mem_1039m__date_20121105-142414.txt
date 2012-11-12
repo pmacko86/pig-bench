@@ -1,0 +1,20 @@
+operation                                   dex-mean (ms)   dex-stdev (ms)  dex-min (ms)    dex-max (ms)    
+OperationOpenGraph                              20618.081            0.000     20618.081       20618.081    
+OperationDoGC                                    1417.038           39.310      1399.835        1578.425    
+OperationGetManyVertices                            0.324            0.023         0.204           0.386    
+OperationGetManyEdges                               0.354            0.059         0.264           0.427    
+OperationGetFirstNeighbor-out                      20.507           15.169         0.093         133.168    
+OperationGetAllNeighbors-out                       18.587           11.924         0.098          84.393    
+OperationGetNeighborEdgeConditional-out            60.913           68.898         0.102         434.181    
+OperationGetFirstNeighbor-in                       14.734            8.315         0.134          71.592    
+OperationGetAllNeighbors-in                        13.550            7.806         0.135          72.294    
+OperationGetNeighborEdgeConditional-in             20.935           10.547         0.189          90.501    
+OperationGetFirstNeighbor-both                     29.485           10.985         0.223          54.842    
+OperationGetAllNeighbors-both                      27.806           11.332         0.170          76.667    
+OperationGetNeighborEdgeConditional-both           82.192           91.459         0.342         707.122    
+OperationGetManyVertexProperties-name             499.733          173.455       314.025        1342.392    
+OperationGetManyVertexProperties-age              390.949          165.215       171.547         850.603    
+OperationGetManyEdgeProperties-time               732.905          108.731       541.391         992.500    
+OperationGetManyVertexPropertySets                324.637           81.486       179.581         523.775    
+OperationGetManyEdgePropertySets                  535.858           56.488       404.883         694.337    
+OperationShutdownGraph                            329.694            0.000       329.694         329.694    

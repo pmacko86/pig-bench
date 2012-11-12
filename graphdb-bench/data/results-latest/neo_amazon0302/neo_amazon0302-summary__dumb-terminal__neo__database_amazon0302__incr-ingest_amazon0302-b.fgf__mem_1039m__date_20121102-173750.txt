@@ -1,0 +1,5 @@
+operation                                   neo-mean (ms)   neo-stdev (ms)  neo-min (ms)    neo-max (ms)    
+OperationOpenGraph                                105.673            0.000       105.673         105.673    
+OperationDoGC                                    1657.336          155.304      1503.993        1870.182    
+OperationLoadFGF-incremental-amazon0302-b        5319.051            0.000      5319.051        5319.051    
+OperationShutdownGraph                           3205.313            0.000      3205.313        3205.313    

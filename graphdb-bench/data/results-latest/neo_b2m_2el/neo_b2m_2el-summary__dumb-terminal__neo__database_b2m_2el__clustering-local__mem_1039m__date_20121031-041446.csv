@@ -1,0 +1,5 @@
+"operation","neo-mean","neo-stdev","neo-min","neo-max"
+"OperationOpenGraph","1.49589126E8","0.0","1.49589126E8","1.49589126E8"
+"OperationDoGC","1.708963105E9","3.305167291100593E8","1.46733982E9","2.176294016E9"
+"OperationLocalClusteringCoefficient","1518574.86","851024.0617207366","427594.0","4934937.0"
+"OperationShutdownGraph","1.707524158E9","0.0","1.707524158E9","1.707524158E9"

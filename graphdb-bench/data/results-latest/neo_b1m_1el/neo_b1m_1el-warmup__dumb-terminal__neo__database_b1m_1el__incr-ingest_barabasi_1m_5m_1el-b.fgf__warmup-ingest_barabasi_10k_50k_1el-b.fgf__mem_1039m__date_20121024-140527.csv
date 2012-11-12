@@ -1,0 +1,7 @@
+"id","name","type","args","time","result","memory","gccount","gctime"
+"0","OperationOpenGraph","com.tinkerpop.bench.operation.OperationOpenGraph","[DEFAULT]","427078741","DONE","29725520","0","0"
+"2","OperationDoGC","com.tinkerpop.bench.operation.OperationDoGC","[]","1443777182","DONE","32622359","8","0"
+"3","OperationDoGC","com.tinkerpop.bench.operation.OperationDoGC","[]","1459945761","DONE","34791775","8","1"
+"1","OperationLoadFGF-incremental-barabasi_10k_50k_1el-b","com.tinkerpop.bench.operation.operations.OperationLoadFGF","[/ssd/pmacko/graphdb-bench/datasets/barabasi_10k_50k_1el-b.fgf, false]","1893707287","DONE-Incremental","103146975","0","0"
+"4","OperationShutdownGraph","com.tinkerpop.bench.operation.OperationShutdownGraph","[]","894505393","DONE","46174799","1","19"
+"5","OperationDoGC","com.tinkerpop.bench.operation.OperationDoGC","[]","1495975341","DONE","32778319","8","0"

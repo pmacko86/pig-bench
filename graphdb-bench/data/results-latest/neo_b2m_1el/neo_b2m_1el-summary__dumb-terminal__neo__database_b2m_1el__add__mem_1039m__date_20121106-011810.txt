@@ -1,0 +1,8 @@
+operation                           neo-mean (ms)   neo-stdev (ms)  neo-min (ms)    neo-max (ms)    
+OperationOpenGraph                       2295.550            0.000      2295.550        2295.550    
+OperationDoGC                            2135.700          322.282      1506.347        2338.826    
+OperationAddManyVertices                   95.402           13.531        77.315         191.932    
+OperationSetManyVertexProperties           89.906          143.298        28.295         939.960    
+OperationAddManyEdges                     238.071         1031.211        25.945        6926.330    
+OperationSetManyEdgeProperties            322.582         1543.187        24.812       10383.284    
+OperationShutdownGraph                  12760.738            0.000     12760.738       12760.738    
