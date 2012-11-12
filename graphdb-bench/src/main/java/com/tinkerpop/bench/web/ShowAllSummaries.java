@@ -108,6 +108,14 @@ public class ShowAllSummaries extends HttpServlet {
 		}
 		
 		
+		// Other parameters
+		
+		boolean parsedHeader = WebUtils.getBooleanParameter(request, "parsed_header", false);
+		
+		String delimiter = WebUtils.getStringParameter(request, "delimiter");
+		if (delimiter == null) delimiter = "\t";
+		
+		
 		// Start the response
 		
         response.setContentType("text/plain");
@@ -116,15 +124,25 @@ public class ShowAllSummaries extends HttpServlet {
         
         // Print the header
         
-        String delimiter = "\t";
         PrintWriter writer = response.getWriter();
         
-        writer.print("dbname");
-        writer.print(delimiter);
-        writer.print("dbinstance");
-        writer.print(delimiter);
-        writer.print("edgelabels");
-        
+        if (parsedHeader) {
+        	writer.print("#bname");
+ 	        writer.print(delimiter);
+ 	        writer.print("type");
+ 	        writer.print(delimiter);
+ 	        writer.print("#nodes");
+ 	        writer.print(delimiter);
+ 	        writer.print("edgelabels");
+        }
+        else {
+	        writer.print("dbname");
+	        writer.print(delimiter);
+	        writer.print("dbinstance");
+	        writer.print(delimiter);
+	        writer.print("edgelabels");
+        }
+	        
         for (String s : operationNames) {
         	boolean many = AnalysisUtils.isManyOperation(s);
             writer.print(delimiter);
@@ -152,6 +170,7 @@ public class ShowAllSummaries extends HttpServlet {
         for (Map.Entry<DatabaseEngineAndInstance, Map<String, SortedSet<Job>>> data : dbeiOperationMap.entrySet()) {
             
         	DatabaseEngineAndInstance dbei = data.getKey();
+        	
         	String dbi_simple = dbei.getInstanceSafe("default");
         	String dbi_el = "none";
         	if (dbi_simple.endsWith("_1el") || dbi_simple.endsWith("_2el")) {
@@ -159,11 +178,47 @@ public class ShowAllSummaries extends HttpServlet {
         		dbi_simple = dbi_simple.substring(0, dbi_simple.length() - 4);
         	}
         	
-            writer.print(dbei.getEngine().getLongName());
-            writer.print(delimiter);
-            writer.print(dbi_simple);
-            writer.print(delimiter);
-            writer.print(dbi_el);
+        	String dbi_type;
+        	{
+        		String s = dbei.getInstanceSafe("default");
+				if (s.startsWith("b") && s.length() >= 2 && Character.isDigit(s.charAt(1))) dbi_type = "b";
+				else if (s.startsWith("k") && s.length() >= 2 && Character.isDigit(s.charAt(1))) dbi_type = "k";
+				else if (s.startsWith("amazon")) dbi_type = "amazon";
+				else dbi_type = s;
+        	}
+        	
+        	String dbi_nodes;
+        	{
+				String x, s = dbei.getInstanceSafe(""); String[] t = s.split("_");
+				if (s.startsWith("b") && s.length() >= 2 && Character.isDigit(s.charAt(1))) x = t[0].substring(1);
+				else if (s.startsWith("k") && s.length() >= 2 && Character.isDigit(s.charAt(1))) x = t[0].substring(1);
+				else if (s.startsWith("amazon0")) x = s.substring("amazon0".length());
+				else if (s.startsWith("amazon")) x = s.substring("amazon".length());
+				else x = "none";
+				
+				if (x.equals("1k")) dbi_nodes = "1000";
+				else if (x.equals("1m")) dbi_nodes = "1000000";
+				else if (x.equals("2m")) dbi_nodes = "2000000";
+				else if (x.equals("10m")) dbi_nodes = "10000000";
+				else dbi_nodes = x;
+	       	}
+        	
+        	if (parsedHeader) {
+	            writer.print(dbei.getEngine().getLongName());
+	            writer.print(delimiter);
+	            writer.print(dbi_type);
+	            writer.print(delimiter);
+	            writer.print(dbi_nodes);
+	            writer.print(delimiter);
+	            writer.print(dbi_el);
+        	}
+        	else {
+	            writer.print(dbei.getEngine().getLongName());
+	            writer.print(delimiter);
+	            writer.print(dbi_simple);
+	            writer.print(delimiter);
+	            writer.print(dbi_el);
+        	}
             
             Map<String, SortedSet<Job>> operationMap = data.getValue();
             for (String s : operationNames) {
