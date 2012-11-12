@@ -113,7 +113,7 @@ public class ShowAllSummaries extends HttpServlet {
 		boolean parsedHeader = WebUtils.getBooleanParameter(request, "parsed_header", false);
 		
 		String delimiter = WebUtils.getStringParameter(request, "delimiter");
-		if (delimiter == null) delimiter = "\t";
+		if (delimiter == null) delimiter = " ";
 		
 		
 		// Start the response
