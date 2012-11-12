@@ -1653,7 +1653,7 @@ public class BenchmarkMicro extends Benchmark {
 			if (options.has("get") || options.has("get--traversals")) {
 				
 				boolean b_micro      = options.has("get");
-				boolean b_traversals = options.has("get") || options.has("get--micro");
+				boolean b_traversals = options.has("get") || options.has("get--traversals");
 				
 				if (b_micro) {
 					operationFactories.add(new OperationFactoryGeneric(
