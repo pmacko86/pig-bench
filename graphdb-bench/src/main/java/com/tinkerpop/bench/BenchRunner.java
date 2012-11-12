@@ -303,6 +303,7 @@ public class BenchRunner {
 		@Override
 		public void run() {
 			boolean main = id == 0;
+        	Runtime runtime = Runtime.getRuntime();
 			
 			try {
 				
@@ -418,7 +419,11 @@ public class BenchRunner {
 							
 							for (@SuppressWarnings("unused") Vertex v : new ClosingIterator<Vertex>(g.getVertices())) {
 								objects++;
-								if (main) if ((objects & 0xfff) == 0) System.gc();
+								if (main) {
+									if (runtime.freeMemory() < runtime.totalMemory() / 4) {
+						        		System.gc();
+						        	}
+								}
 								if (main) {
 									if (numVertices >= 0 && numEdges >= 0) {
 										ConsoleUtils.printProgressIndicator(objects, numVertices + numEdges);
@@ -428,7 +433,11 @@ public class BenchRunner {
 							
 							for (@SuppressWarnings("unused") Edge e : new ClosingIterator<Edge>(g.getEdges())) {
 								objects++;
-								if (main) if ((objects & 0xfff) == 0) System.gc();
+								if (main) {
+									if (runtime.freeMemory() < runtime.totalMemory() / 4) {
+						        		System.gc();
+						        	}
+								}
 								if (main) {
 									if (numVertices >= 0 && numEdges >= 0) {
 										ConsoleUtils.printProgressIndicator(objects, numVertices + numEdges);
@@ -513,7 +522,12 @@ public class BenchRunner {
 						
 						// Execute the operation
 						
-				        System.gc(); // XXX Concurrency?
+				        if (benchmark.isActualRun()) {
+				        	// XXX Concurrency?
+				        	if (runtime.freeMemory() < runtime.totalMemory() / 2) {
+				        		System.gc();
+				        	}
+				        }
 						operation.execute();
 						
 						

@@ -1003,11 +1003,11 @@ public class BenchmarkMicro extends Benchmark {
 		String[] warmupGraphmlFiles = new String[] { warmupIngestFile };
 		GraphGenerator[] graphGenerators = new GraphGenerator[] { graphGenerator };
 		
-		Benchmark warmupBenchmark = new BenchmarkMicro(
+		Benchmark warmupBenchmark = new BenchmarkMicro(false,
 				warmupGraphmlFiles, graphGenerators, options, warmupOpCount, kHops,
 				ingestAsUndirected, edgePropertyForConditionalTraversal);
 		
-		Benchmark benchmark = new BenchmarkMicro(
+		Benchmark benchmark = new BenchmarkMicro(true,
 				graphmlFiles, graphGenerators, options, opCount, kHops,
 				ingestAsUndirected, edgePropertyForConditionalTraversal);
 		
@@ -1439,10 +1439,11 @@ public class BenchmarkMicro extends Benchmark {
 	private GraphGenerator[] graphGenerators = null;
 	private OptionSet options = null;
 
-	public BenchmarkMicro(String[] graphmlFilenames,
+	public BenchmarkMicro(boolean actualRun, String[] graphmlFilenames,
 			GraphGenerator[] graphGenerators, OptionSet options,
 			int opCount, int[] kHops, boolean ingestAsUndirected,
 			String edgePropertyForConditionalTraversal) {
+		super(actualRun);
 		this.graphmlFilenames = graphmlFilenames;
 		this.graphGenerators = graphGenerators;
 		this.options = options;
@@ -1649,27 +1650,35 @@ public class BenchmarkMicro extends Benchmark {
 			
 			// GET microbenchmarks & GET_NEIGHBORS ops and variants
 			
-			if (options.has("get")) {
-				operationFactories.add(new OperationFactoryGeneric(
-						OperationGetManyVertices.class, opCount,
-						new Integer[] { opCount }));
-				operationFactories.add(new OperationFactoryGeneric(
-						OperationGetManyEdges.class, opCount,
-						new Integer[] { opCount }));
+			if (options.has("get") || options.has("get--traversals")) {
 				
-				for (Direction d : DIRECTIONS) {
-					operationFactories.add(new OperationFactoryRandomVertex(
-							OperationGetFirstNeighbor.class, opCount,
-							new Object[] { d }, OutputUtils.toTag(d)));
-					operationFactories.add(new OperationFactoryRandomVertex(
-							OperationGetAllNeighbors.class, opCount,
-							new Object[] { d }, OutputUtils.toTag(d)));
-					
-					if (edgePropertyForConditionalTraversal.equalsIgnoreCase("none")) continue;
-					operationFactories.add(new OperationFactoryRandomVertex(
-							OperationGetNeighborEdgeConditional.class, opCount,
-							new Object[] { d, edgePropertyForConditionalTraversal },
-							OutputUtils.toTag(d)));
+				boolean b_micro      = options.has("get");
+				boolean b_traversals = options.has("get") || options.has("get--micro");
+				
+				if (b_micro) {
+					operationFactories.add(new OperationFactoryGeneric(
+							OperationGetManyVertices.class, opCount,
+							new Integer[] { opCount }));
+					operationFactories.add(new OperationFactoryGeneric(
+							OperationGetManyEdges.class, opCount,
+							new Integer[] { opCount }));
+				}
+				
+				if (b_traversals) {
+					for (Direction d : DIRECTIONS) {
+						operationFactories.add(new OperationFactoryRandomVertex(
+								OperationGetFirstNeighbor.class, opCount,
+								new Object[] { d }, OutputUtils.toTag(d)));
+						operationFactories.add(new OperationFactoryRandomVertex(
+								OperationGetAllNeighbors.class, opCount,
+								new Object[] { d }, OutputUtils.toTag(d)));
+						
+						if (edgePropertyForConditionalTraversal.equalsIgnoreCase("none")) continue;
+						operationFactories.add(new OperationFactoryRandomVertex(
+								OperationGetNeighborEdgeConditional.class, opCount,
+								new Object[] { d, edgePropertyForConditionalTraversal },
+								OutputUtils.toTag(d)));
+					}
 				}
 			}
 			

@@ -70,6 +70,8 @@ public class Workload {
 				"Generate or grow the graph based on the given model", "MODEL", false, UpdateCategory.LOAD_UPDATE));
 		m.put("get", new Workload("get", "Get",
 				"\"Get\" microbenchmarks", null, true, UpdateCategory.READ_ONLY));
+		m.put("get--traversals", new Workload("get--traversals", "Get -- Traversals",
+				"\"Get\" microbenchmarks -- traversals only", null, true, UpdateCategory.READ_ONLY));
 		m.put("get-label", new Workload("get-label", "Get using edge labels",
 				"\"Get\" microbenchmarks using edge labels", null, true, UpdateCategory.READ_ONLY));
 		m.put("get-k", new Workload("get-k", "Get k-hop",

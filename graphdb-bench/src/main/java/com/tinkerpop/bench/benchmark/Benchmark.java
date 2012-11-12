@@ -13,12 +13,27 @@ import com.tinkerpop.bench.operationFactory.OperationFactory;
  * @author Peter Macko (pmacko@eecs.harvard.edu)
  */
 public abstract class Benchmark {
+	
+	private boolean actualRun;
 
 	
 	/**
 	 * Create an instance of class Benchmark
+	 * 
+	 * @param actualRun true if this is an actual run, false if it is a warmup run
 	 */
-	public Benchmark() {
+	public Benchmark(boolean actualRun) {
+		this.actualRun = actualRun;
+	}
+	
+	
+	/**
+	 * Return true if this is an actual run
+	 * 
+	 * @return true if this is an actual run, false if it is a warmup run
+	 */
+	public boolean isActualRun() {
+		return actualRun;
 	}
 
 	
