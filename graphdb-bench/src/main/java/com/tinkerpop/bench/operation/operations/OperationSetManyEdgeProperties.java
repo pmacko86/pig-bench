@@ -37,7 +37,7 @@ public class OperationSetManyEdgeProperties extends Operation {
 		if (property_values == null) {
 			property_values = new String[edgeSamples.length];
 			for (int i = 0; i < property_values.length; i++) {
-				property_values[i] = UUID.randomUUID().toString();
+				property_values[i] = UUID.randomUUID().toString().substring(0, 10);
 			}
 		}
 	}

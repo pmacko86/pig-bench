@@ -2,7 +2,9 @@ package com.tinkerpop.bench.web;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.SortedSet;
@@ -18,6 +20,8 @@ import com.tinkerpop.bench.DatabaseEngine;
 import com.tinkerpop.bench.analysis.AnalysisContext;
 import com.tinkerpop.bench.analysis.AnalysisUtils;
 import com.tinkerpop.bench.analysis.IngestAnalysis;
+import com.tinkerpop.bench.log.OperationLogEntry;
+import com.tinkerpop.bench.log.OperationLogReader;
 import com.tinkerpop.bench.log.SummaryLogEntry;
 import com.tinkerpop.bench.log.SummaryLogReader;
 import com.tinkerpop.bench.util.Pair;
@@ -161,6 +165,8 @@ public class ShowAllSummaries extends HttpServlet {
         writer.print("IndexCreate");
         writer.print(delimiter);
         writer.print("IndexShutdown");
+        writer.print(delimiter);
+        writer.print("IncIngestPrediction");
         
         writer.println();
         
@@ -231,11 +237,40 @@ public class ShowAllSummaries extends HttpServlet {
 	            	}
 	            	Job job = jobs.last();
 	            	
-	            	SummaryLogEntry entry = SummaryLogReader.getEntryForOperation(job.getSummaryFile(), s);
-	            	if (AnalysisUtils.isManyOperation(s)) entry = AnalysisUtils.convertLogEntryForManyOperation(entry, job);
 	            	
-	                writer.print(delimiter);
-	            	writer.print(entry.getDefaultRunTimes().getMean() / 1000000.0);
+	            	if (!AnalysisUtils.isManyOperation(s)) {
+		            	
+		            	SummaryLogEntry entry = SummaryLogReader.getEntryForOperation(job.getSummaryFile(), s);
+		            	if (AnalysisUtils.isManyOperation(s)) entry = AnalysisUtils.convertLogEntryForManyOperation(entry, job);
+		            	
+		                writer.print(delimiter);
+		            	writer.print(entry.getDefaultRunTimes().getMean() / 1000000.0);
+	            	}
+	            	else {
+		            	List<OperationLogEntry> entries = OperationLogReader.getEntriesForOperation(job.getSummaryFile(), s);
+		            	
+		            	if (AnalysisUtils.isManyOperation(s)) {
+			            	List<OperationLogEntry> convertedEntries = new ArrayList<OperationLogEntry>(entries.size());
+			            	for (OperationLogEntry e : entries) {
+			            		convertedEntries.add(AnalysisUtils.convertLogEntryForManyOperation(e));
+			            	}
+			            	convertedEntries = entries;
+		            	}
+		            	
+		            	
+		            	// Compute the mean from the last 20%
+		            	
+		            	double time = 0; int count = 0;
+		            	for (int i = (4 * entries.size()) / 5; i < entries.size(); i++) {
+		            		time += entries.get(i).getTime() / 1000000.0;
+		            		count++;
+		            	}
+		            	
+		            	time /= count;
+		            	
+		                writer.print(delimiter);
+		            	writer.print(time);
+	            	}
             	}
             	catch (Exception e) {
             		writer.println();
@@ -266,6 +301,8 @@ public class ShowAllSummaries extends HttpServlet {
             writer.print(ia.getCreateIndexTime());
             writer.print(delimiter);
             writer.print(ia.getCreateIndexShutdownTime());
+            writer.print(delimiter);
+            writer.print(ia.getIncrementalLoadTimePrediction());
             
             writer.println();
             writer.flush();

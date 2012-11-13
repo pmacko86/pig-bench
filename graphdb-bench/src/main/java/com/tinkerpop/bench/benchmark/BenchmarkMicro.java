@@ -1627,19 +1627,19 @@ public class BenchmarkMicro extends Benchmark {
 				}
 				
 				operationFactories.add(new OperationFactoryGeneric(
-						OperationAddManyVertices.class, opCount,
+						OperationAddManyVertices.class, 50,
 						new Integer[] { opCount }));
 				
 				operationFactories.add(new OperationFactoryGeneric(
-						OperationSetManyVertexProperties.class, opCount,
+						OperationSetManyVertexProperties.class, 50,
 						new Object[] { ADD_PROPERTY_KEY, opCount }));
 				
 				operationFactories.add(new OperationFactoryGeneric(
-						OperationAddManyEdges.class, opCount,
+						OperationAddManyEdges.class, 50,
 						new Integer[] { opCount }));
 				
 				operationFactories.add(new OperationFactoryGeneric(
-						OperationSetManyEdgeProperties.class, opCount,
+						OperationSetManyEdgeProperties.class, 50,
 						new Object[] { ADD_PROPERTY_KEY, opCount }));
 			}
 			
@@ -1650,17 +1650,17 @@ public class BenchmarkMicro extends Benchmark {
 			
 			// GET microbenchmarks & GET_NEIGHBORS ops and variants
 			
-			if (options.has("get") || options.has("get--traversals")) {
+			if (options.has("get") || options.has("get--micro") || options.has("get--traversals")) {
 				
-				boolean b_micro      = options.has("get");
+				boolean b_micro      = options.has("get") || options.has("get--micro");
 				boolean b_traversals = options.has("get") || options.has("get--traversals");
 				
 				if (b_micro) {
 					operationFactories.add(new OperationFactoryGeneric(
-							OperationGetManyVertices.class, opCount,
+							OperationGetManyVertices.class, 50,
 							new Integer[] { opCount }));
 					operationFactories.add(new OperationFactoryGeneric(
-							OperationGetManyEdges.class, opCount,
+							OperationGetManyEdges.class, 50,
 							new Integer[] { opCount }));
 				}
 				
@@ -1756,23 +1756,23 @@ public class BenchmarkMicro extends Benchmark {
 				
 				for (String key : vertexKeys) {
 					operationFactories.add(new OperationFactoryGeneric(
-							OperationGetManyVertexProperties.class, opCount,
+							OperationGetManyVertexProperties.class, 50,
 							new Object[] { key, opCount }, key));
 				}
 				for (String key : edgeKeys) {
 					operationFactories.add(new OperationFactoryGeneric(
-							OperationGetManyEdgeProperties.class, opCount,
+							OperationGetManyEdgeProperties.class, 50,
 							new Object[] { key, opCount }, key));
 				}
 				
 				if (!vertexKeys.isEmpty()) {
 					operationFactories.add(new OperationFactoryGeneric(
-							OperationGetManyVertexPropertySets.class, opCount,
+							OperationGetManyVertexPropertySets.class, 50,
 							new Object[] { vertexKeys, opCount }));
 				}
 				if (!edgeKeys.isEmpty()) {
 					operationFactories.add(new OperationFactoryGeneric(
-							OperationGetManyEdgePropertySets.class, opCount,
+							OperationGetManyEdgePropertySets.class, 50,
 							new Object[] { edgeKeys, opCount }));
 				}
             }

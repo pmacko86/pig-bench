@@ -381,6 +381,26 @@ public class IngestAnalysis {
 	
 	
 	/**
+	 * Get the dataset
+	 * 
+	 * @return the dataset
+	 */
+	public DatasetDescription getBulkLoadDataset() {
+		return DATASETS.get(bulkLoadDataset);
+	}
+	
+	
+	/**
+	 * Get the incremental load dataset
+	 * 
+	 * @return the dataset
+	 */
+	public DatasetDescription getIncrementalLoadDataset() {
+		return DATASETS.get(incrementalLoadDataset);
+	}
+	
+	
+	/**
 	 * A dataset description
 	 */
 	public static class DatasetDescription {

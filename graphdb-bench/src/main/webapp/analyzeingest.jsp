@@ -238,7 +238,7 @@
 					<h2>Results</h2>
 				<%
 				
-				String linkCore = "/ShowIngestAnalysis?format=csv&predictions=" + modelPredictions
+				String linkCore = "/ShowIngestAnalysis?predictions=" + modelPredictions
 									+ "&hide_index_creation=" + hideIndexCreation;
 				String link = linkCore;
 				for (DatabaseEngineAndInstance dbei : selectedDatabaseInstances_sortedByInstance) {
@@ -247,7 +247,7 @@
 
 				ChartProperties chartProperties = new ChartProperties();
 				
-				chartProperties.source = link;
+				chartProperties.source = link + "&format=csv";
 				chartProperties.attach = "chart_all";
 				chartProperties.stacked = true;
 				chartProperties.yscale = logScale ? "log" : "linear";
@@ -274,6 +274,14 @@
 						"html", modelPredictions, !hideIndexCreation /* show index creation */, null);
 				%>
 					<%= writer.toString() %>
+					
+					<br />
+					
+					<div>
+						<button onclick="replace_by_page(this, '<%= link + "&show=prediction_details&format=html" %>')">
+							Prediction Details...
+						</button>
+					</div>
 				<%
 				
 				
@@ -297,7 +305,7 @@
 							link += "&database_engine_instance=" + d.getEngine().getShortName() + "|" + d.getInstanceSafe("");
 						}
 						
-						chartProperties.source = link;
+						chartProperties.source = link + "&format=csv";
 						chartProperties.attach = "chart_" + instance;
 						chartProperties.group_label_function = "return \"\"";
 						

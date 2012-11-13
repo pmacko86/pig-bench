@@ -5,6 +5,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.WeakHashMap;
 
@@ -68,6 +69,15 @@ public class OperationLogReader implements Iterable<OperationLogEntry> {
 		this(logFile, operationNameFilter, CACHE_BY_DEFAULT);
 	}
 	
+	public static List<OperationLogEntry> getEntriesForOperation(File logFile, String operationName) {
+		OperationLogReader reader = new OperationLogReader(logFile, operationName);
+		List<OperationLogEntry> r = new ArrayList<OperationLogEntry>();
+		for (OperationLogEntry e : reader) {
+			if (e.getName().equals(operationName)) r.add(e);
+		}
+		return r;
+	}
+
 
 	public Iterator<OperationLogEntry> iterator() {
 		if (cachedIterable == null) {
