@@ -258,10 +258,14 @@ public class ShowAllSummaries extends HttpServlet {
 		            	}
 		            	
 		            	
-		            	// Compute the mean from the last 20%
+		            	// Compute the mean from the last 20%-50%
 		            	
+		            	int l = entries.size();
+		            	int from = l > 10 ? (4 * l) / 5 : l / 2; 
+		            	if (from >= l) from = 0;
+		            		
 		            	double time = 0; int count = 0;
-		            	for (int i = (4 * entries.size()) / 5; i < entries.size(); i++) {
+		            	for (int i = from; i < l; i++) {
 		            		time += entries.get(i).getTime() / 1000000.0;
 		            		count++;
 		            	}
