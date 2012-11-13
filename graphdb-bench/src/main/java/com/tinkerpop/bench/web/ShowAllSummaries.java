@@ -238,7 +238,7 @@ public class ShowAllSummaries extends HttpServlet {
 	            	Job job = jobs.last();
 	            	
 	            	
-	            	if (AnalysisUtils.isManyOperation(s) && s.contains("Properties")) {
+	            	if (AnalysisUtils.isManyOperation(s) && (s.contains("Add") || s.contains("Properties"))) {
 	            		
 		            	List<OperationLogEntry> entries = OperationLogReader.getEntriesForOperation(job.getLogFile(), s);
 		            	
@@ -257,14 +257,11 @@ public class ShowAllSummaries extends HttpServlet {
 		            	int from = (3 * l) / 4; 
 		            	if (from >= l) from = 0;
 		            	
-		            	//System.err.println("\n" + dbei + " : " + s);
 		            	double time = 0; int count = 0;
 		            	for (int i = from; i < l; i++) {
 		            		time += entries.get(i).getTime() / 1000000.0;
 		            		count++;
-		            		//System.err.print(com.tinkerpop.bench.util.OutputUtils.format(entries.get(i).getTime() / 1000000.0) + " ");
 		            	}
-		            	//System.err.println();
 		            	
 		            	time /= count;
 		            	
