@@ -238,14 +238,14 @@ public class ShowAllSummaries extends HttpServlet {
 	            	Job job = jobs.last();
 	            	
 	            	
-	            	if (!AnalysisUtils.isManyOperation(s)) {
+	            	//if (!AnalysisUtils.isManyOperation(s)) {
 		            	
 		            	SummaryLogEntry entry = SummaryLogReader.getEntryForOperation(job.getSummaryFile(), s);
 		            	if (AnalysisUtils.isManyOperation(s)) entry = AnalysisUtils.convertLogEntryForManyOperation(entry, job);
 		            	
 		                writer.print(delimiter);
 		            	writer.print(entry.getDefaultRunTimes().getMean() / 1000000.0);
-	            	}
+	            	/*}
 	            	else {
 		            	List<OperationLogEntry> entries = OperationLogReader.getEntriesForOperation(job.getLogFile(), s);
 		            	
@@ -274,7 +274,7 @@ public class ShowAllSummaries extends HttpServlet {
 		            	
 		                writer.print(delimiter);
 		            	writer.print(time);
-	            	}
+	            	}*/
             	}
             	catch (Exception e) {
             		writer.println();
