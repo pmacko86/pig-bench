@@ -247,7 +247,7 @@ public class ShowAllSummaries extends HttpServlet {
 		            	writer.print(entry.getDefaultRunTimes().getMean() / 1000000.0);
 	            	}
 	            	else {
-		            	List<OperationLogEntry> entries = OperationLogReader.getEntriesForOperation(job.getSummaryFile(), s);
+		            	List<OperationLogEntry> entries = OperationLogReader.getEntriesForOperation(job.getLogFile(), s);
 		            	
 		            	if (AnalysisUtils.isManyOperation(s)) {
 			            	List<OperationLogEntry> convertedEntries = new ArrayList<OperationLogEntry>(entries.size());
