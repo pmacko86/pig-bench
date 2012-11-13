@@ -28,7 +28,7 @@
 		
 	<% if (chartProperties.smallGraph) { %>
 		chart_inner_height /= 2;
-		padding_right /= 2;
+		padding_right /= 1.8;
 		padding_bottom /= 2;
 		num_ticks /= 2;
 		legend_padding_left = 0;
@@ -424,7 +424,7 @@
 					
 					// Legend
 					
-					if (categories.length > 1) {
+					if (categories.length > 1 && <%= !chartProperties.hideLegend %>) {
 						for (var j = 0; j < categories.length; j++) {
 							var i = stacked ? categories.length - j - 1 : j;
 						

@@ -148,6 +148,7 @@
 				boolean byInstance = WebUtils.getBooleanParameter(request, "byinstance", false);
 				boolean modelPredictions = WebUtils.getBooleanParameter(request, "modelpredictions", false);
 				boolean hideDataLabels = WebUtils.getBooleanParameter(request, "hidedatalabels", false);
+				boolean hideLegend = WebUtils.getBooleanParameter(request, "hidelegend", false);
 				boolean hideIndexCreation = WebUtils.getBooleanParameter(request, "hideindexcreation", false);
 				boolean mergeShutdown = WebUtils.getBooleanParameter(request, "mergeshutdown", false);
 			%>
@@ -196,6 +197,15 @@
 							value="true"/>
 					Hide data labels
 				</label>
+							
+				<label class="checkbox">
+					<input class="checkbox" type="checkbox"
+							name="hidelegend" id="hidelegend"
+							onchange="form_submit();" <%= hideLegend ? "checked=\"checked\"" : "" %>
+							value="true"/>
+					Hide legend
+				</label>
+							
 							
 				<div class="medium_spacer"></div>
 							
@@ -264,6 +274,7 @@
 				chartProperties.smallGraph = smallGraphs;
 				chartProperties.patternFill = patternFill;
 				chartProperties.hideDataLabels = hideDataLabels;
+				chartProperties.hideLegend = hideLegend;
 				chartProperties.ylabel = "Execution Time (s)";
 				chartProperties.subgroup_by = "dbengine";
 				chartProperties.subgroup_label_function = "return d.dbengine";

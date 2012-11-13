@@ -627,7 +627,7 @@
 			// Legend
 			//
 			
-			if (series.length > 1) {
+			if (series.length > 1 && <%= !chartProperties.hideLegend %>) {
 				for (var i = 0; i < series.length; i++) {
 				
 					point_type = i % 5;

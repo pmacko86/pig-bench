@@ -304,7 +304,7 @@ public class ShowIngestAnalysis extends HttpServlet {
 					w.writeNext(buffer);
 	
 					i = index; s = Double.toString(1000000.0 * ia.getIncrementalLoadTimePrediction() / 1000.0 /* HACK, beware! */ );
-					buffer[i++] = "Incremental Load";
+					buffer[i++] = "Incremental Load (Prediction)";
 					buffer[i++] = buffer[0] + " : " + buffer[1] + " : " + buffer[3] + " : " + buffer[2];
 					buffer[i++] = s; buffer[i++] = "0"; buffer[i++] = s; buffer[i++] = s;
 					w.writeNext(buffer);
@@ -331,20 +331,20 @@ public class ShowIngestAnalysis extends HttpServlet {
 				}
 				else {
 					i = index; s = Double.toString(1000000.0 * (ia.getBulkLoadShutdownTime() + ia.getBulkLoadTime()) / 1000.0 /* HACK, beware! */ );
-					buffer[i++] = "Bulk Load";
+					buffer[i++] = "Bulk";
 					buffer[i++] = buffer[0] + " : " + buffer[1] + " : " + buffer[3] + " : " + buffer[2];
 					buffer[i++] = s; buffer[i++] = "0"; buffer[i++] = s; buffer[i++] = s;
 					w.writeNext(buffer);
 	
 					i = index; s = Double.toString(1000000.0 * (ia.getIncrementalLoadShutdownTime() + ia.getIncrementalLoadTime()) / 1000.0 /* HACK, beware! */ );
-					buffer[i++] = "Incremental Load";
+					buffer[i++] = "Incremental";
 					buffer[i++] = buffer[0] + " : " + buffer[1] + " : " + buffer[3] + " : " + buffer[2];
 					buffer[i++] = s; buffer[i++] = "0"; buffer[i++] = s; buffer[i++] = s;
 					w.writeNext(buffer);
 	
 					if (showIndexCreation) {
 						i = index; s = Double.toString(1000000.0 * (ia.getCreateIndexShutdownTime() + ia.getCreateIndexTime()) / 1000.0 /* HACK, beware! */ );
-						buffer[i++] = "Index Creation";
+						buffer[i++] = "Index";
 						buffer[i++] = buffer[0] + " : " + buffer[1] + " : " + buffer[3] + " : " + buffer[2];
 						buffer[i++] = s; buffer[i++] = "0"; buffer[i++] = s; buffer[i++] = s;
 						w.writeNext(buffer);
@@ -361,20 +361,20 @@ public class ShowIngestAnalysis extends HttpServlet {
 					buffer[index++] = "predicted";
 	
 					i = index; s = Double.toString(1000000.0 * (ia.getBulkLoadShutdownTime() + ia.getBulkLoadTime()) / 1000.0 /* HACK, beware! */ );
-					buffer[i++] = "Bulk Load";
+					buffer[i++] = "Bulk";
 					buffer[i++] = buffer[0] + " : " + buffer[1] + " : " + buffer[3] + " : " + buffer[2];
 					buffer[i++] = s; buffer[i++] = "0"; buffer[i++] = s; buffer[i++] = s;
 					w.writeNext(buffer);
 	
 					i = index; s = Double.toString(1000000.0 * ia.getIncrementalLoadTimePrediction() / 1000.0 /* HACK, beware! */ );
-					buffer[i++] = "Incremental Load";
+					buffer[i++] = "Incremental (pred.)";
 					buffer[i++] = buffer[0] + " : " + buffer[1] + " : " + buffer[3] + " : " + buffer[2];
 					buffer[i++] = s; buffer[i++] = "0"; buffer[i++] = s; buffer[i++] = s;
 					w.writeNext(buffer);
 	
 					if (showIndexCreation) {
 						i = index; s = Double.toString(1000000.0 * (ia.getCreateIndexShutdownTime() + ia.getCreateIndexTime()) / 1000.0 /* HACK, beware! */ );
-						buffer[i++] = "Index Creation";
+						buffer[i++] = "Index";
 						buffer[i++] = buffer[0] + " : " + buffer[1] + " : " + buffer[3] + " : " + buffer[2];
 						buffer[i++] = s; buffer[i++] = "0"; buffer[i++] = s; buffer[i++] = s;
 						w.writeNext(buffer);

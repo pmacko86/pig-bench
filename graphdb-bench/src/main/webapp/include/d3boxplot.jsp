@@ -499,7 +499,7 @@
 		
 				// Legend
 				
-				if (categories.length > 1) {
+				if (categories.length > 1 && <%= !chartProperties.hideLegend %>) {
 					for (var i = 0; i < categories.length; i++) {
 					
 						chart.append("rect")
