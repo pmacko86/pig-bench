@@ -138,6 +138,11 @@ public class ShowCustomData extends HttpServlet {
 						}
 					}
 				}
+				
+				else if (preset.equals("margo-sp")) {
+					operationNames.add("OperationGetShortestPath");
+				}
+
 				else {
 			        response.setContentType("text/plain");
 			        response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
