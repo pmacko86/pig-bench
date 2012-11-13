@@ -247,7 +247,7 @@ public class ShowAllSummaries extends HttpServlet {
 			            	for (OperationLogEntry e : entries) {
 			            		convertedEntries.add(AnalysisUtils.convertLogEntryForManyOperation(e));
 			            	}
-			            	convertedEntries = entries;
+			            	entries = convertedEntries;
 		            	}
 		            	
 		            	
@@ -256,12 +256,15 @@ public class ShowAllSummaries extends HttpServlet {
 		            	int l = entries.size();
 		            	int from = l / 2; 
 		            	if (from >= l) from = 0;
-		            		
+		            	
+		            	//System.err.println("\n" + dbei + " : " + s);
 		            	double time = 0; int count = 0;
 		            	for (int i = from; i < l; i++) {
 		            		time += entries.get(i).getTime() / 1000000.0;
 		            		count++;
+		            		//System.err.print(com.tinkerpop.bench.util.OutputUtils.format(entries.get(i).getTime() / 1000000.0) + " ");
 		            	}
+		            	//System.err.println();
 		            	
 		            	time /= count;
 		            	
