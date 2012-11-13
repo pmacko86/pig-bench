@@ -238,15 +238,8 @@ public class ShowAllSummaries extends HttpServlet {
 	            	Job job = jobs.last();
 	            	
 	            	
-	            	//if (!AnalysisUtils.isManyOperation(s)) {
-		            	
-		            	SummaryLogEntry entry = SummaryLogReader.getEntryForOperation(job.getSummaryFile(), s);
-		            	if (AnalysisUtils.isManyOperation(s)) entry = AnalysisUtils.convertLogEntryForManyOperation(entry, job);
-		            	
-		                writer.print(delimiter);
-		            	writer.print(entry.getDefaultRunTimes().getMean() / 1000000.0);
-	            	/*}
-	            	else {
+	            	if (!AnalysisUtils.isManyOperation(s) && s.contains("Properties")) {
+	            		
 		            	List<OperationLogEntry> entries = OperationLogReader.getEntriesForOperation(job.getLogFile(), s);
 		            	
 		            	if (AnalysisUtils.isManyOperation(s)) {
@@ -258,10 +251,10 @@ public class ShowAllSummaries extends HttpServlet {
 		            	}
 		            	
 		            	
-		            	// Compute the mean from the last 20%-50%
+		            	// Compute the mean from the last 50%
 		            	
 		            	int l = entries.size();
-		            	int from = l > 10 ? (4 * l) / 5 : l / 2; 
+		            	int from = l / 2; 
 		            	if (from >= l) from = 0;
 		            		
 		            	double time = 0; int count = 0;
@@ -274,7 +267,15 @@ public class ShowAllSummaries extends HttpServlet {
 		            	
 		                writer.print(delimiter);
 		            	writer.print(time);
-	            	}*/
+	            	}
+	            	else {
+		            	
+		            	SummaryLogEntry entry = SummaryLogReader.getEntryForOperation(job.getSummaryFile(), s);
+		            	if (AnalysisUtils.isManyOperation(s)) entry = AnalysisUtils.convertLogEntryForManyOperation(entry, job);
+		            	
+		                writer.print(delimiter);
+		            	writer.print(entry.getDefaultRunTimes().getMean() / 1000000.0);
+	            	}
             	}
             	catch (Exception e) {
             		writer.println();

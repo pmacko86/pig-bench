@@ -131,7 +131,7 @@ public class ShowIngestAnalysis extends HttpServlet {
 			writer.println("\t<th>Total (s)</th>");
 			writer.println("</tr>");
 
-			double[] data = new double[6 - (showIndexCreation ? 0 : 2)];
+			double[] data = new double[(6 - (showIndexCreation ? 0 : 2)) / (!mergeShutdown ? 1 : 2)];
 
 			for (DatabaseEngineAndInstance dbei : dbeis) {
 				IngestAnalysis ia = IngestAnalysis.getInstance(dbei);
