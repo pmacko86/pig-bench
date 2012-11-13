@@ -254,7 +254,7 @@ public class ShowAllSummaries extends HttpServlet {
 		            	// Compute the mean from the last 50%
 		            	
 		            	int l = entries.size();
-		            	int from = l / 2; 
+		            	int from = (3 * l) / 4; 
 		            	if (from >= l) from = 0;
 		            	
 		            	//System.err.println("\n" + dbei + " : " + s);
