@@ -642,9 +642,8 @@ public class ModelAnalysis {
 		// Read the log file
 		
 		OperationLogReader reader = new OperationLogReader(job.getLogFile());
-		
-		double time_ms = 0;
-		int count = 0;
+		Vector<Double> times_ms = new Vector<Double>();
+		Vector<Integer> counts = new Vector<Integer>();
 		
 		for (OperationLogEntry e : reader) {
 			
@@ -660,22 +659,38 @@ public class ModelAnalysis {
 				if (!ok) continue;
 			}
 			
+			int count;
 			if (many) {
 				String s = e.getArgs()[opCountArg >= 0 ? opCountArg : e.getArgs().length + opCountArg];
 				int opCount = Integer.parseInt(s);
 				if (!s.equals("" + opCount)) throw new NumberFormatException(s);
-				count += opCount;
+				count = opCount;
 			}
 			else {
-				count++;
+				count = 1;
 			}
 			
-			time_ms += e.getTime() / 1000000.0;
+			counts.add(count);
+			times_ms.add(e.getTime() / 1000000.0);
 		}
 		
-		if (count <= 0) return null;
+		assert counts.size() == times_ms.size();
+		if (counts.isEmpty()) return null;
 		
-		return time_ms / count;
+		
+    	// Compute the mean from the last 25%
+    	
+    	int l = counts.size();
+    	int from = (3 * l) / 4; 
+    	if (from >= l) from = 0;
+    	
+    	double time = 0; int count = 0;
+    	for (int i = from; i < l; i++) {
+    		time += times_ms.get(i).doubleValue();
+    		count += counts.get(i).intValue();
+    	}
+		
+		return time / count;
 	}
 	
 	

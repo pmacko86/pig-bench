@@ -251,7 +251,7 @@ public class ShowAllSummaries extends HttpServlet {
 		            	}
 		            	
 		            	
-		            	// Compute the mean from the last 50%
+		            	// Compute the mean from the last 25%
 		            	
 		            	int l = entries.size();
 		            	int from = (3 * l) / 4; 

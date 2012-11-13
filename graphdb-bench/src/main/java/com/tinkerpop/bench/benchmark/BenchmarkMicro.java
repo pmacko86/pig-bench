@@ -1627,20 +1627,20 @@ public class BenchmarkMicro extends Benchmark {
 				}
 				
 				operationFactories.add(new OperationFactoryGeneric(
-						OperationAddManyVertices.class, 50,
-						new Integer[] { opCount }));
-				
-				operationFactories.add(new OperationFactoryGeneric(
 						OperationSetManyVertexProperties.class, 50,
 						new Object[] { ADD_PROPERTY_KEY, opCount }));
 				
 				operationFactories.add(new OperationFactoryGeneric(
-						OperationAddManyEdges.class, 50,
+						OperationSetManyEdgeProperties.class, 50,
+						new Object[] { ADD_PROPERTY_KEY, opCount }));
+				
+				operationFactories.add(new OperationFactoryGeneric(
+						OperationAddManyVertices.class, 50,
 						new Integer[] { opCount }));
 				
 				operationFactories.add(new OperationFactoryGeneric(
-						OperationSetManyEdgeProperties.class, 50,
-						new Object[] { ADD_PROPERTY_KEY, opCount }));
+						OperationAddManyEdges.class, 50,
+						new Integer[] { opCount }));
 			}
 			
 			
