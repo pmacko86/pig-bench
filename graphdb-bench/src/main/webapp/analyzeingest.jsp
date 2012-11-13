@@ -149,6 +149,7 @@
 				boolean modelPredictions = WebUtils.getBooleanParameter(request, "modelpredictions", false);
 				boolean hideDataLabels = WebUtils.getBooleanParameter(request, "hidedatalabels", false);
 				boolean hideIndexCreation = WebUtils.getBooleanParameter(request, "hideindexcreation", false);
+				boolean mergeShutdown = WebUtils.getBooleanParameter(request, "mergeshutdown", false);
 			%>
 			
 			<div id="select_display_options">
@@ -213,6 +214,14 @@
 							value="true"/>
 					Hide index creation, both from the plots and from the data table
 				</label>
+							
+				<label class="checkbox">
+					<input class="checkbox" type="checkbox"
+							name="mergeshutdown" id="mergeshutdown"
+							onchange="form_submit();" <%= mergeShutdown ? "checked=\"checked\"" : "" %>
+							value="true"/>
+					Merge shutdown times into the main results
+				</label>
 			</div>
 			
 			<input type="hidden" name="refreshed" id="refreshed" value="no" />
@@ -227,7 +236,7 @@
 	</div>
 		
 	<div class="basic_form">
-		<%		
+		<%	
 			TreeSet<DatabaseEngineAndInstance> selectedDatabaseInstances_sortedByInstance
 				= new TreeSet<DatabaseEngineAndInstance>(new DatabaseEngineAndInstance.ByInstance());
 			selectedDatabaseInstances_sortedByInstance.addAll(selectedDatabaseInstances);
@@ -239,7 +248,8 @@
 				<%
 				
 				String linkCore = "/ShowIngestAnalysis?predictions=" + modelPredictions
-									+ "&hide_index_creation=" + hideIndexCreation;
+									+ "&hide_index_creation=" + hideIndexCreation
+									+ "&merge_shutdown=" + mergeShutdown;
 				String link = linkCore;
 				for (DatabaseEngineAndInstance dbei : selectedDatabaseInstances_sortedByInstance) {
 					link += "&database_engine_instance=" + dbei.getEngine().getShortName() + "|" + dbei.getInstanceSafe("");
@@ -271,7 +281,7 @@
 				
 				StringWriter writer = new StringWriter();
 				ShowIngestAnalysis.printIngestAnalysis(new PrintWriter(writer), selectedDatabaseInstances_sortedByInstance,
-						"html", modelPredictions, !hideIndexCreation /* show index creation */, null);
+						"html", modelPredictions, !hideIndexCreation /* show index creation */, mergeShutdown, null);
 				%>
 					<%= writer.toString() %>
 					
