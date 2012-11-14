@@ -243,7 +243,7 @@ public class ShowCustomData extends HttpServlet {
 					currentJobsEntries = a;
 				}
 
-				if (dropExtremes > 0) {
+				if (dropExtremes > 0 && currentJobsEntries.size() > 0) {
 					
 					long[] a = new long[currentJobsEntries.size()];
 					for (int i = 0; i < a.length; i++) a[i] = currentJobsEntries.get(i).getThird().getTime();
