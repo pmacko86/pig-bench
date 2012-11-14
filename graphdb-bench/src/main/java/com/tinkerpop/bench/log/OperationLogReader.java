@@ -1,5 +1,6 @@
 package com.tinkerpop.bench.log;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -9,7 +10,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.WeakHashMap;
 
-import au.com.bytecode.opencsv.CSVReader;
+import au.com.bytecode.opencsv.CSVParser;
 
 import com.tinkerpop.bench.util.LogUtils;
 
@@ -97,15 +98,17 @@ public class OperationLogReader implements Iterable<OperationLogEntry> {
 			Iterator<OperationLogEntry> {
 
 		private OperationLogEntry nextLogEntry = null;
-		private CSVReader reader = null;
+		private CSVParser parser = null;
+		private BufferedReader reader = null;
 
 		public OperationLogEntryIterator(File logFile)
 				throws IOException {
 			
-			this.reader = new CSVReader(new FileReader(logFile), logDelim);
+			this.reader = new BufferedReader(new FileReader(logFile));
+			this.parser = new CSVParser(logDelim);
 
 			// skip first line: .csv headers
-			reader.readNext();
+			reader.readLine();
 		}
 
 		@Override
@@ -138,26 +141,38 @@ public class OperationLogReader implements Iterable<OperationLogEntry> {
 
 		private OperationLogEntry readNextLogEntry() throws IOException {
 			
-			String[] tokens;
+			String[] tokens = null;
 			boolean repeat;
 			
 			do {
 				repeat = false;
 					
-				tokens = reader.readNext();
-				if (tokens == null) {
+				String line = reader.readLine();
+				if (line == null) {
 					reader.close();
 					reader = null;
 					return null;
 				}
 				
 				if (operationNameFilter != null) {
-					if (!tokens[1].equals(operationNameFilter)) repeat = true;
+					if (!line.contains(operationNameFilter)) {
+						repeat = true;
+						continue;
+					}
+				}
+				
+				tokens = parser.parseLine(line);
+				
+				if (operationNameFilter != null) {
+					if (!tokens[1].equals(operationNameFilter)) {
+						repeat = true;
+						continue;
+					}
 				}
 			}
 			while (repeat);
 
-			return extractLogEntry(tokens);
+			return tokens == null ? null : extractLogEntry(tokens);
 		}
 
 		private OperationLogEntry extractLogEntry(String[] tokens) throws IOException {
