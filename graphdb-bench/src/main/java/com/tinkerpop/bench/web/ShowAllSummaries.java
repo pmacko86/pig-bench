@@ -95,8 +95,8 @@ public class ShowAllSummaries extends HttpServlet {
 			operationNames.add("OperationGetManyVertexProperties-age");
 			operationNames.add("OperationGetManyVertexProperties-name");
 			operationNames.add("OperationGetFirstNeighbor-both");
-			operationNames.add("OperationGetFirstNeighbor-in");
-			operationNames.add("OperationGetFirstNeighbor-out");
+			operationNames.add("OperationGetAllNeighbors-both");
+			operationNames.add("OperationGetAllNeighbors-out");
 			operationNames.add("OperationGetKHopNeighbors-both-1");
 			operationNames.add("OperationGetKHopNeighbors-both-2");
 			operationNames.add("OperationGetKHopNeighbors-both-3");
