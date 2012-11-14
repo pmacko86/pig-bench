@@ -237,8 +237,8 @@ public class ShowAllSummaries extends HttpServlet {
 	            	}
 	            	Job job = jobs.last();
 	            	
-	            	
-	            	if (AnalysisUtils.isManyOperation(s) && (s.contains("Add") || s.contains("Properties"))) {
+	            	if (AnalysisUtils.isManyOperation(s) && (s.contains("Add") || s.contains("Properties")
+	            			|| (s.contains("GetManyVertices") || s.contains("GetManyEdges")))) {
 	            		
 		            	List<OperationLogEntry> entries = OperationLogReader.getEntriesForOperation(job.getLogFile(), s);
 		            	
