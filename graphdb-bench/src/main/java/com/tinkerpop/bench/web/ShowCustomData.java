@@ -188,7 +188,7 @@ public class ShowCustomData extends HttpServlet {
 		// Get the writer and write out the log file
 		
 		PrintWriter writer = response.getWriter();
-		printData(writer, operationsToJobs, columns, delimiter, printHeader, convertManyOperations, response);
+		printData(writer, operationsToJobs, columns, delimiter, printHeader, convertManyOperations, 10000, response);
 	}
 	
 	
@@ -201,20 +201,24 @@ public class ShowCustomData extends HttpServlet {
 	 * @param delimiter the column delimiters
 	 * @param printHeader true to print header
 	 * @param convertManyOperations whether convert the "Many" operations into the single operations
+	 * @param tail return at most this number of runs (use 0 or a negative number to disable)
 	 * @param response the response, or null if none
 	 */
 	public static void printData(PrintWriter writer, Map<String, Collection<Job>> operationsToJobs,
 			String[] columns, String delimiter, boolean printHeader, boolean convertManyOperations,
-			HttpServletResponse response) {
+			int tail, HttpServletResponse response) {
 
 		
 		// Get the data for each operation
 		
 		ArrayList<Triple<String, Job, OperationLogEntry>> operationsJobsEntries
 			= new ArrayList<Triple<String, Job, OperationLogEntry>>();
+		ArrayList<Triple<String, Job, OperationLogEntry>> currentJobsEntries
+			= new ArrayList<Triple<String, Job, OperationLogEntry>>();
 		
 		for (String operationName : operationsToJobs.keySet()) {
 			for (Job job : operationsToJobs.get(operationName)) {
+				currentJobsEntries.clear();
 				
 				OperationLogReader reader = new OperationLogReader(job.getLogFile(), operationName);
 				for (OperationLogEntry e : reader) {
@@ -225,8 +229,17 @@ public class ShowCustomData extends HttpServlet {
 						}
 						
 						String s = e.getName();
-						operationsJobsEntries.add(new Triple<String, Job, OperationLogEntry>(s, job, e));
+						currentJobsEntries.add(new Triple<String, Job, OperationLogEntry>(s, job, e));
 					}
+				}
+				
+				if (tail > 0 && currentJobsEntries.size() > tail) {
+					for (int i = currentJobsEntries.size() - tail; i < currentJobsEntries.size(); i++) {
+						operationsJobsEntries.add(currentJobsEntries.get(i));
+					}
+				}
+				else {
+					operationsJobsEntries.addAll(currentJobsEntries);
 				}
 			}
 		}
