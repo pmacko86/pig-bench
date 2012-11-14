@@ -188,7 +188,7 @@ public class ShowCustomData extends HttpServlet {
 		// Get the writer and write out the log file
 		
 		PrintWriter writer = response.getWriter();
-		printData(writer, operationsToJobs, columns, delimiter, printHeader, convertManyOperations, 10000, response);
+		printData(writer, operationsToJobs, columns, delimiter, printHeader, convertManyOperations, 10000, 0.01, response);
 	}
 	
 	
@@ -202,11 +202,12 @@ public class ShowCustomData extends HttpServlet {
 	 * @param printHeader true to print header
 	 * @param convertManyOperations whether convert the "Many" operations into the single operations
 	 * @param tail return at most this number of runs (use 0 or a negative number to disable)
+	 * @param dropExtremes the fraction of extreme top and bottom values to drop (use a negative number to disable)
 	 * @param response the response, or null if none
 	 */
 	public static void printData(PrintWriter writer, Map<String, Collection<Job>> operationsToJobs,
 			String[] columns, String delimiter, boolean printHeader, boolean convertManyOperations,
-			int tail, HttpServletResponse response) {
+			int tail, double dropExtremes, HttpServletResponse response) {
 
 		
 		// Get the data for each operation
@@ -234,13 +235,32 @@ public class ShowCustomData extends HttpServlet {
 				}
 				
 				if (tail > 0 && currentJobsEntries.size() > tail) {
+					ArrayList<Triple<String, Job, OperationLogEntry>> a
+						= new ArrayList<Triple<String, Job, OperationLogEntry>>();
 					for (int i = currentJobsEntries.size() - tail; i < currentJobsEntries.size(); i++) {
-						operationsJobsEntries.add(currentJobsEntries.get(i));
+						a.add(currentJobsEntries.get(i));
 					}
+					currentJobsEntries = a;
 				}
-				else {
-					operationsJobsEntries.addAll(currentJobsEntries);
+
+				if (dropExtremes > 0) {
+					
+					long[] a = new long[currentJobsEntries.size()];
+					for (int i = 0; i < a.length; i++) a[i] = currentJobsEntries.get(i).getThird().getTime();
+					Arrays.sort(a);
+					long min = a[(int) (dropExtremes * a.length)];
+					long max = a[(int) ((1 - dropExtremes) * a.length)];
+					
+					ArrayList<Triple<String, Job, OperationLogEntry>> l
+						= new ArrayList<Triple<String, Job, OperationLogEntry>>();
+					for (Triple<String, Job, OperationLogEntry> t : currentJobsEntries) {
+						long v = t.getThird().getTime();
+						if (v >= min && v <= max) l.add(t);
+					}
+					currentJobsEntries = l;
 				}
+				
+				operationsJobsEntries.addAll(currentJobsEntries);
 			}
 		}
 		

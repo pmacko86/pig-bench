@@ -168,7 +168,7 @@ public class Show3dPlot extends HttpServlet {
 			dataFile.deleteOnExit();
 			
 			PrintWriter w = new PrintWriter(new FileWriter(dataFile));
-			ShowCustomData.printData(w, operationsToJobs, columns, " ", false, convertManyOperations, -1, null);
+			ShowCustomData.printData(w, operationsToJobs, columns, " ", false, convertManyOperations, -1, 0.01, null);
 			w.close();
 			
 			gnuplotFile = File.createTempFile("graphdb-bench-data", ".plt");
