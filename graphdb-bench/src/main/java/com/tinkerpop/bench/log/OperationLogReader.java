@@ -172,7 +172,7 @@ public class OperationLogReader implements Iterable<OperationLogEntry> {
 			int opId      = Integer.parseInt(tokens[0]);
 			String name   = tokens[1].intern();
 			String type   = tokens[2].intern();
-			String[] args = extractArgs(tokens[3]);
+			String args   = tokens[3];
 			long time     = Long.parseLong(tokens[4]);
 			String result = tokens[5];
 			long memory   = Long.parseLong(tokens[6]);
@@ -185,10 +185,6 @@ public class OperationLogReader implements Iterable<OperationLogEntry> {
 
 			
 			return new OperationLogEntry(opId, name, type, args, time, result, memory, gcCount, gcTime);
-		}
-
-		private String[] extractArgs(String argsStr) {
-			return argsStr.replaceAll("[\\[\\]]", "").split(", ");
 		}
 	}
 }

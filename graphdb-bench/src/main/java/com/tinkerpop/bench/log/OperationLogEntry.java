@@ -5,14 +5,15 @@ public class OperationLogEntry {
 	private int opId = -1;
 	private String name = null;
 	private String type = null;
-	private String[] args = null;
+	private String args = null;
+	private String[] args_parsed = null;
 	private long time = -1;
 	private String result = null;
 	private long memory = -1;
 	private long gcCount = -1;
 	private long gcTimeMS = -1;
 
-	public OperationLogEntry(int opId, String name, String type, String[] args,
+	public OperationLogEntry(int opId, String name, String type, String args,
 			long time, String result, long memory, long gcCount, long gcTimeMS)  {
 		this.opId = opId;
 		this.name = name;
@@ -37,8 +38,14 @@ public class OperationLogEntry {
 		return type;
 	}
 
-	public String[] getArgs() {
+	public String getArgsString() {
 		return args;
+	}
+
+	public String[] getArgs() {
+		if (args_parsed != null) return args_parsed;
+		args_parsed = extractArgs(args);
+		return args_parsed;
 	}
 
 	public long getTime() {
@@ -59,5 +66,9 @@ public class OperationLogEntry {
 
 	public long getGCTimeMS() {
 		return gcTimeMS;
+	}
+
+	private static String[] extractArgs(String argsStr) {
+		return argsStr.replaceAll("[\\[\\]]", "").split(", ");
 	}
 }

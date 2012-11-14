@@ -112,7 +112,7 @@ public class AnalysisUtils {
 				entry.getOpId(),
 				convertNameOfManyOperation(entry.getName()),
 				entry.getType(),
-				entry.getArgs(),
+				entry.getArgsString(),
 				Math.round(entry.getTime() / (double) opCount),
 				entry.getResult(),
 				entry.getMemory(),
