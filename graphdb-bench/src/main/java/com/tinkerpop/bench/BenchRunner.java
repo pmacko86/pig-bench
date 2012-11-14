@@ -420,7 +420,7 @@ public class BenchRunner {
 							for (@SuppressWarnings("unused") Vertex v : new ClosingIterator<Vertex>(g.getVertices())) {
 								objects++;
 								if (main) {
-									if (runtime.freeMemory() < runtime.totalMemory() / 4) {
+									if (runtime.freeMemory() < runtime.totalMemory() / 10 && (objects & 0xffff) == 0) {
 						        		System.gc();
 						        	}
 								}
@@ -434,7 +434,7 @@ public class BenchRunner {
 							for (@SuppressWarnings("unused") Edge e : new ClosingIterator<Edge>(g.getEdges())) {
 								objects++;
 								if (main) {
-									if (runtime.freeMemory() < runtime.totalMemory() / 4) {
+									if (runtime.freeMemory() < runtime.totalMemory() / 10 && (objects & 0xffff) == 0) {
 						        		System.gc();
 						        	}
 								}
