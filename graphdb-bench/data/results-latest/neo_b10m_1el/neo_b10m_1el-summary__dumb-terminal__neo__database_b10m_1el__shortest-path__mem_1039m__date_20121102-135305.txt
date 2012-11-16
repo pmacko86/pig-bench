@@ -1,3 +1,0 @@
-operation           neo-mean (ms)   neo-stdev (ms)  neo-min (ms)    neo-max (ms)    
-OperationOpenGraph        906.945            0.000       906.945         906.945    
-OperationDoGC            1838.384          357.929      1480.455        2196.313    

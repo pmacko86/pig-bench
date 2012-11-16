@@ -1,6 +1,0 @@
-operation                               dex-mean (ms)   dex-stdev (ms)  dex-min (ms)    dex-max (ms)    
-OperationOpenGraph                             42.037            0.000        42.037          42.037    
-OperationDoGC                                1384.658            7.446      1378.460        1398.665    
-OperationDeleteGraph                          316.934            0.000       316.934         316.934    
-OperationLoadFGF-bulkload-kron_1m_1el-a    128827.123            0.000    128827.123      128827.123    
-OperationShutdownGraph                       8923.464            0.000      8923.464        8923.464    

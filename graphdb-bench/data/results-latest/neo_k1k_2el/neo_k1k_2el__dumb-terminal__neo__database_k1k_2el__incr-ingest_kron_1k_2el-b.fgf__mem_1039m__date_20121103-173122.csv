@@ -1,7 +1,0 @@
-"id","name","type","args","time","result","memory","gccount","gctime"
-"0","OperationOpenGraph","com.tinkerpop.bench.operation.OperationOpenGraph","[DEFAULT]","103315120","DONE","38913927","0","0"
-"2","OperationDoGC","com.tinkerpop.bench.operation.OperationDoGC","[]","1479000761","DONE","34051983","8","1"
-"3","OperationDoGC","com.tinkerpop.bench.operation.OperationDoGC","[]","1478084468","DONE","34182175","8","1"
-"1","OperationLoadFGF-incremental-kron_1k_2el-b","com.tinkerpop.bench.operation.operations.OperationLoadFGF","[/ssd/pmacko/graphdb-bench/datasets/kron_1k_2el-b.fgf, false]","295108953","DONE-Incremental","38374271","0","0"
-"4","OperationShutdownGraph","com.tinkerpop.bench.operation.OperationShutdownGraph","[]","765984005","DONE","40570287","0","0"
-"5","OperationDoGC","com.tinkerpop.bench.operation.OperationDoGC","[]","1449775403","DONE","21800095","8","0"

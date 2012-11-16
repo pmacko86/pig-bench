@@ -1,6 +1,0 @@
-"operation","neo-mean","neo-stdev","neo-min","neo-max"
-"OperationOpenGraph","1.300808878E9","0.0","1.300808878E9","1.300808878E9"
-"OperationDoGC","1.5148323098E9","9.090698932874008E7","1.463168144E9","1.69639296E9"
-"OperationDeleteGraph","2.527337442E9","0.0","2.527337442E9","2.527337442E9"
-"OperationLoadFGF-bulkload-amazon0312-a","5.303379344E9","0.0","5.303379344E9","5.303379344E9"
-"OperationShutdownGraph","2.8028560689E10","0.0","2.8028560689E10","2.8028560689E10"

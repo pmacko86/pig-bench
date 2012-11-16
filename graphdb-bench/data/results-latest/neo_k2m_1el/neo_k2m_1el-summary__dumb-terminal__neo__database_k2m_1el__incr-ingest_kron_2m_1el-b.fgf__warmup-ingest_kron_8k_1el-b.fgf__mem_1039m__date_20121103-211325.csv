@@ -1,5 +1,0 @@
-"operation","neo-mean","neo-stdev","neo-min","neo-max"
-"OperationOpenGraph","1.1437306E8","0.0","1.1437306E8","1.1437306E8"
-"OperationDoGC","1.8076786576666667E9","2.664229094313841E8","1.49096432E9","2.142786417E9"
-"OperationLoadFGF-incremental-kron_2m_1el-b","9.38245088886E11","0.0","9.38245088886E11","9.38245088886E11"
-"OperationShutdownGraph","9.368126687E9","0.0","9.368126687E9","9.368126687E9"

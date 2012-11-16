@@ -1,6 +1,0 @@
-operation                               dex-mean (ms)   dex-stdev (ms)  dex-min (ms)    dex-max (ms)    
-OperationOpenGraph                             48.917            0.000        48.917          48.917    
-OperationDoGC                                1377.809            4.890      1371.140        1386.039    
-OperationDeleteGraph                          242.018            0.000       242.018         242.018    
-OperationLoadFGF-bulkload-amazon0312-a      43139.226            0.000     43139.226       43139.226    
-OperationShutdownGraph                       3338.263            0.000      3338.263        3338.263    

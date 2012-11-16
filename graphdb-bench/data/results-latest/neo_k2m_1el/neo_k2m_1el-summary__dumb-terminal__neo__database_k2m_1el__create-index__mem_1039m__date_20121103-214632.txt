@@ -1,7 +1,0 @@
-operation                           neo-mean (ms)   neo-stdev (ms)  neo-min (ms)    neo-max (ms)    
-OperationOpenGraph                        103.452            0.000       103.452         103.452    
-OperationDoGC                            2076.346          293.134      1503.079        2379.908    
-OperationCreateKeyIndex-vertex-name    407790.796            0.000    407790.796      407790.796    
-OperationCreateKeyIndex-vertex-age     390856.770            0.000    390856.770      390856.770    
-OperationCreateKeyIndex-edge-time     3109158.530            0.000   3109158.530     3109158.530    
-OperationShutdownGraph                   3492.097            0.000      3492.097        3492.097    

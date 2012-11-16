@@ -1,5 +1,0 @@
-operation                   neo-mean (ms)   neo-stdev (ms)  neo-min (ms)    neo-max (ms)    
-OperationOpenGraph                268.233            0.000       268.233         268.233    
-OperationDoGC                    1462.330            4.375      1459.040        1468.513    
-OperationGetShortestPath            3.481            3.153         0.061          21.024    
-OperationShutdownGraph            448.990            0.000       448.990         448.990    

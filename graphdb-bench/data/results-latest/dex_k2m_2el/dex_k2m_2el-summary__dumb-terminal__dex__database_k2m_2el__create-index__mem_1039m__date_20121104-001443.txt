@@ -1,7 +1,0 @@
-operation                           dex-mean (ms)   dex-stdev (ms)  dex-min (ms)    dex-max (ms)    
-OperationOpenGraph                       1232.811            0.000      1232.811        1232.811    
-OperationDoGC                            1380.581            4.927      1371.979        1388.271    
-OperationCreateKeyIndex-vertex-name     11186.932            0.000     11186.932       11186.932    
-OperationCreateKeyIndex-vertex-age       1877.196            0.000      1877.196        1877.196    
-OperationCreateKeyIndex-edge-time       32831.931            0.000     32831.931       32831.931    
-OperationShutdownGraph                   6121.997            0.000      6121.997        6121.997    

@@ -1,8 +1,0 @@
-"operation","dex-mean","dex-stdev","dex-min","dex-max"
-"OperationOpenGraph","5.6070401E7","0.0","5.6070401E7","5.6070401E7"
-"OperationDoGC","1.3815336748888888E9","6185543.906724174","1.374391626E9","1.391698964E9"
-"OperationAddManyVertices","1148262.0","0.0","1148262.0","1148262.0"
-"OperationSetManyVertexProperties","3320169.0","0.0","3320169.0","3320169.0"
-"OperationAddManyEdges","7081155.0","0.0","7081155.0","7081155.0"
-"OperationSetManyEdgeProperties","3556996.0","0.0","3556996.0","3556996.0"
-"OperationShutdownGraph","1.457391962E9","0.0","1.457391962E9","1.457391962E9"

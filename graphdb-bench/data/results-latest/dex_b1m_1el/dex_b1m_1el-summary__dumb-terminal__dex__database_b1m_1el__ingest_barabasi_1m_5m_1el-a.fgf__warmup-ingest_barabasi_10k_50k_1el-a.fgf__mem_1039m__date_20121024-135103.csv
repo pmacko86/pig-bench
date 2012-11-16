@@ -1,6 +1,0 @@
-"operation","dex-mean","dex-stdev","dex-min","dex-max"
-"OperationOpenGraph","4.1114541E7","0.0","4.1114541E7","4.1114541E7"
-"OperationDoGC","1.378092967E9","5592943.212808405","1.371818573E9","1.386042186E9"
-"OperationDeleteGraph","2.35576215E8","0.0","2.35576215E8","2.35576215E8"
-"OperationLoadFGF-bulkload-barabasi_1m_5m_1el-a","9.8930982636E10","0.0","9.8930982636E10","9.8930982636E10"
-"OperationShutdownGraph","4.902561485E9","0.0","4.902561485E9","4.902561485E9"

@@ -1,8 +1,0 @@
-"operation","neo-mean","neo-stdev","neo-min","neo-max"
-"OperationOpenGraph","8.89685766E8","0.0","8.89685766E8","8.89685766E8"
-"OperationDoGC","1.8205862616666667E9","1.7141866812442923E8","1.492644731E9","1.933371624E9"
-"OperationAddManyVertices","1.94940705E8","0.0","1.94940705E8","1.94940705E8"
-"OperationSetManyVertexProperties","7.07127E7","0.0","7.07127E7","7.07127E7"
-"OperationAddManyEdges","7.1260094E7","0.0","7.1260094E7","7.1260094E7"
-"OperationSetManyEdgeProperties","7.1132547E7","0.0","7.1132547E7","7.1132547E7"
-"OperationShutdownGraph","1.002633909E9","0.0","1.002633909E9","1.002633909E9"

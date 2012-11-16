@@ -1,4 +1,0 @@
-"id","name","type","args","time","result","memory","gccount","gctime"
-"0","OperationOpenGraph","com.tinkerpop.bench.operation.OperationOpenGraph","[DEFAULT]","21138538916","DONE","23417151","0","0"
-"101","OperationDoGC","com.tinkerpop.bench.operation.OperationDoGC","[]","1390221248","DONE","21081495","8","1"
-"102","OperationDoGC","com.tinkerpop.bench.operation.OperationDoGC","[]","1387185777","DONE","20938503","8","0"

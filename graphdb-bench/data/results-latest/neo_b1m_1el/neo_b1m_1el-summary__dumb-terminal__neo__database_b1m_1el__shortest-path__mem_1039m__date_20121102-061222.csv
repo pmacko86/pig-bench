@@ -1,5 +1,0 @@
-"operation","neo-mean","neo-stdev","neo-min","neo-max"
-"OperationOpenGraph","2.39771086E8","0.0","2.39771086E8","2.39771086E8"
-"OperationDoGC","1.7347297006666667E9","2.855975837768796E8","1.472573972E9","2.131899185E9"
-"OperationGetShortestPath","1.568116395686E10","6.960567435247317E9","6.1192408E7","2.4914664527E10"
-"OperationShutdownGraph","1.070302433E9","0.0","1.070302433E9","1.070302433E9"

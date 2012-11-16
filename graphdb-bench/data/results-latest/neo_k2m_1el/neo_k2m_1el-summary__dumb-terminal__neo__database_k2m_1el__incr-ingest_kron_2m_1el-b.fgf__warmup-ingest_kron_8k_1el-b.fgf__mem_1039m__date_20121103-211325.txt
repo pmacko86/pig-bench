@@ -1,5 +1,0 @@
-operation                                   neo-mean (ms)   neo-stdev (ms)  neo-min (ms)    neo-max (ms)    
-OperationOpenGraph                                114.373            0.000       114.373         114.373    
-OperationDoGC                                    1807.679          266.423      1490.964        2142.786    
-OperationLoadFGF-incremental-kron_2m_1el-b     938245.089            0.000    938245.089      938245.089    
-OperationShutdownGraph                           9368.127            0.000      9368.127        9368.127    

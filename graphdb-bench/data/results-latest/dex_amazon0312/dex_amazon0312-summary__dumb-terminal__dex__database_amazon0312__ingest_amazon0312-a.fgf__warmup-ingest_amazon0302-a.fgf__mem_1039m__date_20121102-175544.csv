@@ -1,6 +1,0 @@
-"operation","dex-mean","dex-stdev","dex-min","dex-max"
-"OperationOpenGraph","4.8916754E7","0.0","4.8916754E7","4.8916754E7"
-"OperationDoGC","1.3778086886E9","4889704.251613939","1.371140371E9","1.386039177E9"
-"OperationDeleteGraph","2.42018026E8","0.0","2.42018026E8","2.42018026E8"
-"OperationLoadFGF-bulkload-amazon0312-a","4.3139225617E10","0.0","4.3139225617E10","4.3139225617E10"
-"OperationShutdownGraph","3.338263036E9","0.0","3.338263036E9","3.338263036E9"

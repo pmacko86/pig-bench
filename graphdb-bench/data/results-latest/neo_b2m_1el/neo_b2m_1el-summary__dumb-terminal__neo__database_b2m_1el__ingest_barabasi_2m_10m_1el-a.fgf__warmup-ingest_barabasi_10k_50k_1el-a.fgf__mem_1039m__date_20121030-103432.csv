@@ -1,6 +1,0 @@
-"operation","neo-mean","neo-stdev","neo-min","neo-max"
-"OperationOpenGraph","1.323568162E9","0.0","1.323568162E9","1.323568162E9"
-"OperationDoGC","1.51641194E9","1.1730040314846109E8","1.454025276E9","1.750935553E9"
-"OperationDeleteGraph","2.540796058E9","0.0","2.540796058E9","2.540796058E9"
-"OperationLoadFGF-bulkload-barabasi_2m_10m_1el-a","3.6647854252E10","0.0","3.6647854252E10","3.6647854252E10"
-"OperationShutdownGraph","1.32855198222E11","0.0","1.32855198222E11","1.32855198222E11"
