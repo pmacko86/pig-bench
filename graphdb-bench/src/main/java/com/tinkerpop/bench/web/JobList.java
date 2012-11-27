@@ -243,7 +243,7 @@ public class JobList {
 		
 		LinkedList<Job> r = new LinkedList<Job>();
 		File dir = WebUtils.getResultsDirectory(dbEngine, dbInstance);
-		String logFilePrefix = WebUtils.getLogFilePrefix(dbEngine, dbInstance);
+		String[] logFilePrefixes = WebUtils.getAllLogFilePrefixes(dbEngine, dbInstance);
 		String logFilePrefixWarmup = WebUtils.getWarmupLogFilePrefix(dbEngine, dbInstance);
 				
 		for (File f : dir.listFiles()) {
@@ -251,14 +251,25 @@ public class JobList {
 			String name = f.getName();
 			
 			if (name.endsWith(".csv")) {
-				if (name.startsWith(logFilePrefix)) {
-					r.add(new Job(f, dbEngine, dbInstance));
+				for (String logFilePrefix : logFilePrefixes) {
+					if (name.startsWith(logFilePrefix)) {
+						r.add(new Job(f, dbEngine, dbInstance));
+						break;
+					}
 				}
 				if (name.startsWith(logFilePrefixWarmup)) {
-					File log = new File(dir, name.substring(0, logFilePrefix.length() - 1)
-							+ "_" + name.substring(logFilePrefixWarmup.length()));
-					if (!log.exists()) {
-						r.add(new Job(log, dbEngine, dbInstance));
+					File baseLogFile = null;
+					for (String logFilePrefix : logFilePrefixes) {
+						File log = new File(dir, logFilePrefix + name.substring(logFilePrefixWarmup.length()));
+						if (log.exists()) {
+							baseLogFile = log;
+							break;
+						}
+					}
+					if (baseLogFile == null) {
+						String logFilePrefix = WebUtils.getLogFilePrefix(dbEngine, dbInstance);
+						baseLogFile = new File(dir, logFilePrefix + name.substring(logFilePrefixWarmup.length()));
+						r.add(new Job(baseLogFile, dbEngine, dbInstance));
 					}
 				}
 			}

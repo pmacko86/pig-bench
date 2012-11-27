@@ -162,7 +162,10 @@ public abstract class Operation {
 	 * @return the operation type -- the name of the operation class
 	 */
 	public final String getType() {
-		return getClass().getName();
+		String s = getClass().getName();
+		if (s.startsWith("com.tinkerpop.bench.operation.")) s = s.substring("com.tinkerpop.bench.operation.".length());
+		if (s.startsWith("operations.")) s = s.substring("operations.".length());
+		return s;
 	}
 	
 	

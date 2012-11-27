@@ -191,7 +191,7 @@ public class WebUtils {
 	 *
 	 * @param dbEngine the database engine name
 	 * @param dbInstance the database instance name
-	 * @return the directory
+	 * @return the prefix
 	 */
 	public static String getLogFilePrefix(String dbEngine, String dbInstance) {
 
@@ -201,7 +201,26 @@ public class WebUtils {
 			subdir += "_" + dbInstance;
 		}
 
-		return subdir + "_";
+		return subdir + "-log_";
+	}
+
+	
+	/**
+	 * Get all file name prefix for log files, including the ones that are already deprecated
+	 *
+	 * @param dbEngine the database engine name
+	 * @param dbInstance the database instance name
+	 * @return an array of prefixes
+	 */
+	public static String[] getAllLogFilePrefixes(String dbEngine, String dbInstance) {
+
+		String subdir = dbEngine;
+		if (dbInstance != null && !"".equals(dbInstance)) {
+			asssertDatabaseInstanceNameValidity(dbInstance);
+			subdir += "_" + dbInstance;
+		}
+
+		return new String[] { subdir + "-log_", subdir + "_" };
 	}
 
 	
@@ -210,7 +229,7 @@ public class WebUtils {
 	 *
 	 * @param dbEngine the database engine name
 	 * @param dbInstance the database instance name
-	 * @return the directory
+	 * @return the prefix
 	 */
 	public static String getWarmupLogFilePrefix(String dbEngine, String dbInstance) {
 
@@ -229,7 +248,7 @@ public class WebUtils {
 	 *
 	 * @param dbEngine the database engine name
 	 * @param dbInstance the database instance name
-	 * @return the directory
+	 * @return the prefix
 	 */
 	public static String getSummaryFilePrefix(String dbEngine, String dbInstance) {
 

@@ -151,6 +151,8 @@
 				}
 			%>
 				
+			var categories = [];
+				
 			<% if (chartProperties.group_by != null) { %>
 			
 				// Get the groups and the categories 
@@ -164,8 +166,6 @@
 				var subgroup_columns = [];
 				var subgroup_offsets = [];
 				var subgroup_labels = [];
-				
-				var categories = [];
 				
 				var __last_group_column = "";
 				var __last_group_label = "";

@@ -77,17 +77,20 @@ public class OperationLogWriter {
 		
 		// Log to the file
 		
-		buffer[0] = Integer.toString(op.getId());
-		buffer[1] = op.getName();
-		buffer[2] = op.getType();
-		buffer[3] = Arrays.toString(op.getArgs());
-		buffer[4] = Long.toString(op.getTime());
-		buffer[5] = op.getResult() == null ? "null" : op.getResult().toString();
-		buffer[6] = Long.toString(op.getMemory());
-		buffer[7] = Long.toString(op.getGCCount());
-		buffer[8] = Long.toString(op.getGCTimeMS());
-		
-		if (writer != null) writer.writeNext(buffer);
+		if (writer != null) {
+			
+			buffer[0] = Integer.toString(op.getId());
+			buffer[1] = op.getName();
+			buffer[2] = op.getType();
+			buffer[3] = Arrays.toString(op.getArgs());
+			buffer[4] = Long.toString(op.getTime());
+			buffer[5] = op.getResult() == null ? "null" : op.getResult().toString();
+			buffer[6] = Long.toString(op.getMemory());
+			buffer[7] = Long.toString(op.getGCCount());
+			buffer[8] = Long.toString(op.getGCTimeMS());
+			
+			writer.writeNext(buffer);
+		}
 		
 		
 		// Update the internal statistics

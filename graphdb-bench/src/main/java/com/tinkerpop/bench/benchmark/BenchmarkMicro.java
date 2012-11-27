@@ -107,6 +107,7 @@ public class BenchmarkMicro extends Benchmark {
 		System.err.println("  --dir DIR               Set the database and results directory");
 		System.err.println("  --dumb-terminal         Use the dumb terminal settings");
 		System.err.println("  --help                  Print this help message");
+		System.err.println("  --log-warmup            Log the warmup phase of the benchmark");
 		System.err.println("  --no-cache-pollution    Disable cache pollution before benchmarks");
 		System.err.println("  --no-color              Disable color output to the terminal");
 		System.err.println("  --no-logs               Disable logs");
@@ -215,6 +216,7 @@ public class BenchmarkMicro extends Benchmark {
 		parser.accepts("dumb-terminal");
 		parser.accepts("help");
 		parser.accepts("keep-temp-copy");
+		parser.accepts("log-warmup");
 		parser.accepts("neo-caches").withRequiredArg().ofType(String.class);
 		parser.accepts("neo-gcr").withRequiredArg().ofType(String.class);
 		parser.accepts("no-cache-pollution");
@@ -367,6 +369,15 @@ public class BenchmarkMicro extends Benchmark {
 		boolean logs = true;
 		if (options.has("no-logs")) {
 			logs = false;
+		}
+		
+		boolean warmupLog = false;
+		if (options.has("log-warmup")) {
+			warmupLog = true;
+			if (!logs) {
+				ConsoleUtils.error("Cannot combine --no-logs and --log-warmup");
+				return 1;
+			}
 		}
 		
 		boolean provenance = true;
@@ -1042,7 +1053,7 @@ public class BenchmarkMicro extends Benchmark {
 		String logPrefix = dbPrefix + dbShortName;
 		if (dbInstanceName != null && !dbInstanceName.equals("")) logPrefix += "_" + dbInstanceName;
 		String warmupLogFile = logPrefix + "-warmup" + argString + ".csv";
-		String logFile = logPrefix + argString + ".csv";
+		String logFile = logPrefix + "-log" + argString + ".csv";
 		String summaryLogFile = logPrefix + "-summary" + argString + ".csv";
 		String summaryLogFileText = logPrefix + "-summary" + argString + ".txt";
 		
@@ -1298,7 +1309,7 @@ public class BenchmarkMicro extends Benchmark {
 			
 			try {
 				if (!skipWorkloads) {
-					warmupBenchmark.runBenchmark(graphDescriptor, logs ? warmupLogFile : null,
+					warmupBenchmark.runBenchmark(graphDescriptor, logs && warmupLog ? warmupLogFile : null,
 							isIngest ? GraphDescriptor.OpenMode.BULKLOAD : GraphDescriptor.OpenMode.DEFAULT, numThreads);
 				}
 			}
@@ -1307,7 +1318,7 @@ public class BenchmarkMicro extends Benchmark {
 				t.printStackTrace(System.err);
 				return 1;
 			}
-			if (CPL.isAttached() && options.has("annotation") && logs) {
+			if (CPL.isAttached() && options.has("annotation") && (logs && warmupLog)) {
 				CPLFile.lookup(new File(warmupLogFile)).addProperty("ANNOTATION",
 						options.valueOf("annotation").toString());
 			}

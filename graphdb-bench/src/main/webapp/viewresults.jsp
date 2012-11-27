@@ -296,22 +296,8 @@
 							<p class="simple_status_warning">Not found.</p>
 						<%
 					}
-					else {
-						
-						ChartProperties chartProperties = new ChartProperties();
-						
-						chartProperties.source = "/ShowLogFile?job=" + job.getId() + "&format=csv";
-						chartProperties.attach = "chart_log";
-						chartProperties.foreach = "d.label = d.name";
-						chartProperties.filter = "['OperationOpenGraph', 'OperationDoGC', 'OperationShutdownGraph'].indexOf(d.name) < 0";
-						chartProperties.yscale = "log";
-						chartProperties.ylabel = "Execution Time (ms)";
-							
+					else {							
 						%>
-							<div class="chart_outer"><div class="chart_log">
-							<%@ include file="include/d3boxplot.jsp" %>
-							</div></div>
-							
 							<div>
 								<button onclick="replace_by_log_file(this, '<%= job.getId() %>', false)">
 									Show...
@@ -332,10 +318,6 @@
 						<%
 					}
 					else {
-						String efn = StringEscapeUtils.escapeJavaScript(f.getName());
-						String dbe = job.getDbEngine();
-						String dbi = job.getDbInstance();
-						if (dbi == null) dbi = "";
 						%>
 							<div>
 								<button onclick="replace_by_log_file(this, '<%= job.getId() %>', true)">

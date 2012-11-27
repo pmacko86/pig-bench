@@ -901,18 +901,24 @@ public class Job implements Comparable<Job> {
 	 */
 	public File getSummaryFile() {
 		if (logFile == null) return null;
+		String name = logFile.getName();
 		
 		String logFilePrefix = dbEngine;
 		if (dbInstance != null) {
 			logFilePrefix += "_" + dbInstance;
 		}
-		String logFilePrefixExt = logFilePrefix + "_";
-
-		String name = logFile.getName();
-		if (!name.startsWith(logFilePrefixExt)) {
-			throw new IllegalStateException("The log file must be prefixed by the database engine and the instance name");
+		
+		boolean ok = false;
+		for (String logFilePrefixExt : WebUtils.getAllLogFilePrefixes(dbEngine, dbInstance)) {
+			if (name.startsWith(logFilePrefixExt)) {
+				name = logFilePrefix + "-summary_" + name.substring(logFilePrefixExt.length());
+				ok = true;
+				continue;
+			}
 		}
-		name = name.substring(0, logFilePrefix.length()) + "-summary" + name.substring(logFilePrefix.length());
+		if (!ok) {
+			throw new IllegalStateException("The log file does not have a valid prefix: " + logFile.getName());
+		}
 		
 		File f = new File(logFile.getParentFile(), name);
 		if (!f.exists()) f = null;
@@ -930,17 +936,23 @@ public class Job implements Comparable<Job> {
 	public File getWarmupLogFile() {
 		if (logFile == null) return null;
 		
+		String name = logFile.getName();
 		String logFilePrefix = dbEngine;
 		if (dbInstance != null) {
 			logFilePrefix += "_" + dbInstance;
 		}
-		String logFilePrefixExt = logFilePrefix + "_";
 
-		String name = logFile.getName();
-		if (!name.startsWith(logFilePrefixExt)) {
-			throw new IllegalStateException("The log file must be prefixed by the database engine and the instance name");
+		boolean ok = false;
+		for (String logFilePrefixExt : WebUtils.getAllLogFilePrefixes(dbEngine, dbInstance)) {
+			if (name.startsWith(logFilePrefixExt)) {
+				name = logFilePrefix + "-warmup" + name.substring(logFilePrefixExt.length());
+				ok = true;
+				continue;
+			}
 		}
-		name = name.substring(0, logFilePrefix.length()) + "-warmup" + name.substring(logFilePrefix.length());
+		if (!ok) {
+			throw new IllegalStateException("The log file does not have a valid prefix: " + logFile.getName());
+		}
 		
 		File f = new File(logFile.getParentFile(), name);
 		if (!f.exists()) f = null;
