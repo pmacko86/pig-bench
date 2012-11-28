@@ -40,6 +40,7 @@ var d3bp = {
 		this.__parent = parent;		// parent series
 		
 		this.__value = null;		// the common property value
+		this.__valuelabelfn = null;
 		this.__label = null;
 		
 		this.__data = [];			// data or sub-series
@@ -158,10 +159,14 @@ d3bp.data.prototype.foreach = function(fn) {
  * categorizing data elements into series/groups
  *
  * @param property the property
- * @param fn the property transform function (optional)
+ * @param labelfn the value label function (optional)
+ * @param transformfn the property transform function (optional)
  */
-d3bp.data.prototype.groupby = function(property, fn) {
-	this.__seriesdefinitions.push([property, fn]);
+d3bp.data.prototype.groupby = function(property, labelfn, transformfn) {
+	if (labelfn == undefined) {
+		labelfn = function(v) { return "" + v; };
+	}
+	this.__seriesdefinitions.push([property, labelfn, transformfn]);
 	return this;
 };
 
@@ -222,8 +227,8 @@ d3bp.data.prototype.__preprocess = function() {
 				for (var di = 0; di < leaf.__data.length; di++) {
 					var d = leaf.__data[di];
 					var v = d[sd[0]];
-					if (sd[1] != undefined && sd[1] != null) {
-						v = sd[1](v);
+					if (sd[2] != undefined && sd[2] != null) {
+						v = sd[2](v);
 					}
 					
 					var found = null;
@@ -235,6 +240,8 @@ d3bp.data.prototype.__preprocess = function() {
 					if (found == null) {
 						found = new d3bp.series(leaf);
 						found.__value = v;
+						found.__valuelabelfn = sd[1];
+						found.__label = found.__valuelabelfn(v);
 						new_data.push(found);
 						new_leaves.push(found);
 					}
@@ -423,13 +430,17 @@ d3bp.barchart.prototype.render = function(id) {
 	this.__data.run(function() {
 		
 		var data = t.data();
-		var num_bars = data.d3data().length;//XXX(t.__stacked ? subgroup_ids.length : data.length);
-		var chart = d3.select("#" + id).append("svg")
+		var num_bars = data.d3data().length;
+		
+		
+		// Create the chart with the initial size estimates, but we will
+		// correct them later
+		
+		var chart_svg = d3.select("#" + id).append("svg")
 			.attr("class", "chart")
-			.attr("width",  a.bar_width * num_bars + a.padding_left
-			+ a.padding_right) //+ (categories.length > 1 ? a.padding_right : a.padding_right_without_legend))
-			.attr("height", a.chart_inner_height + a.padding_top + a.padding_bottom)
-			.append("g")
+			.attr("width",  a.bar_width * num_bars + a.padding_left)
+			.attr("height", a.chart_inner_height + a.padding_top);
+		var chart = chart_svg.append("g")
 			.attr("transform", "translate(" + a.padding_left + ", " + a.padding_top + ")");
 		
 		
@@ -467,7 +478,7 @@ d3bp.barchart.prototype.render = function(id) {
 		// Data axis
 		//
 	
-		chart.selectAll("line")
+		var h_tick_lines = chart.selectAll("line")
 			.data(ticks)
 			.enter().append("line")
 			.attr("x1", -a.bars_margin)
@@ -519,6 +530,9 @@ d3bp.barchart.prototype.render = function(id) {
 		var pos = 0;
 		var lastparent = null;
 		var categories = [];
+		
+		var seriesinfo = [];
+		var max_level = 0;
 		
 		while (seriesqueue.length > 0) {
 			var series = seriesqueue.shift();
@@ -621,10 +635,75 @@ d3bp.barchart.prototype.render = function(id) {
 						.text(label);
 				}
 				
+				
+				// Advance the counters
+				
+				var old_pos = pos;
 				pos += bar_width;
 				index++;
+				
+				
+				// Update the series info
+				
+				var inv_level = 0;
+				for (var s = series; s != null; s = s.__parent) {
+				
+					var info = null;
+					for (var si = 0; si < seriesinfo.length; si++) {
+						var x = seriesinfo[si];
+						if (x.series == s) {
+							info = x;
+							break;
+						}
+					}
+					if (info == null) {
+						info = [];
+						info.series = s;
+						info.min_pos = 1000 * 1000 * 1000;
+						info.max_pos = 0;
+						seriesinfo.push(info);
+					}
+					
+					
+					// Update min and max
+					
+					if (info.min_pos > old_pos) {
+						info.min_pos = old_pos;
+					}
+					
+					if (info.max_pos < pos) {
+						info.max_pos = pos;
+					}
+					
+					
+					// Advance the inverse level
+					
+					if (max_level < inv_level) {
+						max_level = inv_level;
+					}
+					
+					inv_level++;
+				}
 			}
 		}
+		
+		
+		//
+		// Adjust the tick lines
+		//
+		
+		var chart_inner_width = pos;
+		for (var ti = 0; ti < h_tick_lines[0].length; ti++) {
+			h_tick_lines[0][ti].setAttribute("x2", chart_inner_width + a.bars_margin);
+		}
+		
+		
+		//
+		// Prepare for the upcoming chart adjustments
+		//
+		
+		var max_chart_y = a.chart_inner_height;
+		var max_chart_x = chart_inner_width + a.bars_margin;
 		
 		
 		//
@@ -634,10 +713,122 @@ d3bp.barchart.prototype.render = function(id) {
 		chart.append("line")
 			.attr("x1", -a.bars_margin)
 			.attr("y1", a.chart_inner_height)
-			.attr("x2", a.bar_width * num_bars + a.bars_margin)
+			.attr("x2", chart_inner_width + a.bars_margin)
 			.attr("y2", a.chart_inner_height)
 			.style("stroke", "#000");
 		
+		
+		//
+		// Series labels
+		//
+		
+		seriesqueue = [];
+		seriesqueue.push(data.__seriesroot);
+		
+		var label_at_inv_levels = [];
+		
+		while (seriesqueue.length > 0) {
+			var series = seriesqueue.shift();
+			if (series.__data.length == 0) {
+				continue;
+			}
+			
+			if (series.__data[0] instanceof d3bp.series) {
+				for (var di = 0; di < series.__data.length; di++) {
+					var s = series.__data[di];
+					seriesqueue.push(s);
+				}
+			}
+			
+			var info = null;
+			for (var si = 0; si < seriesinfo.length; si++) {
+				var x = seriesinfo[si];
+				if (x.series == series) {
+					info = x;
+					break;
+				}
+			}
+			
+			var level = -1;
+			for (var s = series; s != null; s = s.__parent) {
+				level++;
+			}
+			
+			var text = chart.append("text")
+				.attr("x", 0)
+				.attr("y", 0)
+				.attr("dx", 0)
+				.attr("dy", ".35em") // vertical-align: middle
+				.attr("text-anchor", "middle")
+				.attr("transform", "translate("
+					+ ((info.min_pos + info.max_pos) / 2) + ", "
+					+ (a.chart_inner_height + a.chart_margin)  + ") rotate(0)")
+				.text(series.__label);
+			
+			var labels_at_level = label_at_inv_levels[max_level - level];
+			if (labels_at_level == undefined || labels_at_level == null) {
+				labels_at_level = [];
+				label_at_inv_levels[max_level - level] = labels_at_level;
+			}
+			
+			var x = [];
+			var w = text[0][0].getBoundingClientRect().width;
+			x.text = text[0][0];
+			x.x_pos = (info.min_pos + info.max_pos) / 2;
+			x.too_long = 0.9 * (info.max_pos - info.min_pos) < w;
+			labels_at_level.push(x);
+		}
+		
+		var label_y_pos = a.chart_inner_height + a.chart_margin;
+		for (var inv_level = 0; inv_level < label_at_inv_levels.length; inv_level++) {
+			var labels_at_level = label_at_inv_levels[inv_level];
+			
+			var too_long = false;
+			for (var li = 0; li < labels_at_level.length; li++) {
+				if (labels_at_level[li].too_long) {
+					too_long = true;
+					break;
+				}
+			}
+			
+			if (too_long) {
+				for (var li = 0; li < labels_at_level.length; li++) {
+					var l = labels_at_level[li];
+					l.text.setAttribute("text-anchor", "start");
+					l.text.setAttribute("transform", "translate("
+						+ (l.x_pos) + ", "
+						+ (label_y_pos)  + ") rotate(45)");
+				}
+			}
+			else {
+				for (var li = 0; li < labels_at_level.length; li++) {
+					var l = labels_at_level[li];
+					l.text.setAttribute("text-anchor", "middle");
+					l.text.setAttribute("transform", "translate("
+					+ (l.x_pos) + ", "
+					+ (label_y_pos)  + ") rotate(0)");
+				}
+			}
+			
+			var max_height = 0;
+			for (var li = 0; li < labels_at_level.length; li++) {
+				var l = labels_at_level[li];
+				var h = l.text.getBoundingClientRect().height;
+				if (h > max_height) {
+					max_height = h;
+				}
+				var w = l.text.getBoundingClientRect().width;
+				if (l.x_pos + w > max_chart_x) {
+					max_chart_x = l.x_pos + w;
+				}
+			}
+			
+			if (max_height + label_y_pos > max_chart_y) {
+				max_chart_y = max_height + label_y_pos;
+			}
+			
+			label_y_pos += max_height + 4;
+		}
 		
 		
 		//
@@ -645,7 +836,7 @@ d3bp.barchart.prototype.render = function(id) {
 		//
 		
 		if (categories.length > 1) {
-			var x = a.bar_width * num_bars + a.bars_margin + a.chart_margin
+			var x = chart_inner_width + a.bars_margin + a.chart_margin
 					+ a.legend_padding_left;
 			
 			for (var ci = 0; ci < categories.length; ci++) {
@@ -658,15 +849,29 @@ d3bp.barchart.prototype.render = function(id) {
 					.attr("height", a.legend_bar_height)
 					.style("fill", bar_colors(ci));
 				
-				chart.append("text")
+				var text = chart.append("text")
 					.attr("x", x + a.legend_bar_width + a.legend_bar_padding_right)
 					.attr("y", ci * (a.legend_bar_height + a.legend_vertical_spacing)
 						+ a.legend_padding_top + 0.5 * a.legend_bar_height)
 					.attr("dx", 0)
 					.attr("dy", ".35em") // vertical-align: middle
 					.text(t.__categorylabelfn(categories[ci]));
+				
+				var b = text[0][0].getBBox();
+				if (b.x + b.width > max_chart_x) {
+					max_chart_x = b.x + b.width;
+				}
 			}
 		}
+		
+		
+		//
+		// Adjust the chart size
+		//
+		
+		chart_svg[0][0].setAttribute("width", a.padding_left + max_chart_x);
+		chart_svg[0][0].setAttribute("height", a.padding_top + max_chart_y);
+		chart[0][0].setAttribute("transform", "translate(" + a.padding_left + ", " + a.padding_top + ")");
 	});
 	
 	return this;
