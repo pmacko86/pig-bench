@@ -7,7 +7,7 @@ var d3bp = {
 	/*
 	 * data
 	 */
-	data: function(input) {
+	Data: function(input) {
 		
 		this.__datasource = null;
 		
@@ -35,7 +35,7 @@ var d3bp = {
 	/*
 	 * series
 	 */
-	series: function(parent) {
+	Series: function(parent) {
 		
 		this.__parent = parent;		// parent series
 		
@@ -50,7 +50,7 @@ var d3bp = {
 	/*
 	 * appearance
 	 */
-	appearance: function() {
+	Appearance: function() {
 		this.chart_inner_height = 420;
 		this.chart_margin = 10;
 		this.num_ticks = 10;
@@ -79,17 +79,19 @@ var d3bp = {
 	/*
 	 * barchart
 	 */
-	barchart: function() {
+	BarChart: function() {
 		
 		this.__data = null;
-		this.__valuefn = null;
-		this.__stdevfn = null;
-		this.__labelfn = null;
-		this.__categoryfn = null;
-		this.__categorylabelfn = null;
+		this.__valuefn = null;			// extract the value (usually y)
+		this.__stdevfn = null;			// extract the standard deviation
+		this.__labelfn = null;			// extract the label value (usually x)
+		this.__categoryfn = null;		// extract the category
 		
-		this.__appearance = new d3bp.appearance();
-		this.__valuelabel = null;
+		this.__valuelabelfn = null;		// convert the value to string
+		this.__categorylabelfn = null;	// convert the category to string
+		
+		this.__appearance = new d3bp.Appearance();
+		this.__valueaxislabel = null;
 		
 		this.__stacked = false;
 		this.__scaletype = "linear";
@@ -112,12 +114,26 @@ var d3bp = {
 			}
 		}
 		return ticks;
+	},
+	
+	
+	/*
+	 * Utility: numToString3
+	 */
+	numToString3: function(x) {
+		
+		var fixed_length = 3;
+		if (x > 10) fixed_length = 2;
+		if (x > 100) fixed_length = 1;
+		if (x > 1000) fixed_length = 0;
+		
+		return x.toFixed(fixed_length);
 	}
 };
 
 
 /*****************************************************************************
- * Class d3bp.data                                                           *
+ * Class d3bp.Data                                                           *
  *****************************************************************************/
 
 /**
@@ -125,7 +141,7 @@ var d3bp = {
  *
  * @param fn the function, taking a data element and returning true or false
  */
-d3bp.data.prototype.filter = function(fn) {
+d3bp.Data.prototype.filter = function(fn) {
 	this.__preprocessfunctions.push(["filter", fn]);
 	return this;
 };
@@ -137,7 +153,7 @@ d3bp.data.prototype.filter = function(fn) {
  * @param property the new property name
  * @param fn the function, taking a data element and returning a value
  */
-d3bp.data.prototype.derive = function(property, fn) {
+d3bp.Data.prototype.derive = function(property, fn) {
 	this.__preprocessfunctions.push(["derive", property, fn]);
 	return this;
 };
@@ -148,7 +164,7 @@ d3bp.data.prototype.derive = function(property, fn) {
  *
  * @param fn the function, taking a data element
  */
-d3bp.data.prototype.foreach = function(fn) {
+d3bp.Data.prototype.forEach = function(fn) {
 	this.__preprocessfunctions.push(["foreach", fn]);
 	return this;
 };
@@ -162,7 +178,7 @@ d3bp.data.prototype.foreach = function(fn) {
  * @param labelfn the value label function (optional)
  * @param transformfn the property transform function (optional)
  */
-d3bp.data.prototype.groupby = function(property, labelfn, transformfn) {
+d3bp.Data.prototype.groupBy = function(property, labelfn, transformfn) {
 	if (labelfn == undefined) {
 		labelfn = function(v) { return "" + v; };
 	}
@@ -174,7 +190,7 @@ d3bp.data.prototype.groupby = function(property, labelfn, transformfn) {
 /**
  * Run all the preprocess functions
  */
-d3bp.data.prototype.__preprocess = function() {
+d3bp.Data.prototype.__preprocess = function() {
 
 	if (this.__originaldata == null) {
 		throw "The data has not yet been loaded";
@@ -206,7 +222,7 @@ d3bp.data.prototype.__preprocess = function() {
 	
 	// Categorize the data into the individual data series
 	
-	var root = new d3bp.series(null);
+	var root = new d3bp.Series(null);
 	this.__data.forEach(function(d, i) {
 		root.__data.push(d);
 	});
@@ -238,7 +254,7 @@ d3bp.data.prototype.__preprocess = function() {
 						}
 					}
 					if (found == null) {
-						found = new d3bp.series(leaf);
+						found = new d3bp.Series(leaf);
 						found.__value = v;
 						found.__valuelabelfn = sd[1];
 						found.__label = found.__valuelabelfn(v);
@@ -262,7 +278,7 @@ d3bp.data.prototype.__preprocess = function() {
  *
  * @param fn the callback function, receiving this object
  */
-d3bp.data.prototype.run = function(fn) {
+d3bp.Data.prototype.run = function(fn) {
 	var t = this;
 	if (this.__datasource != null && typeof(this.__datasource) == "string") {
 		d3.csv(this.__datasource, function(data) {
@@ -282,7 +298,7 @@ d3bp.data.prototype.run = function(fn) {
  *
  * @return the loaded data
  */
-d3bp.data.prototype.d3data = function() {
+d3bp.Data.prototype.d3data = function() {
 	
 	if (this.__data == null) {
 		throw "The data has not yet been loaded";
@@ -294,7 +310,7 @@ d3bp.data.prototype.d3data = function() {
 
 
 /*****************************************************************************
- * Class d3bp.barchart                                                       *
+ * Class d3bp.BarChart                                                       *
  *****************************************************************************/
 
 /**
@@ -303,7 +319,7 @@ d3bp.data.prototype.d3data = function() {
  * @param data the new data
  * @return the data if no arguments are given, otherwise return this
  */
-d3bp.barchart.prototype.data = function(data) {
+d3bp.BarChart.prototype.data = function(data) {
 	if (data === undefined) return this.__data;
 	this.__data = data;
 	return this;
@@ -314,10 +330,11 @@ d3bp.barchart.prototype.data = function(data) {
  * Set the value function or property
  * 
  * @param property_or_function the name of the property, or a function
- * @param the value axis label (optional)
+ * @param axislabel the value axis label (optional)
+ * @param strfn the to string function for data labels (optional)
  * @return the function if no arguments are given, otherwise this
  */
-d3bp.barchart.prototype.value = function(property_or_function, label) {
+d3bp.BarChart.prototype.value = function(property_or_function, axislabel, strfn) {
 	if (property_or_function === undefined) return this.__valuefn;
 	if (typeof(property_or_function) == "string") {
 		this.__valuefn = function(d) { return d[property_or_function]; };
@@ -328,11 +345,17 @@ d3bp.barchart.prototype.value = function(property_or_function, label) {
 	else {
 		throw "Invalid type of the argument";
 	}
-	if (label === undefined) {
-		this.__valuelabel = null;
+	if (axislabel === undefined) {
+		this.__valueaxislabel = null;
 	}
 	else {
-		this.__valuelabel = label;
+		this.__valueaxislabel = axislabel;
+	}
+	if (strfn === undefined) {
+		this.__valuelabelfn = null;
+	}
+	else {
+		this.__valuelabelfn = strfn;
 	}
 	return this;
 };
@@ -344,7 +367,7 @@ d3bp.barchart.prototype.value = function(property_or_function, label) {
  * @param property_or_function the name of the property, or a function
  * @return the function if no arguments are given, otherwise this
  */
-d3bp.barchart.prototype.stdev = function(property_or_function) {
+d3bp.BarChart.prototype.stdev = function(property_or_function) {
 	if (property_or_function === undefined) return this.__stdevfn;
 	if (typeof(property_or_function) == "string") {
 		this.__stdevfn = function(d) { return d[property_or_function]; };
@@ -365,7 +388,7 @@ d3bp.barchart.prototype.stdev = function(property_or_function) {
  * @param property_or_function the name of the property, or a function
  * @return the function if no arguments are given, otherwise this
  */
-d3bp.barchart.prototype.label = function(property_or_function) {
+d3bp.BarChart.prototype.label = function(property_or_function) {
 	if (property_or_function === undefined) return this.__labelfn;
 	if (typeof(property_or_function) == "string") {
 		this.__labelfn = function(d) { return d[property_or_function]; };
@@ -388,7 +411,7 @@ d3bp.barchart.prototype.label = function(property_or_function) {
  * @param labelfn the label function to be used in the legend (optional)
  * @return the function if no arguments are given, otherwise this
  */
-d3bp.barchart.prototype.category = function(property_or_function, labelfn) {
+d3bp.BarChart.prototype.category = function(property_or_function, labelfn) {
 	if (property_or_function === undefined) return this.__categoryfn;
 	if (typeof(property_or_function) == "string") {
 		this.__categoryfn = function(d) { return d[property_or_function]; };
@@ -414,7 +437,7 @@ d3bp.barchart.prototype.category = function(property_or_function, labelfn) {
  * 
  * @param id the DOM element ID
  */
-d3bp.barchart.prototype.render = function(id) {
+d3bp.BarChart.prototype.render = function(id) {
 	
 	var t = this;
 	var a = this.__appearance;
@@ -449,11 +472,16 @@ d3bp.barchart.prototype.render = function(id) {
 		//
 		
 		if (t.__scaletype == "linear") {
+			// XXX Hardcoded
 			t.__d3scale = d3.scale.linear()
 				.domain([0, 1.1 * d3.max(data.d3data(), function(d) { return d.mean + d.stdev; })]);
 			//XXX(stacked ? d3.max(subgroup_sums) : d3.max(data, function(d) { return d.mean + d.stdev; }))])
 		}
-		else if (t.__scale == "log") {
+		else if (t.__scaletype == "log") {
+			// XXX Hardcoded + what to do for min if we get <= 0 values?
+			t.__d3scale = d3.scale.log()
+				.domain([0.9 * d3.min(data.d3data(), function(d) { return d.mean <= d.stdev ? 0 : d.mean - d.stdev; }),
+						 1.1 * d3.max(data.d3data(), function(d) { return d.mean + d.stdev; })]);
 		}
 		else {
 			throw "Invalid data scale: " + t.__scaletype;
@@ -505,7 +533,7 @@ d3bp.barchart.prototype.render = function(id) {
 			.attr("y2", a.chart_inner_height)
 			.style("stroke", "#000");
 		
-		if (t.__valuelabel != undefined && t.__valuelabel != null) {
+		if (t.__valueaxislabel != undefined && t.__valueaxislabel != null) {
 			chart.append("text")
 				.attr("x", 0)
 				.attr("y", 0)
@@ -515,7 +543,7 @@ d3bp.barchart.prototype.render = function(id) {
 				.attr("transform", "translate("
 				+ (-a.bars_margin*2 - a.ylabel_from_chart_margin) + ", "
 				+ (a.chart_inner_height/2)  + ") rotate(-90)")
-				.text(t.__valuelabel);
+				.text(t.__valueaxislabel);
 		}
 		
 		
@@ -540,7 +568,7 @@ d3bp.barchart.prototype.render = function(id) {
 				continue;
 			}
 			
-			if (series.__data[0] instanceof d3bp.series) {
+			if (series.__data[0] instanceof d3bp.Series) {
 				for (var di = 0; di < series.__data.length; di++) {
 					var s = series.__data[di];
 					seriesqueue.push(s);
@@ -633,6 +661,21 @@ d3bp.barchart.prototype.render = function(id) {
 							+ (a.chart_inner_height + a.chart_margin)
 							+ ") rotate(45)")
 						.text(label);
+				}
+				
+				
+				// Value label
+				
+				if (t.__valuelabelfn != undefined && t.__valuelabelfn != null) {
+					var text = chart.append("text")
+						.attr("x", 0)
+						.attr("y", 0)
+						.attr("dx", 0)
+						.attr("dy", ".35em") // vertical-align: middle
+						.attr("transform", "translate("
+							+ (pos +  0.5 * a.bar_width) + ", "
+							+ (t.__d3scale(top) - 10)  + ") rotate(-90)")
+						.text(t.__valuelabelfn(value));
 				}
 				
 				
@@ -733,7 +776,7 @@ d3bp.barchart.prototype.render = function(id) {
 				continue;
 			}
 			
-			if (series.__data[0] instanceof d3bp.series) {
+			if (series.__data[0] instanceof d3bp.Series) {
 				for (var di = 0; di < series.__data.length; di++) {
 					var s = series.__data[di];
 					seriesqueue.push(s);
