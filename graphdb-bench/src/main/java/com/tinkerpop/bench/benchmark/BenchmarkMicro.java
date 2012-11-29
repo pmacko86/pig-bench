@@ -1300,6 +1300,7 @@ public class BenchmarkMicro extends Benchmark {
 				
 				HashSet<String> processedOperations = new HashSet<String>();
 				HashSet<String> currentRetain = new HashSet<String>();
+				HashSet<String> currentWithoutTagsRetain = new HashSet<String>();
 				
 				for (String operation : retain) {
 					
@@ -1320,7 +1321,14 @@ public class BenchmarkMicro extends Benchmark {
 					// Find all operations that can be satisfied by this job
 					
 					currentRetain.clear();
+					currentWithoutTagsRetain.clear();
+					
 					currentRetain.add(operation);
+					
+					if (operation.endsWith("-*")) {
+						currentRetain.add(operation.substring(0, operation.length() - 2));
+						currentWithoutTagsRetain.add(operation.substring(0, operation.length() - 2));
+					}
 					
 					for (String x : retain) {	
 						if (processedOperations.contains(x)) continue;
@@ -1338,6 +1346,11 @@ public class BenchmarkMicro extends Benchmark {
 						if (xJob == job) {
 							processedOperations.add(x);
 							currentRetain.add(x);
+							
+							if (x.endsWith("-*")) {
+								currentRetain.add(x.substring(0, x.length() - 2));
+								currentWithoutTagsRetain.add(x.substring(0, x.length() - 2));
+							}
 						}
 					}
 					
@@ -1360,6 +1373,14 @@ public class BenchmarkMicro extends Benchmark {
 					for (OperationLogEntry e : logReader) {
 						if (currentRetain.contains(e.getName())) {
 							logWriter.write(e);
+						}
+						else {
+							String x = e.getName();
+							int tagStart = x.indexOf('-');
+							if (tagStart > 0) x = x.substring(0, tagStart);
+							if (currentWithoutTagsRetain.contains(x)) {
+								logWriter.write(e);
+							}
 						}
 					}
 					
