@@ -2,6 +2,7 @@ package com.tinkerpop.bench.web;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -36,6 +37,9 @@ import com.tinkerpop.bench.util.Triple;
  */
 @SuppressWarnings("serial")
 public class ShowOperationRunTimes extends HttpServlet {
+	
+	private static SimpleDateFormat dateTimeFormatter = new SimpleDateFormat("[yyyy/MM/dd HH:mm:ss]");
+	
 	
 	/**
 	 * Create an instance of class ShowOperationRunTimes
@@ -477,6 +481,7 @@ public class ShowOperationRunTimes extends HttpServlet {
 							else {
 								s += " " + d;
 							}
+							s = dateTimeFormatter.format(job.getExecutionTime()) + " " + s;
 						}
 						
 						for (Pair<String, Pattern> p : customSeriesNamesAndCompiledPatterns) {

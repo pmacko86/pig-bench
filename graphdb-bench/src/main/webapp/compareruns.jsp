@@ -174,15 +174,20 @@
 						
 						<%
 							for (String operationName : selectedOperations) {
-								Set<Job> ojs = operationToJobsMap.get(operationName);
-								if (ojs == null) continue;
+								String niceOperationName = operationName;
+								if (niceOperationName.startsWith("Operation")) {
+									niceOperationName = niceOperationName.substring(9);
+								}
 								
 								for (DatabaseEngineAndInstance p : selectedDatabaseInstances) {
-									Set<Job> jobs = new TreeSet<Job>();
-									for (Job j : selectedDatabaseInstanceToJobsMap.get(p)) {
-										if (ojs.contains(j)) jobs.add(j);
-									}
-									if (jobs.isEmpty()) continue;
+									AnalysisContext ac = AnalysisContext.getInstance(p);
+									
+									String untransformedOperationName = operationName;
+									Map<DatabaseEngineAndInstance, String> tm = operationNameTransforms.get(operationName);
+									if (tm != null && tm.containsKey(p)) untransformedOperationName = tm.get(p);
+									
+									SortedSet<Job> jobs = ac.getJobsWithTag(untransformedOperationName);
+									if (jobs == null || jobs.isEmpty()) continue;
 									
 									String inputName = p.getEngine().getShortName()
 											+ "-" + p.getInstanceSafe("")

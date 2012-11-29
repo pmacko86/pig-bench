@@ -187,6 +187,19 @@ public class AnalysisContext {
 	
 	
 	/**
+	 * Get all jobs for the specified operation that includes a specified tag
+	 * 
+	 * @param operationName the operation name with an optional tag
+	 * @return the jobs sorted by time (ascending), or null if none
+	 */
+	public SortedSet<Job> getJobsWithTag(String operationName) {
+		SortedSet<Job> operationJobs = operationWithTagsToJobs.get(operationName);
+		if (operationJobs == null || operationJobs.isEmpty()) return null;
+		return operationJobs;
+	}
+	
+	
+	/**
 	 * Get all successfully finished jobs
 	 * 
 	 * @return the jobs, or null if none

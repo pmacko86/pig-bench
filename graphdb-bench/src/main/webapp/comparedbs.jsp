@@ -1,9 +1,9 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<%@page import="org.apache.commons.lang.StringUtils"%>
+<%@ page import="au.com.bytecode.opencsv.CSVReader"%>
 <%@ page import="com.tinkerpop.bench.Bench"%>
 <%@ page import="com.tinkerpop.bench.DatabaseEngine"%>
 <%@ page import="com.tinkerpop.bench.Workload"%>
-<%@ page import="com.tinkerpop.bench.analysis.ModelAnalysis"%>
+<%@ page import="com.tinkerpop.bench.analysis.*"%>
 <%@ page import="com.tinkerpop.bench.benchmark.BenchmarkMicro"%>
 <%@ page import="com.tinkerpop.bench.log.SummaryLogEntry"%>
 <%@ page import="com.tinkerpop.bench.log.SummaryLogReader"%>
@@ -14,8 +14,8 @@
 <%@ page import="java.text.SimpleDateFormat"%>
 <%@ page import="java.util.regex.Pattern"%>
 <%@ page import="java.util.*"%>
-<%@ page import="au.com.bytecode.opencsv.CSVReader"%>
 <%@ page import="org.apache.commons.lang.StringEscapeUtils"%>
+<%@ page import="org.apache.commons.lang.StringUtils"%>
 
 <%
 	String jsp_title = "Compare Databases";
@@ -177,23 +177,25 @@
 						
 						<%
 							for (String operationName : selectedOperations) {
-								Set<Job> ojs = operationToJobsMap.get(operationName);
-								if (ojs == null) continue;
 								String niceOperationName = operationName;
 								if (niceOperationName.startsWith("Operation")) {
 									niceOperationName = niceOperationName.substring(9);
 								}
+
 								
 								%>
 									<p class="middle_inner"><%= niceOperationName %></p>
 								<%
 								
 								for (DatabaseEngineAndInstance p : selectedDatabaseInstances) {
-									SortedSet<Job> jobs = new TreeSet<Job>();
-									for (Job j : selectedDatabaseInstanceToJobsMap.get(p)) {
-										if (ojs.contains(j)) jobs.add(j);
-									}
-									if (jobs.isEmpty()) continue;
+									AnalysisContext ac = AnalysisContext.getInstance(p);
+									
+									String untransformedOperationName = operationName;
+									Map<DatabaseEngineAndInstance, String> tm = operationNameTransforms.get(operationName);
+									if (tm != null && tm.containsKey(p)) untransformedOperationName = tm.get(p);
+									
+									SortedSet<Job> jobs = ac.getJobsWithTag(untransformedOperationName);
+									if (jobs == null || jobs.isEmpty()) continue;
 									
 									String inputName = p.getEngine().getShortName()
 											+ "-" + p.getInstanceSafe("")
