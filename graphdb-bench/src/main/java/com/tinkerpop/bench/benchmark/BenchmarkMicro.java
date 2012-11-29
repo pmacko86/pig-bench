@@ -1248,7 +1248,8 @@ public class BenchmarkMicro extends Benchmark {
 			
 			// Operations to retain (null to retain all) -- should not be hard-coded
 			
-			Set<String> retain = new TreeSet<String>();
+			Set<String> retain = new HashSet<String>();
+			
 			retain.add("OperationGetManyVertices");
 			retain.add("OperationGetManyEdges");
 			retain.add("OperationGetManyEdgeProperties-time");
@@ -1263,11 +1264,14 @@ public class BenchmarkMicro extends Benchmark {
 			retain.add("OperationGetKHopNeighbors-both-5");
 			retain.add("OperationGetShortestPath");
 			retain.add("OperationLocalClusteringCoefficient");
+			
 			retain.add("OperationAddManyVertices");
 			retain.add("OperationAddManyEdges");
 			retain.add("OperationSetManyEdgeProperties");
 			retain.add("OperationSetManyVertexProperties");
 			retain.add("OperationGetVerticesUsingKeyIndex-_original_id");
+			
+			retain.add("OperationDeleteGraph");
 			retain.add("OperationLoadFGF-*");
 			retain.add("OperationLoadGraphML-*");
 			retain.add("OperationCreateKeyIndex-*");
@@ -1289,10 +1293,28 @@ public class BenchmarkMicro extends Benchmark {
 				}
 				
 				
-				// If retaining is not specified, then retain all operations by default
+				// If retaining is not specified, then retain all operations by default. If the retaining
+				// is specified, take care of the operations specified with the * suffix
+				
+				Set<String> allOperations = context.getJobsForAllOperationsWithTags().keySet();
 				
 				if (retain == null || false) {
-					retain = context.getJobsForAllOperationsWithTags().keySet();
+					retain = allOperations;
+				}
+				else {
+					Set<String> newRetain = new TreeSet<String>();
+					for (String r : retain) {
+						if (r.endsWith("*")) {
+							String s = r.substring(0, r.length() - 1);
+							for (String x : allOperations) {
+								if (x.startsWith(s)) newRetain.add(x);
+							}
+						}
+						else {
+							newRetain.add(r);
+						}
+					}
+					retain = newRetain;
 				}
 				
 				
@@ -1300,7 +1322,6 @@ public class BenchmarkMicro extends Benchmark {
 				
 				HashSet<String> processedOperations = new HashSet<String>();
 				HashSet<String> currentRetain = new HashSet<String>();
-				HashSet<String> currentWithoutTagsRetain = new HashSet<String>();
 				
 				for (String operation : retain) {
 					
@@ -1321,14 +1342,7 @@ public class BenchmarkMicro extends Benchmark {
 					// Find all operations that can be satisfied by this job
 					
 					currentRetain.clear();
-					currentWithoutTagsRetain.clear();
-					
 					currentRetain.add(operation);
-					
-					if (operation.endsWith("-*")) {
-						currentRetain.add(operation.substring(0, operation.length() - 2));
-						currentWithoutTagsRetain.add(operation.substring(0, operation.length() - 2));
-					}
 					
 					for (String x : retain) {	
 						if (processedOperations.contains(x)) continue;
@@ -1346,11 +1360,6 @@ public class BenchmarkMicro extends Benchmark {
 						if (xJob == job) {
 							processedOperations.add(x);
 							currentRetain.add(x);
-							
-							if (x.endsWith("-*")) {
-								currentRetain.add(x.substring(0, x.length() - 2));
-								currentWithoutTagsRetain.add(x.substring(0, x.length() - 2));
-							}
 						}
 					}
 					
@@ -1373,14 +1382,6 @@ public class BenchmarkMicro extends Benchmark {
 					for (OperationLogEntry e : logReader) {
 						if (currentRetain.contains(e.getName())) {
 							logWriter.write(e);
-						}
-						else {
-							String x = e.getName();
-							int tagStart = x.indexOf('-');
-							if (tagStart > 0) x = x.substring(0, tagStart);
-							if (currentWithoutTagsRetain.contains(x)) {
-								logWriter.write(e);
-							}
 						}
 					}
 					
