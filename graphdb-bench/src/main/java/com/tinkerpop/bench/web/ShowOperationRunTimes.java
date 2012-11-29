@@ -162,7 +162,8 @@ public class ShowOperationRunTimes extends HttpServlet {
 			printRunTimesSummary(writer, operationsToJobs, format, response, groupBy, convertManyOperations);
 		}
 		else if ("details".equals(show)) {
-			printRunTimesDetails(writer, operationsToJobs, format, response, groupBy, convertManyOperations, customSeriesPatterns);
+			printRunTimesDetails(writer, operationsToJobs, format, response, groupBy, convertManyOperations,
+					customSeriesPatterns, 10000 /* XXX hard-coded */, 0 /* XXX hard-coded */);
 		}
 		else {
 			if (response != null) {
@@ -428,10 +429,12 @@ public class ShowOperationRunTimes extends HttpServlet {
 	 * @param groupBy the group by column, or null if none
 	 * @param convertManyOperations whether convert the "Many" operations into the single operations
 	 * @param customSeriesPatterns specify custom series; a map (series name &mdash;&gt; regex defining the series)
+	 * @param tail return at most this number of runs (use 0 or a negative number to disable)
+	 * @param dropExtremes the fraction of extreme top and bottom values to drop (use a negative number to disable)
 	 */
 	public static void printRunTimesDetails(PrintWriter writer, Map<String, Collection<Job>> operationsToJobs,
 			String format, HttpServletResponse response, String groupBy, boolean convertManyOperations,
-			Map<String, String> customSeriesPatterns) {
+			Map<String, String> customSeriesPatterns, int tail, double dropExtremes) {
 		
 		long start = System.currentTimeMillis();
 		
@@ -448,9 +451,11 @@ public class ShowOperationRunTimes extends HttpServlet {
 		
 		// Get the run time for each job
 		
-		LinkedList<Triple<String, Job, OperationLogEntry>> operationsJobsRunTimes
-			= new LinkedList<Triple<String, Job, OperationLogEntry>>();
-
+		ArrayList<Triple<String, Job, OperationLogEntry>> operationsJobsRunTimes
+			= new ArrayList<Triple<String, Job, OperationLogEntry>>();
+		ArrayList<Triple<String, Job, OperationLogEntry>> currentJobsEntries
+			= new ArrayList<Triple<String, Job, OperationLogEntry>>();
+		
 		boolean sameOperation = operationsToJobs.keySet().size() == 1;
 		boolean sameDbEngine = true;
 		boolean sameDbInstance = true;
@@ -463,6 +468,8 @@ public class ShowOperationRunTimes extends HttpServlet {
 			for (Job job : operationsToJobs.get(operationName)) {
 				
 				OperationLogReader reader = new OperationLogReader(job.getLogFile(), operationName);
+				currentJobsEntries.clear();
+				
 				for (OperationLogEntry e : reader) {
 					if (e.getName().equals(operationName)) {
 						
@@ -491,9 +498,37 @@ public class ShowOperationRunTimes extends HttpServlet {
 							}
 						}
 						
-						operationsJobsRunTimes.add(new Triple<String, Job, OperationLogEntry>(s, job, e));
+						currentJobsEntries.add(new Triple<String, Job, OperationLogEntry>(s, job, e));
 					}
 				}
+
+				if (tail > 0 && currentJobsEntries.size() > tail) {
+					ArrayList<Triple<String, Job, OperationLogEntry>> a
+						= new ArrayList<Triple<String, Job, OperationLogEntry>>();
+					for (int i = currentJobsEntries.size() - tail; i < currentJobsEntries.size(); i++) {
+						a.add(currentJobsEntries.get(i));
+					}
+					currentJobsEntries = a;
+				}
+
+				if (dropExtremes > 0 && currentJobsEntries.size() > 0) {
+					
+					long[] a = new long[currentJobsEntries.size()];
+					for (int i = 0; i < a.length; i++) a[i] = currentJobsEntries.get(i).getThird().getTime();
+					Arrays.sort(a);
+					long min = a[(int) (dropExtremes * a.length)];
+					long max = a[(int) ((1 - dropExtremes) * a.length)];
+					
+					ArrayList<Triple<String, Job, OperationLogEntry>> l
+						= new ArrayList<Triple<String, Job, OperationLogEntry>>();
+					for (Triple<String, Job, OperationLogEntry> t : currentJobsEntries) {
+						long v = t.getThird().getTime();
+						if (v >= min && v <= max) l.add(t);
+					}
+					currentJobsEntries = l;
+				}
+				
+				operationsJobsRunTimes.addAll(currentJobsEntries);
 				
 				if (firstJob == null) {
 					firstJob = job;

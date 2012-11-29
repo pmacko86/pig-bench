@@ -104,6 +104,34 @@ public class OperationLogWriter {
 
 	
 	/**
+	 * Write a .csv log data row
+	 * 
+	 * @param entry the operation log entry
+	 * @throws IOException on I/O error
+	 */
+	public synchronized void write(OperationLogEntry entry) throws IOException {
+		
+		
+		// Log to the file
+		
+		if (writer != null) {
+			
+			buffer[0] = Integer.toString(entry.getOpId());
+			buffer[1] = entry.getName();
+			buffer[2] = entry.getType();
+			buffer[3] = Arrays.toString(entry.getArgs());
+			buffer[4] = Long.toString(entry.getTime());
+			buffer[5] = entry.getResult() == null ? "null" : entry.getResult().toString();
+			buffer[6] = Long.toString(entry.getMemory());
+			buffer[7] = Long.toString(entry.getGCCount());
+			buffer[8] = Long.toString(entry.getGCTimeMS());
+			
+			writer.writeNext(buffer);
+		}
+	}
+
+	
+	/**
 	 * Close the log writer
 	 * 
 	 * @throws IOException on I/O error

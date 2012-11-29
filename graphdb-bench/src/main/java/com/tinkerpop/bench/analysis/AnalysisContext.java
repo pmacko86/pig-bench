@@ -127,9 +127,11 @@ public class AnalysisContext {
 			SummaryLogReader reader = new SummaryLogReader(summaryFile);
 			for (SummaryLogEntry e : reader) {
 				String name = e.getName();
+				
 				if (name.equals("OperationOpenGraph")
 						|| name.equals("OperationDoGC")
-						|| name.equals("OperationShutdownGraph")) continue;
+						|| name.equals("OperationShutdownGraph")
+						|| name.startsWith("--")) continue;
 				
 				SortedSet<Job> ojs = operationWithTagsToJobs.get(name);
 				if (ojs == null) {

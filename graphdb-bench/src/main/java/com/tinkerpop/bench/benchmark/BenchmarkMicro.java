@@ -7,9 +7,12 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 
@@ -19,9 +22,13 @@ import com.tinkerpop.bench.DatabaseEngine;
 import com.tinkerpop.bench.GlobalConfig;
 import com.tinkerpop.bench.GraphDescriptor;
 import com.tinkerpop.bench.Workload;
+import com.tinkerpop.bench.analysis.AnalysisContext;
 import com.tinkerpop.bench.analysis.ModelAnalysis;
 import com.tinkerpop.bench.generator.GraphGenerator;
 import com.tinkerpop.bench.generator.SimpleBarabasiGenerator;
+import com.tinkerpop.bench.log.OperationLogEntry;
+import com.tinkerpop.bench.log.OperationLogReader;
+import com.tinkerpop.bench.log.OperationLogWriter;
 import com.tinkerpop.bench.log.SummaryLogWriter;
 import com.tinkerpop.bench.operation.OperationDeleteGraph;
 import com.tinkerpop.bench.operation.operations.*;
@@ -40,6 +47,7 @@ import com.tinkerpop.bench.util.MathUtils;
 import com.tinkerpop.bench.util.OutputUtils;
 import com.tinkerpop.bench.util.Pair;
 import com.tinkerpop.bench.web.DatabaseEngineAndInstance;
+import com.tinkerpop.bench.web.Job;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Graph;
@@ -284,6 +292,7 @@ public class BenchmarkMicro extends Benchmark {
 		// Miscellaneous commands
 		
 		parser.accepts("analysis");
+		parser.accepts("consolidate-logs");	/* undocumented on purpose */
 		parser.accepts("export-fgf").withRequiredArg().ofType(String.class);
 		parser.accepts("export-graphml").withOptionalArg().ofType(String.class);
 		parser.accepts("export-n-graphml").withOptionalArg().ofType(String.class);
@@ -1232,6 +1241,145 @@ public class BenchmarkMicro extends Benchmark {
 			DexCSVLoader.load(((ExtendedDexGraph) g).getRawGraph(), new File(dir), "a");
 			
 			graphDescriptor.shutdownGraph();
+			return 0;
+		}
+		
+		if (options.has("consolidate-logs")) {
+			
+			String consolidateDir = dbPrefix + "/consolidated";
+			
+			
+			// Operations to retain (null to retain all) -- should not be hard-coded
+			
+			Set<String> retain = new TreeSet<String>();
+			retain.add("OperationGetManyVertices");
+			retain.add("OperationGetManyEdges");
+			retain.add("OperationGetManyEdgeProperties-time");
+			retain.add("OperationGetManyVertexProperties-age");
+			retain.add("OperationGetManyVertexProperties-name");
+			retain.add("OperationGetFirstNeighbor-both");
+			retain.add("OperationGetAllNeighbors-both");
+			retain.add("OperationGetKHopNeighbors-both-1");
+			retain.add("OperationGetKHopNeighbors-both-2");
+			retain.add("OperationGetKHopNeighbors-both-3");
+			retain.add("OperationGetKHopNeighbors-both-4");
+			retain.add("OperationGetKHopNeighbors-both-5");
+			retain.add("OperationGetShortestPath");
+			retain.add("OperationLocalClusteringCoefficient");
+			retain.add("OperationAddManyVertices");
+			retain.add("OperationAddManyEdges");
+			retain.add("OperationSetManyEdgeProperties");
+			retain.add("OperationSetManyVertexProperties");
+			retain.add("OperationGetVerticesUsingKeyIndex-_original_id");
+			retain.add("OperationLoadFGF-*");
+			retain.add("OperationLoadGraphML-*");
+			retain.add("OperationCreateKeyIndex-*");
+			
+			
+			// Do the actual work
+			
+			try {
+				DatabaseEngineAndInstance dbEI = new DatabaseEngineAndInstance(dbEngine, dbInstanceName);
+				AnalysisContext context = AnalysisContext.getInstance(dbEI);
+				
+				File consolidateDirFile = new File(consolidateDir);
+				if (!consolidateDirFile.exists()) consolidateDirFile.mkdirs();
+				
+				
+				// If retaining is not specified, then retain all operations by default
+				
+				if (retain == null || false) {
+					retain = context.getJobsForAllOperationsWithTags().keySet();
+				}
+				
+				
+				// Now do the actual hard work
+				
+				HashSet<String> processedOperations = new HashSet<String>();
+				HashSet<String> currentRetain = new HashSet<String>();
+				
+				for (String operation : retain) {
+					
+					if (processedOperations.contains(operation)) continue;
+					processedOperations.add(operation);
+					
+					SortedSet<Job> jobs;
+					if (operation.endsWith("-*")) {
+						jobs = context.getJobs(operation.substring(0, operation.length() - 2));
+					}
+					else {
+						jobs = context.getJobsWithTag(operation);
+					}
+					if (jobs == null || jobs.isEmpty()) continue;
+					Job job = jobs.last();
+					
+					
+					// Find all operations that can be satisfied by this job
+					
+					currentRetain.clear();
+					currentRetain.add(operation);
+					
+					for (String x : retain) {	
+						if (processedOperations.contains(x)) continue;
+						
+						SortedSet<Job> xJobs;
+						if (x.endsWith("-*")) {
+							xJobs = context.getJobs(x.substring(0, x.length() - 2));
+						}
+						else {
+							xJobs = context.getJobsWithTag(x);
+						}
+						if (xJobs == null || xJobs.isEmpty()) continue;
+						Job xJob = xJobs.last();
+						
+						if (xJob == job) {
+							processedOperations.add(x);
+							currentRetain.add(x);
+						}
+					}
+					
+					
+					// Add operations that should be always retained
+					
+					currentRetain.add("OperationOpenGraph");
+					currentRetain.add("OperationDoGC");
+					currentRetain.add("OperationShutdownGraph");
+					
+					
+					// Consolidate and retain the jobs in the main log file
+					// (do not even attempt to process the warmup file)
+					
+					File consolidatedLogFile = new File(consolidateDirFile, job.getLogFile().getName());
+					
+					OperationLogReader logReader = new OperationLogReader(job.getLogFile());
+					OperationLogWriter logWriter = new OperationLogWriter(consolidatedLogFile);
+					
+					for (OperationLogEntry e : logReader) {
+						if (currentRetain.contains(e.getName())) {
+							logWriter.write(e);
+						}
+					}
+					
+					logWriter.close();
+					
+					
+					// Write the consolidated summary log file
+					
+					File consolidatedSummaryLogFile = new File(consolidateDirFile, job.getSummaryFile().getName());
+					
+					LinkedHashMap<String, String> resultFiles = new LinkedHashMap<String, String>();
+					resultFiles.put(dbShortName, consolidatedLogFile.getAbsolutePath());
+					
+					SummaryLogWriter summaryLogWriter = new SummaryLogWriter(resultFiles);
+					summaryLogWriter.writeSummary(consolidatedSummaryLogFile.getAbsolutePath());
+				}
+			}
+			catch (Throwable t) {
+				ConsoleUtils.error(t.getClass() + ": " + t.getMessage());
+				t.printStackTrace(System.err);
+				return 1;
+			}
+			
 			return 0;
 		}
 		
