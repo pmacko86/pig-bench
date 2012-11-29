@@ -824,6 +824,13 @@ d3bp.BarChart.prototype.render = function(id) {
 				// Value label
 				
 				if (t.__valuelabelfn != undefined && t.__valuelabelfn != null) {
+					if (!isNaN(stdev) && stdev > 0) {
+						var top = value + stdev;
+					}
+					else {
+						var top = value;
+					}
+					var y = t.__d3scale(top) - 10;
 					var text = chart.append("text")
 						.attr("x", 0)
 						.attr("y", 0)
@@ -831,11 +838,11 @@ d3bp.BarChart.prototype.render = function(id) {
 						.attr("dy", ".35em") // vertical-align: middle
 						.attr("transform", "translate("
 							+ (pos +  0.5 * a.bar_width) + ", "
-							+ (t.__d3scale(top) - 10)  + ") rotate(-90)")
+							+ y + ") rotate(-90)")
 						.text(t.__valuelabelfn(value));
 					var r = text[0][0].getBoundingClientRect();
-					if (r.top < min_chart_y) {
-						min_chart_y = r.top;
+					if (y - r.height < min_chart_y) {
+						min_chart_y = y - r.height;
 					}
 				}
 				
