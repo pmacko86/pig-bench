@@ -1246,9 +1246,6 @@ public class BenchmarkMicro extends Benchmark {
 		
 		if (options.has("consolidate-logs")) {
 			
-			String consolidateDir = dbPrefix + "/consolidated";
-			
-			
 			// Operations to retain (null to retain all) -- should not be hard-coded
 			
 			Set<String> retain = new TreeSet<String>();
@@ -1282,8 +1279,14 @@ public class BenchmarkMicro extends Benchmark {
 				DatabaseEngineAndInstance dbEI = new DatabaseEngineAndInstance(dbEngine, dbInstanceName);
 				AnalysisContext context = AnalysisContext.getInstance(dbEI);
 				
-				File consolidateDirFile = new File(consolidateDir);
-				if (!consolidateDirFile.exists()) consolidateDirFile.mkdirs();
+				File consolidateDir = new File(dbPrefix + "/consolidated");
+				if (consolidateDir.exists()) {
+					if (!consolidateDir.delete()) {
+						ConsoleUtils.error("Cannot delete " + OutputUtils.simplifyFileName(consolidateDir.getAbsolutePath()));
+						return 1;
+					}
+					consolidateDir.mkdirs();
+				}
 				
 				
 				// If retaining is not specified, then retain all operations by default
@@ -1349,7 +1352,7 @@ public class BenchmarkMicro extends Benchmark {
 					// Consolidate and retain the jobs in the main log file
 					// (do not even attempt to process the warmup file)
 					
-					File consolidatedLogFile = new File(consolidateDirFile, job.getLogFile().getName());
+					File consolidatedLogFile = new File(consolidateDir, job.getLogFile().getName());
 					
 					OperationLogReader logReader = new OperationLogReader(job.getLogFile());
 					OperationLogWriter logWriter = new OperationLogWriter(consolidatedLogFile);
@@ -1365,7 +1368,7 @@ public class BenchmarkMicro extends Benchmark {
 					
 					// Write the consolidated summary log file
 					
-					File consolidatedSummaryLogFile = new File(consolidateDirFile, job.getSummaryFile().getName());
+					File consolidatedSummaryLogFile = new File(consolidateDir, job.getSummaryFile().getName());
 					
 					LinkedHashMap<String, String> resultFiles = new LinkedHashMap<String, String>();
 					resultFiles.put(dbShortName, consolidatedLogFile.getAbsolutePath());
@@ -1373,6 +1376,33 @@ public class BenchmarkMicro extends Benchmark {
 					SummaryLogWriter summaryLogWriter = new SummaryLogWriter(resultFiles);
 					summaryLogWriter.writeSummary(consolidatedSummaryLogFile.getAbsolutePath());
 				}
+				
+				
+				// Now swap the log files
+				
+				int orgDirIndex = 0;
+				File orgDir = null;
+				while ((orgDir = new File(dbPrefix + "/backup-" + orgDirIndex)).exists()) orgDirIndex++;
+				orgDir.mkdirs();
+				
+				File mainDir = new File(dbPrefix);
+				for (File f : mainDir.listFiles()) {
+					if (f.isFile()) {
+						if (!f.renameTo(new File(orgDir, f.getName()))) {
+							throw new IOException("Could not move " + f.getName() + " to " + orgDir.getName());
+						}
+					}
+				}
+				
+				for (File f : consolidateDir.listFiles()) {
+					if (f.isFile()) {
+						if (!f.renameTo(new File(mainDir, f.getName()))) {
+							throw new IOException("Could not move " + f.getName() + " to " + mainDir.getName());
+						}
+					}
+				}
+				
+				consolidateDir.delete();
 			}
 			catch (Throwable t) {
 				ConsoleUtils.error(t.getClass() + ": " + t.getMessage());
