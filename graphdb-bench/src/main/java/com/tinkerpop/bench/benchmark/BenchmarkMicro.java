@@ -790,8 +790,8 @@ public class BenchmarkMicro extends Benchmark {
 					// Reference: http://docs.neo4j.org/chunked/stable/configuration-caches.html
 
 					long[] inMemSizesMB = new long[] {
-						Math.round(Math.ceil((344.0 * onDiskSizes[0] /  9.0) / 10485767.0)),
-						Math.round(Math.ceil((208.0 * onDiskSizes[1] / 33.0) / 10485767.0))
+						Math.round(Math.ceil((344.0 * onDiskSizes[0] /  9.0) / 1048576.0)),
+						Math.round(Math.ceil((208.0 * onDiskSizes[1] / 33.0) / 1048576.0))
 					};
 					
 					config = MathUtils.toStringArray(MathUtils.adjustSumApproximate(inMemSizesMB,
@@ -1030,18 +1030,19 @@ public class BenchmarkMicro extends Benchmark {
 		GraphDescriptor graphDescriptor = null;
 		
 		StringBuilder sb = new StringBuilder();
+		
+		sb.append("__date_");
+		sb.append((new SimpleDateFormat("yyyyMMdd-HHmmss")).format(new Date()));
+		
+		sb.append("__mem_");
+		sb.append(Math.round(Runtime.getRuntime().maxMemory() / 1048576.0f));
+		sb.append("m");
+		
 		for (String s : args) {
 			String argName = s.charAt(0) == '-' ? s.substring(s.charAt(1) == '-' ? 2 : 1) : s;
 			if (s.charAt(0) == '-') sb.append("__"); else sb.append("_");
 			sb.append(argName);
 		}
-		
-		sb.append("__mem_");
-		sb.append(Math.round(Runtime.getRuntime().maxMemory() / 1024768.0f));
-		sb.append("m");	
-		
-		sb.append("__date_");
-		sb.append((new SimpleDateFormat("yyyyMMdd-HHmmss")).format(new Date()));
 		
 		String argString = sb.toString().replaceAll("\\s+", "").replaceAll("/", "-");
 		

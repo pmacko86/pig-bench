@@ -26,6 +26,7 @@
 <%@ include file="include/header.jsp" %>
 	
 	<script src="/include/d3.v2.js"></script>
+	<script src="/include/d3bp.js"></script>
 	<script src="/include/scroll-sneak.js"></script>
 	<script src="/include/BlobBuilder.min.js"></script>
 	<script src="/include/FileSaver.min.js"></script>

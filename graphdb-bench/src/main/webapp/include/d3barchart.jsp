@@ -55,6 +55,8 @@
 	
 		var stacked = <%= chartProperties.stacked %>;
 		
+					
+		var categories = [];
 		
 		
 		<%
@@ -80,8 +82,6 @@
 					var subgroup_labels = [];
 					var subgroup_ids = [];
 					var subgroup_sums = [];
-					
-					var categories = [];
 					
 					var __last_group_column = "";
 					var __last_group_length = -1;

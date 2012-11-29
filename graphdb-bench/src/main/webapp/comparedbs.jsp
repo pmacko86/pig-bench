@@ -26,6 +26,7 @@
 <%@ include file="include/header.jsp" %>
 	
 	<script src="/include/d3.v2.js"></script>
+	<script src="/include/d3bp.js"></script>
 	<script src="/include/scroll-sneak.js"></script>
 	<script src="/include/BlobBuilder.min.js"></script>
 	<script src="/include/FileSaver.min.js"></script>
@@ -702,10 +703,42 @@
 					}
 					chartProperties.category_label_function = "return d.dbengine";
 					
+					String operationLabelFunction = "return v.replace(/^Operation/, '')";
+					if (sameOperationBaseName && selectedOperations.size() > 1) {
+						operationLabelFunction += ".replace(/^[^-]*-/, '')";
+					}
+					
 					%>
 						<div class="chart_outer">
 							<div class="chart chart_all" id="chart_all"></div>
-							<%@ include file="include/d3barchart.jsp" %>
+							<script language="JavaScript">
+								<!-- Begin
+								
+								var data = new d3bp.Data("<%= link + "&format=csv" %>");
+								data.filter(function(d) { return d.label.indexOf("----") != 0; })
+									.forEach(function(d) { d.mean = d.mean / 1000000.0; })
+									.forEach(function(d) { d.stdev = d.stdev / 1000000.0; })
+									.groupBy("operation", function(v) { <%= operationLabelFunction %>; })
+									.groupBy("dbinstance");
+								
+								var chart = new d3bp.BarChart();
+								chart.data(data)
+									 .value("mean", "Execution Time (ms)",
+									 	<%= hideDataLabels_barGraphs %> ? null : d3bp.numToString3)
+									 .stdev("stdev")
+									 .category("dbengine")
+									 .scale(<%= logScale_barGraphs %> ? "log" : "linear");
+								if (<%= smallGraphs %>) {
+									var x = chart.height();
+									chart.height(x.innerHeight / 2, x.ticks / 2);
+								}
+								if (<%= patternFill_barGraphs %>) {
+									chart.appearance().fill = "pattern";
+								}
+								chart.render("chart_all");
+								
+								//  End -->
+							</script>
 							<a class="chart_save" href="javascript:save_svg('chart_all', 'summary-bar-chart.svg')">Save</a>
 						</div>
 					<%
@@ -881,28 +914,40 @@
 					for (Job j : currentJobs) {
 						link += "&jobs-" + eon + "=" + j.getId();
 					}
-									
-					ChartProperties chartProperties = new ChartProperties();
-					
-					chartProperties.source = link + "&format=csv";
-					chartProperties.attach = "chart_" + operationName;
-					chartProperties.smallGraph = smallGraphs;
-					chartProperties.patternFill = patternFill_barGraphs;
-					chartProperties.hideDataLabels = hideDataLabels_barGraphs;
-					chartProperties.ylabel = "Execution Time (ms)";
-					if (logScale_barGraphs) chartProperties.yscale = "log";
-					chartProperties.group_by = "operation";
-					chartProperties.group_label_function = "return d.operation.replace(/^Operation/, '')";
-					if (!sameDbInstance) {
-						chartProperties.subgroup_by = "dbinstance";
-						chartProperties.subgroup_label_function = "return d.dbinstance";
-					}
-					chartProperties.category_label_function = "return d.dbengine";
 					
 					%>
-						<div class="chart_outer"><div class="chart chart_<%= operationName %>">
-						<%@ include file="include/d3barchart.jsp" %>
-						</div></div>
+						<div class="chart_outer">
+							<div class="chart" id="chart_<%= operationName %>"></div>
+							<script language="JavaScript">
+								<!-- Begin
+								
+								var data = new d3bp.Data("<%= link + "&format=csv" %>");
+								data.filter(function(d) { return d.label.indexOf("----") != 0; })
+									.forEach(function(d) { d.mean = d.mean / 1000000.0; })
+									.forEach(function(d) { d.stdev = d.stdev / 1000000.0; })
+									.groupBy("operation", function(v) { return ""; })
+									.groupBy("dbinstance");
+								
+								var chart = new d3bp.BarChart();
+								chart.data(data)
+									 .value("mean", "Execution Time (ms)",
+									 	<%= hideDataLabels_barGraphs %> ? null : d3bp.numToString3)
+									 .stdev("stdev")
+									 .category("dbengine")
+									 .scale(<%= logScale_barGraphs %> ? "log" : "linear");
+								if (<%= smallGraphs %>) {
+									var x = chart.height();
+									chart.height(x.innerHeight / 2, x.ticks / 2);
+								}
+								if (<%= patternFill_barGraphs %>) {
+									chart.appearance().fill = "pattern";
+								}
+								chart.render("chart_<%= operationName %>");
+								
+								//  End -->
+							</script>
+							<a class="chart_save" href="javascript:save_svg('chart_<%= operationName %>', '<%= operationName %>.svg')">Save</a>
+						</div>
 	
 						<%= writer.toString() %>
 					

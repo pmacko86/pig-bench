@@ -61,8 +61,8 @@ public class OperationGetManyEdges extends Operation {
 		@Override
 		protected void onExecute() throws Exception {
 			for (Long l : longIds) {
-				((DexGraph) getGraph()).getRawGraph().getObjectType(l);
-				//XXX ((DexGraph) getGraph()).getRawGraph().getEdgeData(l);
+				//((DexGraph) getGraph()).getRawGraph().getObjectType(l);	// ???
+				((DexGraph) getGraph()).getRawGraph().getEdgeData(l);
 			}
 			setResult(opCount);
 		}

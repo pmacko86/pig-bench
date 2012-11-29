@@ -51,21 +51,14 @@ var d3bp = {
 	 * appearance
 	 */
 	Appearance: function() {
-		this.chart_inner_height = 420;
-		this.chart_margin = 10;
-		this.num_ticks = 10;
 		
-		this.padding_left = 100;
-		this.padding_right = 300;
-		this.padding_right_without_legend = 25;
-		this.padding_top = 75;
-		this.padding_bottom = 150;
+		this.chart_margin = 10;
 		
 		this.bar_width = 20;
 		this.bar_colors = d3.scale.category10();
 		this.bars_margin = 10;
 		
-		this.ylabel_from_chart_margin = 40;
+		this.ylabel_from_data_tick_text = 10;
 		
 		this.legend_padding_left = 10;
 		this.legend_padding_top = 10;
@@ -73,6 +66,8 @@ var d3bp = {
 		this.legend_bar_width = 2 * this.bar_width;
 		this.legend_bar_height = this.bar_width;
 		this.legend_vertical_spacing = 2;
+		
+		this.fill = "solid";
 	},
 
 	
@@ -97,15 +92,18 @@ var d3bp = {
 		this.__scaletype = "linear";
 		
 		this.__d3scale = null;
+		
+		this.__inner_height = 400;
+		this.__num_ticks = 10;
 	},
 	
 	
 	/*
 	 * Utility: __ticks
 	 */
-	__ticks: function(d3scale, scaletype, numticks) {
-		var ticks = d3scale.ticks(num_ticks);
-		if (scaletype == "log" && ticks.length > numticks) {
+	__ticks: function(d3scale, scaleType, numTicks) {
+		var ticks = d3scale.ticks(numTicks);
+		if (scaleType == "log" && ticks.length > numTicks) {
 			ticks = []
 			
 			ticks.push(d3scale.domain()[1]);
@@ -433,6 +431,57 @@ d3bp.BarChart.prototype.category = function(property_or_function, labelfn) {
 
 
 /**
+ * Set or get the scale type
+ * 
+ * @param scale the new scale type
+ * @return the scale type if no arguments are given, otherwise this
+ */
+d3bp.BarChart.prototype.scale = function(scale) {
+	if (scale === undefined) return this.__scaletype;
+	if (scale == "linear" || scale == "log") {
+		this.__scaletype = scale;
+	}
+	else {
+		throw "Invalid data scale: " + t.__scaletype;
+	}
+	return this;
+};
+
+
+/**
+ * Set or return the chart appearance object
+ * 
+ * @param appearance the new appearance
+ * @return the appearance if no arguments are given, otherwise this
+ */
+d3bp.BarChart.prototype.appearance = function(appearance) {
+	if (appearance === undefined) return this.__appearance;
+	this.__appearance = appearance;
+	return this;
+};
+
+
+/**
+ * Set or return the chart height object
+ * 
+ * @param innerHeight the intended inner height
+ * @param ticks the intended number of ticks
+ * @return the height and the ticks if no arguments are given, otherwise this
+ */
+d3bp.BarChart.prototype.height = function(innerHeight, ticks) {
+	if (innerHeight === undefined) {
+		var x = {};
+		x.innerHeight = this.__inner_height;
+		x.ticks = this.__num_ticks;
+		return x;
+	}
+	this.__inner_height = innerHeight;
+	this.__num_ticks = ticks === undefined ? 10 : ticks;
+	return this;
+};
+
+
+/**
  * Render the chart
  * 
  * @param id the DOM element ID
@@ -461,34 +510,62 @@ d3bp.BarChart.prototype.render = function(id) {
 		
 		var chart_svg = d3.select("#" + id).append("svg")
 			.attr("class", "chart")
-			.attr("width",  a.bar_width * num_bars + a.padding_left)
-			.attr("height", a.chart_inner_height + a.padding_top);
-		var chart = chart_svg.append("g")
-			.attr("transform", "translate(" + a.padding_left + ", " + a.padding_top + ")");
+			.attr("width",  a.bar_width * num_bars)
+			.attr("height", t.__inner_height);
+		var chart = chart_svg.append("g");
+		
+		
+		//
+		// Prepare a framework for fill patterns
+		//
+		
+		var defs = chart.append('svg:defs');
+		var num_patterns = 0;
+		var use_patterns = a.fill == "pattern";
 		
 		
 		//
 		// Data scale
 		//
 		
+		var data_max = d3.max(data.d3data(),
+			function(d) {
+				var value = 1 * t.__valuefn(d);
+				if (t.__stdevfn == null) {
+					return value;
+				}
+				else {
+					var stdev = 1 * t.__stdevfn(d);
+					return value + stdev;
+				}
+			});
+		
+		var data_min_ignoring_nonpositives = d3.min(data.d3data(),
+			function(d) {
+				var value = 1 * t.__valuefn(d);
+				if (t.__stdevfn == null) {
+					return value < 0 ? Infinity : value;
+				}
+				else {
+					var stdev = 1 * t.__stdevfn(d);
+					return value - stdev < 0 ? Infinity : value - stdev;
+				}
+			});
+		
+		
 		if (t.__scaletype == "linear") {
-			// XXX Hardcoded
-			t.__d3scale = d3.scale.linear()
-				.domain([0, 1.1 * d3.max(data.d3data(), function(d) { return d.mean + d.stdev; })]);
-			//XXX(stacked ? d3.max(subgroup_sums) : d3.max(data, function(d) { return d.mean + d.stdev; }))])
+			t.__d3scale = d3.scale.linear().domain([0, 1.1 * data_max]);
 		}
 		else if (t.__scaletype == "log") {
-			// XXX Hardcoded + what to do for min if we get <= 0 values?
 			t.__d3scale = d3.scale.log()
-				.domain([0.9 * d3.min(data.d3data(), function(d) { return d.mean <= d.stdev ? 0 : d.mean - d.stdev; }),
-						 1.1 * d3.max(data.d3data(), function(d) { return d.mean + d.stdev; })]);
+				.domain([0.9 * data_min_ignoring_nonpositives, 1.1 * data_max]);
 		}
 		else {
 			throw "Invalid data scale: " + t.__scaletype;
 		}
 		
-		t.__d3scale.range([a.chart_inner_height, 0]).nice();
-		var ticks = d3bp.__ticks(t.__d3scale, t.__scaletype, a.num_ticks);
+		t.__d3scale.range([t.__inner_height, 0]).nice();
+		var ticks = d3bp.__ticks(t.__d3scale, t.__scaletype, t.__num_ticks);
 		
 		/*this.__d3y = d3.scale.<%= chartProperties.yscale %>()
 		.domain([<%= "log".equals(chartProperties.yscale)
@@ -500,6 +577,14 @@ d3bp.BarChart.prototype.render = function(id) {
 		+ "})"
 		: "0" %>, 
 		1.1 * (stacked ? d3.max(subgroup_sums) : d3.max(data, function(d) { return d.mean + d.stdev; }))])*/
+		
+		
+		//
+		// Prepare for the upcoming chart adjustments
+		//
+		
+		var min_chart_y = 0;
+		var min_chart_x = 0;
 		
 		
 		//
@@ -515,7 +600,7 @@ d3bp.BarChart.prototype.render = function(id) {
 			.attr("y2", t.__d3scale)
 			.style("stroke", "#ccc");
 		
-		chart.selectAll(".rule")
+		var data_ticks_text = chart.selectAll(".rule")
 			.data(ticks)
 			.enter().append("text")
 			.attr("class", "rule")
@@ -526,24 +611,38 @@ d3bp.BarChart.prototype.render = function(id) {
 			.attr("text-anchor", "end")
 			.text(String);
 		
+		for (var ti = 0; ti < data_ticks_text[0].length; ti++) {
+			var r = data_ticks_text[0][ti].getBBox();
+			if (r.x < min_chart_x) {
+				min_chart_x = r.x;
+			}
+			if (r.y < min_chart_y) {
+				min_chart_y = r.y;
+			}
+		}
+		
 		chart.append("line")
 			.attr("x1", -a.bars_margin)
 			.attr("y1", 0)
 			.attr("x2", -a.bars_margin)
-			.attr("y2", a.chart_inner_height)
+			.attr("y2", t.__inner_height)
 			.style("stroke", "#000");
 		
 		if (t.__valueaxislabel != undefined && t.__valueaxislabel != null) {
-			chart.append("text")
+			var left = min_chart_x - a.ylabel_from_data_tick_text;
+			var text = chart.append("text")
 				.attr("x", 0)
 				.attr("y", 0)
 				.attr("dx", 0)
 				.attr("dy", 0)
 				.attr("text-anchor", "middle")
-				.attr("transform", "translate("
-				+ (-a.bars_margin*2 - a.ylabel_from_chart_margin) + ", "
-				+ (a.chart_inner_height/2)  + ") rotate(-90)")
+				.attr("transform", "translate(" + left + ", "
+					+ (t.__inner_height/2)  + ") rotate(-90)")
 				.text(t.__valueaxislabel);
+			var r = text[0][0].getBoundingClientRect();
+			if (left - r.width < min_chart_x) {
+				min_chart_x = left - r.width;
+			}
 		}
 		
 		
@@ -585,8 +684,8 @@ d3bp.BarChart.prototype.render = function(id) {
 			
 			for (var di = 0; di < series.__data.length; di++) {
 				var d = series.__data[di];
-				var value = t.__valuefn(d);
-				var stdev = t.__stdevfn == null ? NaN : t.__stdevfn(d);
+				var value = 1 * t.__valuefn(d);
+				var stdev = t.__stdevfn == null ? NaN : 1 * t.__stdevfn(d);
 				var label = t.__labelfn == null ? null : t.__labelfn(d);
 				var category = t.__categoryfn == null ? null : t.__categoryfn(d);
 				
@@ -597,7 +696,7 @@ d3bp.BarChart.prototype.render = function(id) {
 					.attr("x", pos)
 					.attr("y", t.__d3scale(value))
 					.attr("width", a.bar_width)
-					.attr("height", a.chart_inner_height - t.__d3scale(value));
+					.attr("height", t.__inner_height - t.__d3scale(value));
 					
 					
 				// Category
@@ -609,7 +708,65 @@ d3bp.BarChart.prototype.render = function(id) {
 						categories.push(category);
 					}
 					
-					bar.style("fill", bar_colors(category_index));
+					if (use_patterns) {
+						if (category_index >= num_patterns) {
+							for (var pi = num_patterns;
+								 pi <= category_index; pi++) {
+							
+							num_patterns++;
+							var pmod = pi % 6;
+							var pattern = defs.append("svg:pattern")
+								.attr("id", "pattern-" + pi)
+								.attr("x", 0)
+								.attr("y", 0)
+								.attr("width" , pmod == 3 || pmod == 5 ? 6 : 8)
+								.attr("height", pmod == 2 || pmod == 5 ? 6 : 8)
+								.attr("patternUnits", "userSpaceOnUse")
+								.append("g")
+								.style("fill", "none")
+								.style("stroke", a.bar_colors(pi))
+								.style("stroke-width", "1")
+								.style("stroke-linecap", "square");
+								
+								switch (pmod) {
+									case 0:
+										pattern.append("path")
+										.attr("d", "M 0 0 L 8 8 M 0 -8 L 8 0 "
+											+ "M 0 8 L 8 16");
+										break;
+									case 1:
+										pattern.append("path")
+										.attr("d", "M 8 0 L 0 8 M 8 -8 L 0 0 "
+											+ "M 8 8 L 0 16");
+										break;
+									case 2:
+										pattern.append("path")
+										.attr("d", "M 0 3 L 8 3");
+										break;
+									case 3:
+										pattern.append("path")
+										.attr("d", "M 3 0 L 3 8");
+										break;
+									case 4:
+										pattern.append("path")
+										.attr("d", "M 0 0 L 8 8 M 0 -8 L 8 0 "
+											+ "M 0 8 L 8 16 M 8 0 L 0 8 "
+											+ "M 8 -8 L 0 0 M 8 8 L 0 16");
+										break;
+									case 5:
+										pattern.append("path")
+											.attr("d", "M 0 3 L 8 3 M 3 0 L 3 8");
+										break;
+								}
+							}
+						}
+						bar.attr("style",
+								 "fill:url(#pattern-" + category_index + ");"
+								 + "stroke:" + a.bar_colors(category_index));
+					}
+					else {
+						bar.style("fill", a.bar_colors(category_index));
+					}
 				}
 				
 				
@@ -658,7 +815,7 @@ d3bp.BarChart.prototype.render = function(id) {
 						.attr("dy", ".35em") 	// vertical-align: middle
 						.attr("transform", "translate("
 							+ (pos +  0.5 * a.bar_width) + ", "
-							+ (a.chart_inner_height + a.chart_margin)
+							+ (t.__inner_height + a.chart_margin)
 							+ ") rotate(45)")
 						.text(label);
 				}
@@ -676,13 +833,17 @@ d3bp.BarChart.prototype.render = function(id) {
 							+ (pos +  0.5 * a.bar_width) + ", "
 							+ (t.__d3scale(top) - 10)  + ") rotate(-90)")
 						.text(t.__valuelabelfn(value));
+					var r = text[0][0].getBoundingClientRect();
+					if (r.top < min_chart_y) {
+						min_chart_y = r.top;
+					}
 				}
 				
 				
 				// Advance the counters
 				
 				var old_pos = pos;
-				pos += bar_width;
+				pos += a.bar_width;
 				index++;
 				
 				
@@ -745,7 +906,7 @@ d3bp.BarChart.prototype.render = function(id) {
 		// Prepare for the upcoming chart adjustments
 		//
 		
-		var max_chart_y = a.chart_inner_height;
+		var max_chart_y = t.__inner_height;
 		var max_chart_x = chart_inner_width + a.bars_margin;
 		
 		
@@ -755,9 +916,9 @@ d3bp.BarChart.prototype.render = function(id) {
 		
 		chart.append("line")
 			.attr("x1", -a.bars_margin)
-			.attr("y1", a.chart_inner_height)
+			.attr("y1", t.__inner_height)
 			.attr("x2", chart_inner_width + a.bars_margin)
-			.attr("y2", a.chart_inner_height)
+			.attr("y2", t.__inner_height)
 			.style("stroke", "#000");
 		
 		
@@ -805,7 +966,7 @@ d3bp.BarChart.prototype.render = function(id) {
 				.attr("text-anchor", "middle")
 				.attr("transform", "translate("
 					+ ((info.min_pos + info.max_pos) / 2) + ", "
-					+ (a.chart_inner_height + a.chart_margin)  + ") rotate(0)")
+					+ (t.__inner_height + a.chart_margin)  + ") rotate(0)")
 				.text(series.__label);
 			
 			var labels_at_level = label_at_inv_levels[max_level - level];
@@ -822,7 +983,7 @@ d3bp.BarChart.prototype.render = function(id) {
 			labels_at_level.push(x);
 		}
 		
-		var label_y_pos = a.chart_inner_height + a.chart_margin;
+		var label_y_pos = t.__inner_height + a.chart_margin;
 		for (var inv_level = 0; inv_level < label_at_inv_levels.length; inv_level++) {
 			var labels_at_level = label_at_inv_levels[inv_level];
 			
@@ -885,12 +1046,20 @@ d3bp.BarChart.prototype.render = function(id) {
 			for (var ci = 0; ci < categories.length; ci++) {
 				var c = categories[ci];
 				
-				chart.append("rect")
+				var bar = chart.append("rect")
 					.attr("x", x)
 					.attr("y", ci * (a.legend_bar_height + a.legend_vertical_spacing) + a.legend_padding_top)
 					.attr("width", a.legend_bar_width)
-					.attr("height", a.legend_bar_height)
-					.style("fill", bar_colors(ci));
+					.attr("height", a.legend_bar_height);
+			
+				if (use_patterns) {
+					bar.attr("style",
+						"fill:url(#pattern-" + ci + ");"
+						+ "stroke:" + a.bar_colors(ci));
+				}
+				else {
+					bar.style("fill", a.bar_colors(ci));
+				}
 				
 				var text = chart.append("text")
 					.attr("x", x + a.legend_bar_width + a.legend_bar_padding_right)
@@ -912,9 +1081,9 @@ d3bp.BarChart.prototype.render = function(id) {
 		// Adjust the chart size
 		//
 		
-		chart_svg[0][0].setAttribute("width", a.padding_left + max_chart_x);
-		chart_svg[0][0].setAttribute("height", a.padding_top + max_chart_y);
-		chart[0][0].setAttribute("transform", "translate(" + a.padding_left + ", " + a.padding_top + ")");
+		chart_svg[0][0].setAttribute("width" , max_chart_x - min_chart_x);
+		chart_svg[0][0].setAttribute("height", max_chart_y - min_chart_y);
+		chart[0][0].setAttribute("transform", "translate(" + (-min_chart_x) + ", " + (-min_chart_y) + ")");
 	});
 	
 	return this;
