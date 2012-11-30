@@ -45,7 +45,8 @@ public class DownloadResults extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
 		String directories = "";
-		String command = "tar -czf - `find" + directories + " -maxdepth 1 | grep -v /db | grep -v /warmup | grep /`";
+		String grep = "| grep -v /db | grep -v /warmup | grep -v /org | grep -v /bad | grep -v /wait | grep -v /backup";
+		String command = "tar -czf - `find" + directories + " -maxdepth 1 " + grep + " | grep /`";
 		
 		boolean all = WebUtils.getBooleanParameter(request, "all", false);
 		
@@ -53,7 +54,7 @@ public class DownloadResults extends HttpServlet {
 		// Compose the tar commands depending on the download type arguments
 		
 		if (all) {
-			command = "tar -czf - `find . -maxdepth 2 | grep -v /db | grep -v /warmup | grep '/.*/'`";
+			command = "tar -czf - `find . -maxdepth 2 " + grep + " | grep '/.*/'`";
 		}
 		else {
 			
