@@ -41,8 +41,11 @@ if (true) {
 			for (String a : m.keySet()) {
 				String org = a;
 
-				if (a.startsWith("OperationLoadFGF-")) {
-					a = "OperationLoadFGF-*";
+				if (a.startsWith("OperationLoadFGF-bulkload-")) {
+					a = "OperationLoadFGF-incremental-*";
+				}
+				if (a.startsWith("OperationLoadFGF-incremental-")) {
+					a = "OperationLoadFGF-incremental-*";
 				}
 				if (a.startsWith("OperationLoadGraphML-")) {
 					a = "OperationLoadGraphML-*";
@@ -73,8 +76,11 @@ if (true) {
 	if (a_selectedOperations != null) {
 		for (String a : a_selectedOperations) {
 			
-			if (a.startsWith("OperationLoadFGF-")) {
-				a = "OperationLoadFGF-*";
+			if (a.startsWith("OperationLoadFGF-bulkload-")) {
+				a = "OperationLoadFGF-incremental-*";
+			}
+			if (a.startsWith("OperationLoadFGF-incremental-")) {
+				a = "OperationLoadFGF-incremental-*";
 			}
 			if (a.startsWith("OperationLoadGraphML-")) {
 				a = "OperationLoadGraphML-*";

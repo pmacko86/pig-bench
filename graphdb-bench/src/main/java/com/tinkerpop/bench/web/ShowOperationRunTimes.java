@@ -163,7 +163,7 @@ public class ShowOperationRunTimes extends HttpServlet {
 		}
 		else if ("details".equals(show)) {
 			printRunTimesDetails(writer, operationsToJobs, format, response, groupBy, convertManyOperations,
-					customSeriesPatterns, 10000 /* XXX hard-coded */, 0 /* XXX hard-coded */);
+					customSeriesPatterns, 10000 /* XXX hard-coded */, 0.25 /* XXX hard-coded */, 0 /* XXX hard-coded */);
 		}
 		else {
 			if (response != null) {
@@ -430,11 +430,12 @@ public class ShowOperationRunTimes extends HttpServlet {
 	 * @param convertManyOperations whether convert the "Many" operations into the single operations
 	 * @param customSeriesPatterns specify custom series; a map (series name &mdash;&gt; regex defining the series)
 	 * @param tail return at most this number of runs (use 0 or a negative number to disable)
+	 * @param tailFraction the fraction of runs to keep (if smaller than tail, use 0 or less to disable)
 	 * @param dropExtremes the fraction of extreme top and bottom values to drop (use a negative number to disable)
 	 */
 	public static void printRunTimesDetails(PrintWriter writer, Map<String, Collection<Job>> operationsToJobs,
 			String format, HttpServletResponse response, String groupBy, boolean convertManyOperations,
-			Map<String, String> customSeriesPatterns, int tail, double dropExtremes) {
+			Map<String, String> customSeriesPatterns, int tail, double tailFraction, double dropExtremes) {
 		
 		long start = System.currentTimeMillis();
 		
@@ -502,13 +503,20 @@ public class ShowOperationRunTimes extends HttpServlet {
 					}
 				}
 
-				if (tail > 0 && currentJobsEntries.size() > tail) {
-					ArrayList<Triple<String, Job, OperationLogEntry>> a
-						= new ArrayList<Triple<String, Job, OperationLogEntry>>();
-					for (int i = currentJobsEntries.size() - tail; i < currentJobsEntries.size(); i++) {
-						a.add(currentJobsEntries.get(i));
+				if (tail > 0 || tailFraction > 0) {
+					int n = currentJobsEntries.size();
+					int keep1 = tail > 0 ? Math.max(tail, n) : n;
+					int keep2 = tailFraction > 0 ? (int) Math.round(tailFraction * n) : n;
+					int keep  = Math.min(keep1, keep2);
+				
+					if (keep > 0 && currentJobsEntries.size() > keep) {
+						ArrayList<Triple<String, Job, OperationLogEntry>> a
+							= new ArrayList<Triple<String, Job, OperationLogEntry>>();
+						for (int i = currentJobsEntries.size() - keep; i < currentJobsEntries.size(); i++) {
+							a.add(currentJobsEntries.get(i));
+						}
+						currentJobsEntries = a;
 					}
-					currentJobsEntries = a;
 				}
 
 				if (dropExtremes > 0 && currentJobsEntries.size() > 0) {
