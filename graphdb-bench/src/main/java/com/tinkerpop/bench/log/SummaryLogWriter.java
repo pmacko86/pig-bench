@@ -207,7 +207,7 @@ public class SummaryLogWriter {
 		// summarizedResults = ["operation" -> "graphRuntimes"]
 		LinkedHashMap<String, GraphRunTimes> fileOperationTimes = new LinkedHashMap<String, GraphRunTimes>();
 
-		OperationLogReader reader = new OperationLogReader(new File(path));
+		OperationLogReader reader = new OperationLogReader(new File(path), false);
 
 		for (OperationLogEntry opLogEntry : reader) {
 			GraphRunTimes graphRunTimes = fileOperationTimes.get(opLogEntry.getName());

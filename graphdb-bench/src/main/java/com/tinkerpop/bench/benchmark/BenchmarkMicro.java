@@ -3,8 +3,8 @@ package com.tinkerpop.bench.benchmark;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1041,7 +1041,7 @@ public class BenchmarkMicro extends Benchmark {
 		StringBuilder sb = new StringBuilder();
 		
 		sb.append("__date_");
-		sb.append((new SimpleDateFormat("yyyyMMdd-HHmmss")).format(new Date()));
+		sb.append(LogUtils.DATE_FORMAT.format(new Date()));
 		
 		sb.append("__mem_");
 		sb.append(Math.round(Runtime.getRuntime().maxMemory() / 1048576.0f));
@@ -1326,6 +1326,8 @@ public class BenchmarkMicro extends Benchmark {
 				HashSet<String> processedOperations = new HashSet<String>();
 				HashSet<String> currentRetain = new HashSet<String>();
 				
+				Date now = new Date();
+				
 				for (String operation : retain) {
 					
 					if (processedOperations.contains(operation)) continue;
@@ -1374,12 +1376,37 @@ public class BenchmarkMicro extends Benchmark {
 					currentRetain.add("OperationShutdownGraph");
 					
 					
+					// Determine the name of the consolidated log file
+					
+					String consolidatedLogFileName = job.getLogFile().getName();
+					
+					if (job.getExecutionTime().after(now)) {
+						
+						// Fix log file dates that are in the future
+						
+						Date d = job.getExecutionTime();
+						while (d.after(now)) {
+							Calendar c = Calendar.getInstance();
+							c.setTime(d);
+							c.add(Calendar.MONTH, -1);
+							d = c.getTime();
+						}
+						
+						String org = consolidatedLogFileName;
+						consolidatedLogFileName = consolidatedLogFileName.replace(
+								LogUtils.DATE_FORMAT.format(job.getExecutionTime()),
+								LogUtils.DATE_FORMAT.format(d));
+						
+						assert !consolidatedLogFileName.equals(org);
+					}
+					
+					File consolidatedLogFile = new File(consolidateDir, consolidatedLogFileName);
+					
+					
 					// Consolidate and retain the jobs in the main log file
 					// (do not even attempt to process the warmup file)
 					
-					File consolidatedLogFile = new File(consolidateDir, job.getLogFile().getName());
-					
-					OperationLogReader logReader = new OperationLogReader(job.getLogFile());
+					OperationLogReader logReader = new OperationLogReader(job.getLogFile(), false);
 					OperationLogWriter logWriter = new OperationLogWriter(consolidatedLogFile);
 					
 					for (OperationLogEntry e : logReader) {
@@ -1749,8 +1776,6 @@ public class BenchmarkMicro extends Benchmark {
 	@Override
 	public ArrayList<OperationFactory> createOperationFactories() {
 		ArrayList<OperationFactory> operationFactories = new ArrayList<OperationFactory>();
-		
-		// TODO Escape operation tags if necessary?
 
 		for (String ingestFile : graphmlFilenames) {
 			
@@ -1818,14 +1843,14 @@ public class BenchmarkMicro extends Benchmark {
 					operationFactories.add(new OperationFactoryGeneric(
 							OperationCreateKeyIndex.class, 1,
 							new Object[] { "vertex", key },
-							"vertex-" + key));
+							"vertex-" + LogUtils.escapeTag(key)));
 				}
 				
 				for (String key : edgeKeys) {
 					operationFactories.add(new OperationFactoryGeneric(
 							OperationCreateKeyIndex.class, 1,
 							new Object[] { "edge", key },
-							"edge-" + key));
+							"edge-" + LogUtils.escapeTag(key)));
 				}
 			}
 			
@@ -1972,12 +1997,12 @@ public class BenchmarkMicro extends Benchmark {
 				for (String key : vertexKeys) {
 					operationFactories.add(new OperationFactoryGeneric(
 							OperationGetManyVertexProperties.class, 50,
-							new Object[] { key, opCount }, key));
+							new Object[] { key, opCount }, LogUtils.escapeTag(key)));
 				}
 				for (String key : edgeKeys) {
 					operationFactories.add(new OperationFactoryGeneric(
 							OperationGetManyEdgeProperties.class, 50,
-							new Object[] { key, opCount }, key));
+							new Object[] { key, opCount }, LogUtils.escapeTag(key)));
 				}
 				
 				if (!vertexKeys.isEmpty()) {
@@ -2006,12 +2031,14 @@ public class BenchmarkMicro extends Benchmark {
 				
 				for (String key : vertexKeys) {
 					operationFactories.add(new OperationFactoryRandomVertexPropertyValue(
-							OperationGetVerticesUsingKeyIndex.class, opCount, key, new Object[] {}, key));
+							OperationGetVerticesUsingKeyIndex.class, opCount, key,
+							new Object[] {}, LogUtils.escapeTag(key)));
 				}
 				
 				for (String key : edgeKeys) {
 					operationFactories.add(new OperationFactoryRandomEdgePropertyValue(
-							OperationGetEdgesUsingKeyIndex.class, opCount, key, new Object[] {}, key));
+							OperationGetEdgesUsingKeyIndex.class, opCount, key,
+							new Object[] {}, LogUtils.escapeTag(key)));
 				}
 			}
 			

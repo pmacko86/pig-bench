@@ -290,15 +290,11 @@
 				
 				String boxPlotFilter = WebUtils.getStringParameter(request, "boxplotfilter");
 				if (boxPlotFilter == null) boxPlotFilter = "true";
-				// XXX Further sanitize boxPlotFilter!
-				boxPlotFilter = boxPlotFilter.replace(';', ' ');
-				boxPlotFilter = boxPlotFilter.replace('\\', ' ');
+				boxPlotFilter = WebUtils.sanitizeJavaScriptSnippet(boxPlotFilter);
 				
 				String boxPlotYValue = WebUtils.getStringParameter(request, "boxplotyvalue");
 				if (boxPlotYValue == null) boxPlotYValue = "d.time";
-				// XXX Further sanitize boxPlotYValue!
-				boxPlotYValue = boxPlotYValue.replace(';', ' ');
-				boxPlotYValue = boxPlotYValue.replace('\\', ' ');
+				boxPlotYValue = WebUtils.sanitizeJavaScriptSnippet(boxPlotYValue);
 				
 				boolean benchmarksWithExtendedInfo = true;
 				for (String s : selectedOperations) {

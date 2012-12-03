@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
@@ -16,8 +17,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.servlet.http.HttpServletRequest;
-
-import scala.actors.threadpool.Arrays;
 
 import com.tinkerpop.bench.Bench;
 import com.tinkerpop.bench.DatabaseEngine;
@@ -174,7 +173,6 @@ public class Job implements Comparable<Job> {
 	 * 
 	 * @param arguments the arguments
 	 */
-	@SuppressWarnings("unchecked")
 	public Job(final String... arguments) {
 		this(Arrays.asList(arguments));
 	}
@@ -479,8 +477,11 @@ public class Job implements Comparable<Job> {
 		// Reconstruct the command-line arguments from the file name
 		
 		arguments.add(Bench.graphdbBenchDir + "/runBenchmarkSuite.sh");
-	
-		String[] tokens = file.getName().split("__[_]*");
+		
+		String name = file.getName();
+		if (name.endsWith(".csv")) name = name.substring(0, name.length() - ".csv".length());
+		
+		String[] tokens = name.split("__[_]*");
 		boolean first = true;
 		
 		String date = null;
@@ -534,6 +535,22 @@ public class Job implements Comparable<Job> {
 					  Integer.parseInt(date.substring( 6,  8)), Integer.parseInt(date.substring( 9, 11)),
 					  Integer.parseInt(date.substring(11, 13)), Integer.parseInt(date.substring(13    )));
 				executionTime = c.getTime();
+				
+				
+				// XXX Does not belong here -- Fix log file dates that are in the future
+				
+				Date now = new Date();
+				if (executionTime.after(now)) {
+					
+					Date d = executionTime;
+					while (d.after(now)) {
+						Calendar cal = Calendar.getInstance();
+						cal.setTime(d);
+						cal.add(Calendar.MONTH, -1);
+						d = cal.getTime();
+					}
+					executionTime = d;
+				}
 			}
 		}
 		
@@ -545,6 +562,9 @@ public class Job implements Comparable<Job> {
 			int gb = mb / 1024;
 			if (gb >= 1 && (mb % 1024) < gb * 24) {
 				mem = "" + gb + "g";
+			}
+			else if (gb == 0 && mb > 1000) {
+				mem = "1g";
 			}
 		}
 		else if (mem.endsWith("G") || mem.endsWith("g")) {

@@ -2,6 +2,7 @@ package com.tinkerpop.bench.util;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.Map;
 
 import com.tinkerpop.bench.Bench;
@@ -11,8 +12,8 @@ import com.tinkerpop.bench.log.SummaryLogWriter;
 
 public class LogUtils {
 
-	public static final String LOG_DELIMITER = Bench.benchProperties
-			.getProperty(Bench.LOGS_DELIMITER);
+	public static final String LOG_DELIMITER = Bench.benchProperties.getProperty(Bench.LOGS_DELIMITER);
+	public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyyMMdd-HHmmss");
 
 	public static void makeResultsSummary(String summaryFilePath,
 			Map<String, String> resultFilePaths) throws IOException {
@@ -50,5 +51,15 @@ public class LogUtils {
 		long h = ((msTotal / 1000) / 60) / 60;
 
 		return String.format("%d(h):%d(m):%d(s):%d(ms)", h, m, s, ms);
+	}
+	
+	public static String escapeTag(String tag) {
+		String s = tag;
+		
+		s = s.replaceAll("\\s+", "").replaceAll(",", "_");
+		s = s.replaceAll("\\\\", "").replaceAll("\"", "");
+		s = s.replaceAll("-", "_");
+		
+		return s;
 	}
 }

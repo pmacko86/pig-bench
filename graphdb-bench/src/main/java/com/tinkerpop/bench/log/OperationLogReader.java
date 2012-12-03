@@ -66,6 +66,10 @@ public class OperationLogReader implements Iterable<OperationLogEntry> {
 		this(logFile, null, CACHE_BY_DEFAULT);
 	}
 
+	public OperationLogReader(File logFile, boolean cached) {
+		this(logFile, null, cached);
+	}
+
 	public OperationLogReader(File logFile, String operationNameFilter) {
 		this(logFile, operationNameFilter, CACHE_BY_DEFAULT);
 	}

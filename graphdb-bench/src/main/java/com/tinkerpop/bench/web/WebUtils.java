@@ -389,4 +389,51 @@ public class WebUtils {
 			return false;
 		}
 	}
+	
+	
+	/**
+	 * A strict JavaScript code sanitization for the code snippets that we allow the users to write and include
+	 * in the plot processing pipeline
+	 * 
+	 * @param code the original JavaScript code
+	 * @return the sanitized code
+	 */
+	public static String sanitizeJavaScriptSnippet(String code) {
+		
+		code = code.replace( ';',  ' ');
+		code = code.replace('\\',  ' ');
+		code = code.replace("eval", "");
+		code = code.replace("alert", "");
+		
+		
+		// Allow quotes only as array indices
+		
+		// (Use '\' as a special marker character.)
+		
+		code = code.replace('\'', '\\');
+		code = code.replace('\"', '\\');
+		
+		while (code.contains("[\\")) {
+			int k1 = code.indexOf("[\\");
+			int k2 = code.indexOf("\\]");
+			if (k2 < k1) return code.replace('\\',  ' ');
+			
+			boolean ok = true;
+			for (int i = k1 + 2; i < k2; i++) {
+				if (!Character.isLetterOrDigit(code.charAt(i))) {
+					ok = false;
+					break;
+				}
+			}
+			if (!ok) return code.replace('\\',  ' ');
+			
+			code = code.substring(0, k1) + "[\"" + code.substring(k1 + 2, k2) + "\"]" + code.substring(k2 + 2);
+		}
+		
+		
+		// Finish
+
+		code = code.replace('\\',  ' ');
+		return code;
+	}
 }
