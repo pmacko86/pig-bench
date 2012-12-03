@@ -1248,7 +1248,10 @@ public class BenchmarkMicro extends Benchmark {
 			
 			// Operations to retain (null to retain all) -- should not be hard-coded
 			
-			Set<String> retain = new HashSet<String>();
+			Set<String> retain = null;
+			
+			
+			/*retain = new HashSet<String>();
 			
 			retain.add("OperationGetManyVertices");
 			retain.add("OperationGetManyEdges");
@@ -1274,7 +1277,7 @@ public class BenchmarkMicro extends Benchmark {
 			retain.add("OperationDeleteGraph");
 			retain.add("OperationLoadFGF-*");
 			retain.add("OperationLoadGraphML-*");
-			retain.add("OperationCreateKeyIndex-*");
+			retain.add("OperationCreateKeyIndex-*");*/
 			
 			
 			// Do the actual work
@@ -1301,7 +1304,7 @@ public class BenchmarkMicro extends Benchmark {
 				if (retain == null || false) {
 					retain = allOperations;
 				}
-				else {
+				if (retain != null || false) {
 					Set<String> newRetain = new TreeSet<String>();
 					for (String r : retain) {
 						if (r.endsWith("*")) {

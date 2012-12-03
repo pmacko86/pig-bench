@@ -1,6 +1,7 @@
 package com.tinkerpop.bench.log;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 
 /**
@@ -105,5 +106,44 @@ public class GraphRunTimes implements Comparable<GraphRunTimes> {
 	@Override
 	public int compareTo(GraphRunTimes otherGraphName) {
 		return this.graphName.compareTo(otherGraphName.getGraphName());
+	}
+	
+	public void retainTail(int tail, double tailFraction, double dropExtremes) {
+		
+		mean = Double.MIN_VALUE;
+		stdev = Double.MIN_VALUE;
+		min = Double.MIN_VALUE;
+		max = Double.MIN_VALUE;
+
+		if (tail > 0 || tailFraction > 0) {
+			int n = runTimes.size();
+			int keep1 = tail > 0 ? Math.max(tail, n) : n;
+			int keep2 = tailFraction > 0 ? (int) Math.round(tailFraction * n) : n;
+			int keep  = Math.min(keep1, keep2);
+		
+			if (keep > 0 && runTimes.size() > keep) {
+				ArrayList<Long> a = new ArrayList<Long>();
+				for (int i = runTimes.size() - keep; i < runTimes.size(); i++) {
+					a.add(runTimes.get(i));
+				}
+				runTimes = a;
+			}
+		}
+
+		if (dropExtremes > 0 && runTimes.size() > 0) {
+			
+			long[] a = new long[runTimes.size()];
+			for (int i = 0; i < a.length; i++) a[i] = runTimes.get(i);
+			Arrays.sort(a);
+			long min = a[(int) (dropExtremes * a.length)];
+			long max = a[(int) ((1 - dropExtremes) * a.length)];
+			
+			ArrayList<Long> l = new ArrayList<Long>();
+			for (Long t : runTimes) {
+				long v = t.longValue();
+				if (v >= min && v <= max) l.add(t);
+			}
+			runTimes = l;
+		}
 	}
 }

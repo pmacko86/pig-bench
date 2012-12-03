@@ -210,8 +210,7 @@ public class SummaryLogWriter {
 		OperationLogReader reader = new OperationLogReader(new File(path));
 
 		for (OperationLogEntry opLogEntry : reader) {
-			GraphRunTimes graphRunTimes = fileOperationTimes.get(opLogEntry
-					.getName());
+			GraphRunTimes graphRunTimes = fileOperationTimes.get(opLogEntry.getName());
 
 			if (graphRunTimes == null)
 				graphRunTimes = new GraphRunTimes(graphName, opLogEntry.getName());
@@ -220,6 +219,10 @@ public class SummaryLogWriter {
 
 			fileOperationTimes.get(opLogEntry.getName()).add(
 					opLogEntry.getTime());
+		}
+		
+		for (Entry<String, GraphRunTimes> e : fileOperationTimes.entrySet()) {
+			e.getValue().retainTail(10000, 0.25, 0.05);	// XXX hard-coded values
 		}
 
 		return fileOperationTimes;
