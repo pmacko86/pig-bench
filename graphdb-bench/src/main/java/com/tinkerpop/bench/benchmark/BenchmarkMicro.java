@@ -42,6 +42,7 @@ import com.tinkerpop.bench.operationFactory.factories.OperationFactoryRandomVert
 import com.tinkerpop.bench.util.ConsoleUtils;
 import com.tinkerpop.bench.util.FileUtils;
 import com.tinkerpop.bench.util.GraphUtils;
+import com.tinkerpop.bench.util.JVMUtils;
 import com.tinkerpop.bench.util.LogUtils;
 import com.tinkerpop.bench.util.MathUtils;
 import com.tinkerpop.bench.util.OutputUtils;
@@ -206,7 +207,7 @@ public class BenchmarkMicro extends Benchmark {
 				ConsoleUtils.useEscapeSequences = false;
 			}
 		}
-				
+		
 
 		/*
 		 * Parse the command-line arguments
@@ -1489,6 +1490,7 @@ public class BenchmarkMicro extends Benchmark {
 		System.out.println("Database    : " + dbShortName);
 		System.out.println("Instance    : " + (dbInstanceName != null && !dbInstanceName.equals("") ? dbInstanceName : "<default>"));
 		System.out.println("Cache Size  : " + GlobalConfig.databaseCacheSize + " MB");
+		System.out.println("Java VM     : " + JVMUtils.JVM_NAME + " " + JVMUtils.JVM_VERSION);
 		if (warmup) {
 			System.out.println("Warmup Dir  : " + OutputUtils.simplifyFileName(warmupDbDir));
 		}

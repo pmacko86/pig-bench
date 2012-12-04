@@ -753,7 +753,7 @@
 					if (logScale) chartProperties.yscale = "log";
 					if (dropExtremes) chartProperties.dropTopBottomExtremes = true;
 					chartProperties.ylabel = "d.time".equals(boxPlotYValue) 
-							? "Execution Time (ms)" : StringEscapeUtils.escapeXml(boxPlotYValue);	// TODO Need better escape
+							? "Execution Time (ms)" : StringEscapeUtils.escapeXml(boxPlotYValue);
 					chartProperties.group_by = "operation";
 					chartProperties.group_label_function = "return d.operation.replace(/^Operation/, '')";
 					if (sameOperationBaseName && selectedOperations.size() > 1) {
@@ -789,7 +789,7 @@
 					chartProperties.linear_fits = linearFits;
 					chartProperties.xlabel = "Number of Retrieved or Returned Unique Nodes";
 					chartProperties.ylabel = "d.time".equals(boxPlotYValue) 
-							? "Execution Time (ms)" : StringEscapeUtils.escapeXml(boxPlotYValue);	// TODO Need better escape
+							? "Execution Time (ms)" : StringEscapeUtils.escapeXml(boxPlotYValue);
 					chartProperties.series_column = "label";
 					chartProperties.series_label_function = "return d.label.replace(/^Operation/, '')";
 					if (sameOperationBaseName && selectedOperations.size() > 1) {

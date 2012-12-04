@@ -132,60 +132,6 @@ public class GraphUtils {
 		GraphMLWriter writer = new GraphMLWriter(graph);
 		writer.setNormalize(sorted);
 		writer.outputGraph(out);
-				
-		/*out.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-		out.println("<graphml xmlns=\"http://graphml.graphdrawing.org/xmlns\"");
-		out.println("         xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"");
-		out.println("         xsi:schemaLocation=\"http://graphml.graphdrawing.org/xmlns");
-		out.println("         http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd\">");
-		out.println("<!-- Exported by graphdb-bench -->");
-		
-		HashSet<String> nodeKeys = new HashSet<String>();
-		for (Vertex vertex : graph.getVertices()) {
-			nodeKeys.addAll(vertex.getPropertyKeys());
-		}
-		for (String key : nodeKeys) {
-			out.println("  <key id=\"" + key + "\" for=\"node\" attr.name=\"" + key + "\" attr.type=\"string\"/>");
-			if (key.contains("\"")) throw new RuntimeException("The following node key contains \'\"\': " + key);
-		}
-		
-		HashSet<String> edgeKeys = new HashSet<String>();
-		for (Edge edge : graph.getEdges()) {
-			edgeKeys.addAll(edge.getPropertyKeys());
-		}
-		for (String key : edgeKeys) {
-			if (key.contains("\"")) throw new RuntimeException("The following node key contains \'\"\': " + key);
-			out.println("  <key id=\"" + key + "\" for=\"edge\" attr.name=\"" + key + "\" attr.type=\"string\"/>");
-		}
-		
-		out.println("  <graph id=\"G\" edgedefault=\"directed\">");
-		
-		// TODO: Sort
-		
-		for (Vertex vertex : graph.getVertices()) {
-			out.println("    <node id=\"" + vertex.getId() + "\">");
-			for (String key : vertex.getPropertyKeys()) {
-				if (key.contains("\"")) throw new RuntimeException("The following node key contains \'\"\': " + key);
-				String value = OutputUtils.encodeXMLString("" + vertex.getProperty(key));
-				out.println("      <data key=\"" + key + "\">" + value + "</data>");
-			}
-			out.println("    </node>");
-		}
-		
-		for (Edge edge : graph.getEdges()) {
-			out.println("    <edge source=\"" + edge.getVertex(Direction.OUT).getId() + "\" "
-					+ "target=\"" + edge.getInVertex ().getId() + "\" "
-					+ "label=\"" + edge.getLabel() + "\">");
-			for (String key : edge.getPropertyKeys()) {
-				if (key.contains("\"")) throw new RuntimeException("The following node key contains \'\"\': " + key);
-				String value = OutputUtils.encodeXMLString("" + edge.getProperty(key));
-				out.println("      <data key=\"" + key + "\">" + value + "</data>");
-			}
-			out.println("    </edge>");
-		}
-		
-		out.println("  </graph>");
-		out.println("</graphml>");*/
 	}
 	
 	

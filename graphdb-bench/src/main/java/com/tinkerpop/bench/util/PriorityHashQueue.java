@@ -280,8 +280,7 @@ public class PriorityHashQueue<E> extends AbstractQueue<E>
             Integer i = map.get(o);
             if (i == null) return -1;
             // Debug
-            // TODO comment out
-            if (!queue[i.intValue()].equals(o)) throw new InternalError();
+            // if (!queue[i.intValue()].equals(o)) throw new InternalError();
             return i.intValue();
         }
         return -1;

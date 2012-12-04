@@ -77,6 +77,7 @@ usage() {
 	echo " " >&2
 	echo "Script options:" >&2
 	echo "  +debug:gc      Debug the memory usage and the garbage collector" >&2
+	echo "  +debug:jit     Debug the usage of the JIT compiler" >&2
 	echo "  +help          Print this help information" >&2
 	echo "  +itc           Use initialization time compilation (requires Oracle Java RTS)" >&2
 	echo "  +main:CLASS    Set a custom main class" >&2
@@ -111,6 +112,30 @@ while [ "x${1:0:1}" = "x+" ]; do
 	
 	
 	#
+	# Option: Debug the usage of the JIT compiler
+	#
+
+	if [ $ARG = "+debug:jit" ]; then
+		# References:
+		#   http://java.dzone.com/articles/just-time-compiler-jit-hotspot
+		#   https://gist.github.com/1165804#file_notes.md
+		MAVEN_OPTS="$MAVEN_OPTS -XX:+PrintCompilation"
+		#MAVEN_OPTS="$MAVEN_OPTS -XX:+PrintInlining"
+		continue
+	fi
+	
+	
+	#
+	# Option: Debug the usage of the JIT compiler -- with more details (Oracle JVM only)
+	#
+
+	if [ $ARG = "+debug:jitjit" ]; then
+		MAVEN_OPTS="$MAVEN_OPTS -XX:+LogCompilation -XX:+UnlockDiagnosticVMOptions"
+		continue
+	fi
+	
+	
+	#
 	# Option: help
 	#
 
@@ -125,7 +150,7 @@ while [ "x${1:0:1}" = "x+" ]; do
 	#
 
 	if [ $ARG = "+itc" ]; then
-		MAVEN_OPTS="$MAVEN_OPTS -XX:+UseITC"
+		MAVEN_OPTS="$MAVEN_OPTS -XX:+UseITC -XX:+ITCJLT"
 		continue
 	fi
 	
