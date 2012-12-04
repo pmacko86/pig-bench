@@ -145,7 +145,7 @@
 									<%
 										if (job.isRunning() || job.getExecutionCount() > 0) {
 											%>
-												<a href="/ShowOutput?job=<%= job.getId() %>&join=t"
+												<a href="/ShowOutput?job=<%= job.getId() %>&join=f"
 												   class="per_row_link">
 													<img src="icons/information_32.png"
 														 width="20px" height="20px" />
