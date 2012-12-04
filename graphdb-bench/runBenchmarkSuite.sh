@@ -78,7 +78,8 @@ usage() {
 	echo "Script options:" >&2
 	echo "  +debug:gc      Debug the memory usage and the garbage collector" >&2
 	echo "  +help          Print this help information" >&2
-	echo "  +main:CLASS    Set a custom mail class" >&2
+	echo "  +itc           Use initialization time compilation (requires Oracle Java RTS)" >&2
+	echo "  +main:CLASS    Set a custom main class" >&2
 	echo "  +memory:SIZE   Set the Java memory (heap) size" >&2
 	echo "  +ocsf          Run the optimal cache settings finder" >&2
 	echo "  +profile:jrat  Profile the benchmark using JRat" >&2
@@ -116,6 +117,16 @@ while [ "x${1:0:1}" = "x+" ]; do
 	if [ $ARG = "+help" ]; then
 		usage
 		exit
+	fi
+	
+	
+	#
+	# Option: initialization time compilation 
+	#
+
+	if [ $ARG = "+itc" ]; then
+		MAVEN_OPTS="$MAVEN_OPTS -XX:+UseITC"
+		continue
 	fi
 	
 	

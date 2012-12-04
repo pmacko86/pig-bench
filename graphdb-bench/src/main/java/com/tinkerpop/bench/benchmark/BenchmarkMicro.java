@@ -1251,8 +1251,8 @@ public class BenchmarkMicro extends Benchmark {
 			Set<String> retain = null;
 			
 			ConsoleUtils.header("Graph Database Benchmark -- Log Consolidation");
-			System.out.println("Database    : " + dbShortName);
-			System.out.println("Instance    : " + (dbInstanceName != null && !dbInstanceName.equals("") ? dbInstanceName : "<default>"));
+			System.out.println("Database: " + dbShortName);
+			System.out.println("Instance: " + (dbInstanceName != null && !dbInstanceName.equals("") ? dbInstanceName : "<default>"));
 			
 			
 			/*retain = new HashSet<String>();
