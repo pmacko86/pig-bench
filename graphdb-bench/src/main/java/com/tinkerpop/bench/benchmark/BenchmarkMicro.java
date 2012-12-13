@@ -58,8 +58,8 @@ import com.tinkerpop.blueprints.extensions.BenchmarkableGraph;
 import com.tinkerpop.blueprints.extensions.impls.dex.DexCSVLoader;
 import com.tinkerpop.blueprints.extensions.impls.dex.ExtendedDexGraph;
 import com.tinkerpop.blueprints.extensions.impls.sql.SqlGraph;
-import com.tinkerpop.blueprints.extensions.io.fgf.FGFGraphExporter;
-import com.tinkerpop.blueprints.extensions.io.fgf.FGFGraphLoader;
+import com.tinkerpop.blueprints.extensions.io.fgf.FGFConstants;
+import com.tinkerpop.blueprints.extensions.io.fgf.FGFGraphWriter;
 
 import edu.harvard.pass.cpl.CPL;
 import edu.harvard.pass.cpl.CPLException;
@@ -297,6 +297,7 @@ public class BenchmarkMicro extends Benchmark {
 		parser.accepts("export-fgf").withRequiredArg().ofType(String.class);
 		parser.accepts("export-graphml").withOptionalArg().ofType(String.class);
 		parser.accepts("export-n-graphml").withOptionalArg().ofType(String.class);
+		parser.accepts("jvm-features");	/* undocumented on purpose */
 		parser.accepts("stat");
 		parser.accepts("warmup-stat");
 		
@@ -1131,7 +1132,7 @@ public class BenchmarkMicro extends Benchmark {
 				File f = new File(file);
 				graphDescriptor = new GraphDescriptor(dbEngine, dbDir, dbConfig);
 				Graph g = graphDescriptor.openGraph(GraphDescriptor.OpenMode.DEFAULT);
-				FGFGraphExporter.export(g, f);
+				FGFGraphWriter.outputGraph(g, f);
 				graphDescriptor.shutdownGraph();
 			}
 			catch (IOException e) {
@@ -1466,6 +1467,16 @@ public class BenchmarkMicro extends Benchmark {
 				t.printStackTrace(System.err);
 				return 1;
 			}
+			
+			return 0;
+		}
+		
+		if (options.has("jvm-features")) {
+			
+			ConsoleUtils.header(JVMUtils.JVM_NAME + " " + JVMUtils.JVM_VERSION);
+			
+			System.out.println("Compilation time monitoring: " + JVMUtils.haveCompilationTimeMonitoring);
+			System.out.println("Compiler.compileClass()    : " + JVMUtils.haveCompileClass);
 			
 			return 0;
 		}
@@ -2029,8 +2040,8 @@ public class BenchmarkMicro extends Benchmark {
 			if (options.has("get-index")) {
 				
 				operationFactories.add(new OperationFactoryRandomVertexOriginalID(
-						OperationGetVerticesUsingKeyIndex.class, opCount, new Object[] { FGFGraphLoader.KEY_ORIGINAL_ID },
-						FGFGraphLoader.KEY_ORIGINAL_ID));
+						OperationGetVerticesUsingKeyIndex.class, opCount, new Object[] { FGFConstants.KEY_ORIGINAL_ID },
+						FGFConstants.KEY_ORIGINAL_ID));
 				
 				List<String> vertexKeys = parseVertexKeys("get-index");
 				List<String> edgeKeys = parseEdgeKeys("get-index");

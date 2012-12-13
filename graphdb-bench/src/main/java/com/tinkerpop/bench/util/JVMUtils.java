@@ -55,6 +55,15 @@ public class JVMUtils {
 		JVM_VERSION = runtimeBean.getVmVersion();
 		
 		haveCompilationTimeMonitoring = compilationBean != null && compilationBean.isCompilationTimeMonitoringSupported();
-		haveCompileClass = Compiler.compileClass(JVMUtils.class);
+		haveCompileClass = Compiler.compileClass(Dummy.class);
+	}
+	
+	
+	/**
+	 * A dummy class
+	 */
+	private class Dummy {
+		@SuppressWarnings("unused")
+		public Dummy() { System.gc(); };
 	}
 }

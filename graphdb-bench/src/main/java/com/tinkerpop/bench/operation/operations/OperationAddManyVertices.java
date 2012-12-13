@@ -13,7 +13,7 @@ import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.blueprints.extensions.BenchmarkableGraph;
 import com.tinkerpop.blueprints.extensions.impls.dex.DexUtils;
-import com.tinkerpop.blueprints.extensions.io.fgf.FGFGraphLoader;
+import com.tinkerpop.blueprints.extensions.io.fgf.FGFConstants;
 import com.tinkerpop.blueprints.impls.dex.DexGraph;
 import com.tinkerpop.blueprints.impls.neo4j.Neo4jGraph;
 
@@ -46,7 +46,7 @@ public class OperationAddManyVertices extends Operation {
 			
 		for (int i = 0; i < opCount; i++) {
 			Vertex vertex = graph.addVertex(null);
-			vertex.setProperty(FGFGraphLoader.KEY_ORIGINAL_ID, id++);
+			vertex.setProperty(FGFConstants.KEY_ORIGINAL_ID, id++);
 		}
 			
 		setResult(opCount);
@@ -95,10 +95,10 @@ public class OperationAddManyVertices extends Operation {
 			
 			temp = new Value();
 			
-			attrId = graph.findAttribute(this.type, FGFGraphLoader.KEY_ORIGINAL_ID);
+			attrId = graph.findAttribute(this.type, FGFConstants.KEY_ORIGINAL_ID);
 			if (this.attrId == Attribute.InvalidAttribute) {
 				attrId = DexUtils.getOrCreateAttributeHandle(graph, this.type,
-						FGFGraphLoader.KEY_ORIGINAL_ID, DataType.Integer, AttributeKind.Unique);
+						FGFConstants.KEY_ORIGINAL_ID, DataType.Integer, AttributeKind.Unique);
 			}
 		}
 
@@ -151,7 +151,7 @@ public class OperationAddManyVertices extends Operation {
 
 			for (int i = 0; i < opCount; i++) {
 				Node n = graph.createNode();
-				n.setProperty(FGFGraphLoader.KEY_ORIGINAL_ID, id++);
+				n.setProperty(FGFConstants.KEY_ORIGINAL_ID, id++);
 			}
 			
 			setResult(opCount);	

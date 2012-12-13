@@ -6,12 +6,13 @@ import com.tinkerpop.bench.GlobalConfig;
 import com.tinkerpop.bench.operation.Operation;
 import com.tinkerpop.bench.util.ConsoleUtils;
 import com.tinkerpop.blueprints.Graph;
+import com.tinkerpop.blueprints.extensions.BulkloadableGraph;
 import com.tinkerpop.blueprints.extensions.impls.dex.DexCSVLoader;
 import com.tinkerpop.blueprints.extensions.impls.dex.DexFGFIncrementalLoader;
 import com.tinkerpop.blueprints.extensions.impls.neo4j.Neo4jFGFIncrementalLoader;
 import com.tinkerpop.blueprints.extensions.impls.neo4j.Neo4jFGFLoader;
 import com.tinkerpop.blueprints.extensions.io.GraphProgressListener;
-import com.tinkerpop.blueprints.extensions.io.fgf.FGFGraphLoader;
+import com.tinkerpop.blueprints.extensions.io.fgf.FGFGraphReader;
 import com.tinkerpop.blueprints.impls.dex.DexGraph;
 import com.tinkerpop.blueprints.impls.neo4j.Neo4jGraph;
 import com.tinkerpop.blueprints.impls.neo4jbatch.Neo4jBatchGraph;
@@ -34,7 +35,6 @@ public class OperationLoadFGF extends Operation implements GraphProgressListener
 	private long lastProgressTime = 0;
 	private long lastProgressObjectCount = 0;
 	
-	private boolean indexAllProperties = false;
 	private boolean bulkLoad = true;
 	
 
@@ -63,6 +63,10 @@ public class OperationLoadFGF extends Operation implements GraphProgressListener
 		Graph graph = getGraph();
 		System.out.print(": ");
 		
+		if (bulkLoad && graph instanceof BulkloadableGraph) {
+			((BulkloadableGraph) graph).startBulkLoad();
+		}
+
 		
 		//
 		// Neo4j
@@ -73,15 +77,13 @@ public class OperationLoadFGF extends Operation implements GraphProgressListener
 				if (!(graph instanceof Neo4jBatchGraph)) {
 					throw new IllegalStateException("Bulk-load must be disabled for a Neo4jGraph");
 				}
-				Neo4jFGFLoader.load((Neo4jBatchGraph) graph, file, indexAllProperties, this);
+				Neo4jFGFLoader.load((Neo4jBatchGraph) graph, file, this);
 			}
 			else {
 				if (!(graph instanceof Neo4jGraph)) {
 					throw new IllegalStateException("Bulk-load must be enabled for a Neo4jBatchGraph");
 				}
-				//FGFGraphLoader.load(graph, file, GlobalConfig.transactionBufferSize, indexAllProperties, bulkLoad, this);
-				Neo4jFGFIncrementalLoader.load((Neo4jGraph) graph, file, GlobalConfig.transactionBufferSize,
-						                       indexAllProperties, this);
+				Neo4jFGFIncrementalLoader.load((Neo4jGraph) graph, file, GlobalConfig.transactionBufferSize, this);
 			}
 		}
 		
@@ -92,10 +94,10 @@ public class OperationLoadFGF extends Operation implements GraphProgressListener
 		
 		else if (graph instanceof DexGraph) {
 			if (bulkLoad) {
-				DexCSVLoader.load(((DexGraph) graph).getRawGraph(), dexCsvDir, filePrefix, indexAllProperties, this);
+				DexCSVLoader.load(((DexGraph) graph).getRawGraph(), dexCsvDir, filePrefix, this);
 			}
 			else {
-				DexFGFIncrementalLoader.load((DexGraph) graph, file, indexAllProperties, this);
+				DexFGFIncrementalLoader.load((DexGraph) graph, file, this);
 			}
 		}
 		
@@ -105,13 +107,17 @@ public class OperationLoadFGF extends Operation implements GraphProgressListener
 		//
 		
 		else {
-			FGFGraphLoader.load(graph, file, GlobalConfig.transactionBufferSize, indexAllProperties, bulkLoad, this);
+			FGFGraphReader.inputGraph(graph, file, GlobalConfig.transactionBufferSize, bulkLoad, true, this);
 		}
 		
 		
 		//
 		// Finish
 		//
+		
+		if (bulkLoad && graph instanceof BulkloadableGraph) {
+			((BulkloadableGraph) graph).stopBulkLoad();
+		}
 		
 		setResult("DONE-" + (bulkLoad ? "Bulkload" : "Incremental"));
 	}
