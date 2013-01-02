@@ -88,6 +88,8 @@ public class Workload {
 				"Incrementally load data from a file to the database", "FILE", false, UpdateCategory.LOAD_UPDATE));
 		m.put("ingest", new Workload("ingest", "Ingest",
 				"Ingest a file to the database (also delete the graph)", "FILE", false, UpdateCategory.LOAD_UPDATE));
+		m.put("pagerank", new Workload("pagerank", "Compute PageRank",
+				"Compute PageRank", null, false, UpdateCategory.READ_ONLY));
 		WORKLOADS = Collections.unmodifiableMap(m);
 	}
 	

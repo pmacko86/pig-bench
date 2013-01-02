@@ -79,7 +79,7 @@ import joptsimple.OptionSet;
 public class BenchmarkMicro extends Benchmark {
 	
 	/// The default file for ingest
-	public static final String DEFAULT_INGEST_FILE = "barabasi_1k_5k.fgf";
+	public static final String DEFAULT_INGEST_FILE = "barabasi_1k_5k_2el.fgf";
 	
 	/// The defaults
 	public static final int DEFAULT_NUM_THREADS = 1;
@@ -2105,6 +2105,11 @@ public class BenchmarkMicro extends Benchmark {
 				operationFactories.add(new OperationFactoryRandomVertex(
 						OperationLocalClusteringCoefficient.class, opCount));
             }					
+			
+			if (options.has("pagerank")) {
+				operationFactories.add(new OperationFactoryGeneric(
+						OperationPageRank.class, 10));
+            }
 		}
 
 		return operationFactories;
