@@ -13,6 +13,34 @@ public class FileUtils {
 	
 	
 	/**
+	 * Get file extension
+	 * 
+	 * @param file the file
+	 * @return the file extension, or null if not found
+	 */
+	public static String getExtension(File file) {
+		String n = file.getName();
+		int dot = n.lastIndexOf('.');
+		if (dot <= 0) return null;
+		return n.substring(dot + 1);
+	}
+	
+	
+	/**
+	 * Get the base file name
+	 * 
+	 * @param file the file
+	 * @return the base file name
+	 */
+	public static String getBaseName(File file) {
+		String n = file.getName();
+		int dot = n.lastIndexOf('.');
+		if (dot <= 0) return n;
+		return n.substring(0, dot);
+	}
+	
+	
+	/**
 	 * Get sizes of files (in bytes) in the given directory.
 	 * 
 	 * @param dir the directory

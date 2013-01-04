@@ -74,8 +74,8 @@ public class Workload {
 				"\"Get\" microbenchmarks -- micro ops only", null, true, UpdateCategory.READ_ONLY));
 		m.put("get--traversals", new Workload("get--traversals", "Get - traversals only",
 				"\"Get\" microbenchmarks -- traversals only", null, true, UpdateCategory.READ_ONLY));
-		m.put("get-trav-seq", new Workload("get-trav-seq", "Get - traversals, sequential vertices",
-				"\"Get\" traversals, sequential vertices", null, true, UpdateCategory.READ_ONLY));
+		/*m.put("get-trav-seq", new Workload("get-trav-seq", "Get - traversals, sequential vertices",
+				"\"Get\" traversals, sequential vertices", null, true, UpdateCategory.READ_ONLY));*/
 		m.put("get-label", new Workload("get-label", "Get using edge labels",
 				"\"Get\" microbenchmarks using edge labels", null, true, UpdateCategory.READ_ONLY));
 		m.put("get-k", new Workload("get-k", "Get k-hop",

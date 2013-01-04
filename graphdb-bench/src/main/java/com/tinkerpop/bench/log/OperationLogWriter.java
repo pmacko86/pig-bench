@@ -25,6 +25,7 @@ public class OperationLogWriter {
 	
 	// Log writer
 	
+	private File logFile = null;
 	private CSVWriter writer = null;
 	private CPLFile cplObject = null;
 	private String[] buffer = new String[HEADERS.length];
@@ -42,6 +43,8 @@ public class OperationLogWriter {
 	 * @throws IOException on I/O error
 	 */
 	public OperationLogWriter(File logFile) throws IOException {
+		
+		this.logFile = logFile;
 		
 		if (logFile != null) {
 			
@@ -160,5 +163,15 @@ public class OperationLogWriter {
 	 */
 	public long getCumulativeBenchmarkTime() {
 		return cumulativeBenchmarkTime;
+	}
+	
+	
+	/**
+	 * Get the log file
+	 * 
+	 * @return the log file, or null if logging is not enabled
+	 */
+	public File getLogFile() {
+		return logFile;
 	}
 }

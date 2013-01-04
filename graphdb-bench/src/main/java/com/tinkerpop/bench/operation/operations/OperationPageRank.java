@@ -1,5 +1,10 @@
 package com.tinkerpop.bench.operation.operations;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
@@ -9,9 +14,13 @@ import org.neo4j.graphdb.Relationship;
 import org.neo4j.tooling.GlobalGraphOperations;
 
 import com.tinkerpop.bench.operation.Operation;
+import com.tinkerpop.bench.util.ConsoleUtils;
+import com.tinkerpop.bench.util.FileUtils;
 import com.tinkerpop.bench.util.GraphUtils;
+import com.tinkerpop.bench.util.OutputUtils;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Vertex;
+import com.tinkerpop.blueprints.extensions.BenchmarkableGraph;
 import com.tinkerpop.blueprints.impls.neo4j.Neo4jGraph;
 
 
@@ -25,10 +34,16 @@ import com.tinkerpop.blueprints.impls.neo4j.Neo4jGraph;
  */
 public class OperationPageRank extends Operation {
 	
+	public static boolean outputDetailedStatistics = true;
+	
+	
 	private LinkedHashMap<Vertex, Info> perVertexInfo;
 	
 	protected int iterations;	/* the number of iterations */
 	protected double q;			/* the damping factor */
+	
+	protected int[] getAllNeighborsRuntimes = null;
+	protected int   getAllNeighborsCount = 0;
 	
 	
 	@Override
@@ -38,6 +53,11 @@ public class OperationPageRank extends Operation {
 		
 		iterations    = args.length > 0 ? (Integer) args[0] :  100;
 		q             = args.length > 1 ? (Double ) args[1] : 0.15;
+		
+		if (outputDetailedStatistics) {
+			getAllNeighborsRuntimes = new int[(int) ((BenchmarkableGraph) getGraph()).countVertices() * iterations];
+		}
+		getAllNeighborsCount = 0;
 	}
 	
 	
@@ -64,7 +84,7 @@ public class OperationPageRank extends Operation {
 		
 		// Iterations
 		
-		for (int i = 1; i < iterations; i++) {
+		for (int i = 0; i < iterations; i++) {
 			
 			double auxSum = 0;
 			
@@ -72,6 +92,8 @@ public class OperationPageRank extends Operation {
 			// Compute the next iteration of PageRank and store it as aux 
 			
 			for (Entry<Vertex, Info> I : perVertexInfo.entrySet()) {
+				
+				long start = outputDetailedStatistics ? System.nanoTime() : 0;
 				
 				double a = 0;
 				int c = 0;
@@ -82,6 +104,11 @@ public class OperationPageRank extends Operation {
 				}
 				GraphUtils.close(vi);
 				if (c > 0) a /= c;
+				
+				if (outputDetailedStatistics) {
+					getAllNeighborsRuntimes[getAllNeighborsCount] = (int) (System.nanoTime() - start);
+				}
+				getAllNeighborsCount++;
 				
 				get_ops++;
 				get_vertex += c;
@@ -110,6 +137,34 @@ public class OperationPageRank extends Operation {
 	
 	@Override
 	protected void onFinalize() {
+		
+		if (outputDetailedStatistics) {
+			assert getAllNeighborsCount == getAllNeighborsRuntimes.length;
+			File logFile = getLogWriter().getLogFile();
+			if (logFile == null) {
+				ConsoleUtils.warn("Logging is disabled, so operation statistics will not be written out either");
+			}
+			else {
+				String n = FileUtils.getBaseName(logFile) + "__OperationPageRank_" + getId()
+						+ "__get-all-neighbors-in.txt";
+				File f = new File(logFile.getParentFile(), n);
+				PrintWriter w;
+				try {
+					w = new PrintWriter(new BufferedWriter(new FileWriter(f)));
+					for (int i = 0; i < getAllNeighborsCount; i++) {
+						w.println(getAllNeighborsRuntimes[i]);
+					}
+					w.close();
+					System.err.println("\nOperation statistics written to: "
+							+ OutputUtils.simplifyFileName(f.getAbsolutePath()));
+				}
+				catch (IOException e) {
+					ConsoleUtils.warn("Failed to write the operation statistics: " + e.getMessage());
+				}
+			}
+		}
+		
+		getAllNeighborsRuntimes = null;
 		perVertexInfo = null;
 	}
 
@@ -163,7 +218,7 @@ public class OperationPageRank extends Operation {
 			
 			// Iterations
 			
-			for (int i = 1; i < iterations; i++) {
+			for (int i = 0; i < iterations; i++) {
 				
 				double auxSum = 0;
 				
@@ -171,6 +226,8 @@ public class OperationPageRank extends Operation {
 				// Compute the next iteration of PageRank and store it as aux 
 				
 				for (Entry<Node, Info> I : perVertexInfo.entrySet()) {
+					
+					long start = outputDetailedStatistics ? System.nanoTime() : 0;
 					
 					double a = 0;
 					int c = 0;
@@ -181,6 +238,11 @@ public class OperationPageRank extends Operation {
 						c++;
 					}
 					if (c > 0) a /= c;
+					
+					if (outputDetailedStatistics) {
+						getAllNeighborsRuntimes[getAllNeighborsCount] = (int) (System.nanoTime() - start);
+					}
+					getAllNeighborsCount++;
 					
 					get_ops++;
 					get_vertex += c;
@@ -209,6 +271,8 @@ public class OperationPageRank extends Operation {
 		
 		@Override
 		protected void onFinalize() {
+			super.onFinalize();
+			
 			perVertexInfo = null;
 		}
 	}
