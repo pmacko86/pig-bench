@@ -34,7 +34,7 @@ import com.tinkerpop.blueprints.impls.neo4j.Neo4jGraph;
  */
 public class OperationPageRank extends Operation {
 	
-	public static boolean outputDetailedStatistics = true;
+	public static boolean outputDetailedStatistics = false;
 	
 	
 	private LinkedHashMap<Vertex, Info> perVertexInfo;

@@ -319,8 +319,9 @@ public class ShowCustomData extends HttpServlet {
 				// Depending on the column...
 				
 				if      ("name"       .equalsIgnoreCase(column)) writer.print(entry.getName());
-				if      ("opname"     .equalsIgnoreCase(column)) writer.print(entry.getName());
+				else if ("opname"     .equalsIgnoreCase(column)) writer.print(entry.getName());
 				else if ("optype"     .equalsIgnoreCase(column)) writer.print(entry.getType());
+				else if ("opid"       .equalsIgnoreCase(column)) writer.print(entry.getOpId());
 				else if ("#bname"     .equalsIgnoreCase(column)) writer.print(dbei.getEngine().getLongName());
 				else if ("#type"      .equalsIgnoreCase(column) || "type".equalsIgnoreCase(column)) {
 					String s = dbei.getInstanceSafe("default");
@@ -399,7 +400,9 @@ public class ShowCustomData extends HttpServlet {
 	 */
 	public static String getColumnLabel(String column) {
 		if      ("name"     .equalsIgnoreCase(column)) return "Operation Name";
+		if      ("opname"   .equalsIgnoreCase(column)) return "Operation Name";
 		else if ("optype"   .equalsIgnoreCase(column)) return "Operation Type";
+		else if ("opid"     .equalsIgnoreCase(column)) return "Operation ID";
 		else if ("time_ns"  .equalsIgnoreCase(column)) return "Time (ns)";
 		else if ("time_ms"  .equalsIgnoreCase(column)) return "Time (ms)";
 		else if ("time_s"   .equalsIgnoreCase(column)) return "Time (s)";
