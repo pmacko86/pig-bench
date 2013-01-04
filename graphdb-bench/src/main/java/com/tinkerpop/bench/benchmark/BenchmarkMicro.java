@@ -39,6 +39,7 @@ import com.tinkerpop.bench.operationFactory.factories.OperationFactoryRandomVert
 import com.tinkerpop.bench.operationFactory.factories.OperationFactoryRandomVertexOriginalID;
 import com.tinkerpop.bench.operationFactory.factories.OperationFactoryRandomVertexPair;
 import com.tinkerpop.bench.operationFactory.factories.OperationFactoryRandomVertexPropertyValue;
+import com.tinkerpop.bench.operationFactory.factories.OperationFactorySequentialVertex;
 import com.tinkerpop.bench.util.ConsoleUtils;
 import com.tinkerpop.bench.util.FileUtils;
 import com.tinkerpop.bench.util.GraphUtils;
@@ -1939,6 +1940,24 @@ public class BenchmarkMicro extends Benchmark {
 				}
 			}
 			
+			if (options.has("get-trav-seq")) {
+				
+				for (Direction d : DIRECTIONS) {
+					operationFactories.add(new OperationFactorySequentialVertex(
+							OperationGetFirstNeighbor.class, opCount,
+							new Object[] { d }, OutputUtils.toTag(d) + "-seq"));
+					operationFactories.add(new OperationFactorySequentialVertex(
+							OperationGetAllNeighbors.class, opCount,
+							new Object[] { d }, OutputUtils.toTag(d) + "-seq"));
+					
+					if (edgePropertyForConditionalTraversal.equalsIgnoreCase("none")) continue;
+					operationFactories.add(new OperationFactoryRandomVertex(
+							OperationFactorySequentialVertex.class, opCount,
+							new Object[] { d, edgePropertyForConditionalTraversal },
+							OutputUtils.toTag(d) + "-seq"));
+				}
+			}
+			
 			
 			// GET microbenchmarks & GET_NEIGHBORS ops and variants + label
 			
@@ -2108,7 +2127,7 @@ public class BenchmarkMicro extends Benchmark {
 			
 			if (options.has("pagerank")) {
 				operationFactories.add(new OperationFactoryGeneric(
-						OperationPageRank.class, 10));
+						OperationPageRank.class, 4));
             }
 		}
 
