@@ -13,6 +13,7 @@ import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
 import org.neo4j.tooling.GlobalGraphOperations;
 
+import com.sparsity.dex.gdb.EdgesDirection;
 import com.tinkerpop.bench.operation.Operation;
 import com.tinkerpop.bench.util.ConsoleUtils;
 import com.tinkerpop.bench.util.FileUtils;
@@ -21,6 +22,8 @@ import com.tinkerpop.bench.util.OutputUtils;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.blueprints.extensions.BenchmarkableGraph;
+import com.tinkerpop.blueprints.extensions.impls.dex.DexUtils;
+import com.tinkerpop.blueprints.impls.dex.DexGraph;
 import com.tinkerpop.blueprints.impls.neo4j.Neo4jGraph;
 
 
@@ -175,7 +178,124 @@ public class OperationPageRank extends Operation {
 	}
 	
 	
-	// TODO Add DEX implementation
+	/**
+	 * The operation specialized for DEX
+	 */
+	public static class DEX extends OperationPageRank {
+		
+		private LinkedHashMap<Long, Info> perVertexInfo;
+		private int[] edgeTypes;
+		private int[] nodeTypes;
+		
+		
+		@Override
+		protected void onInitialize(Object[] args) {
+			super.onInitialize(args);
+			
+			perVertexInfo = new LinkedHashMap<Long, Info>();
+			edgeTypes = DexUtils.getEdgeTypes(((DexGraph) getGraph()).getRawGraph());
+			nodeTypes = DexUtils.getNodeTypes(((DexGraph) getGraph()).getRawGraph());
+		}
+		
+		
+		@Override
+		protected void onExecute() throws Exception {
+			
+			if (!perVertexInfo.isEmpty()) perVertexInfo.clear();
+			int get_ops = 0, get_vertex = 0;
+			
+			com.sparsity.dex.gdb.Graph graph = ((DexGraph) getGraph()).getRawGraph();
+			
+			
+			// Initialize
+			
+			for (int t : nodeTypes) {
+				com.sparsity.dex.gdb.Objects objs = graph.select(t);
+				com.sparsity.dex.gdb.ObjectsIterator objsItr = objs.iterator();
+						
+				while (objsItr.hasNext()) {
+					long v = objsItr.nextObject();
+					perVertexInfo.put(v, new Info());
+				}
+						
+				objsItr.close();
+				objs.close();
+			}
+			
+			int N = perVertexInfo.size();
+			for (Info I : perVertexInfo.values()) {
+				I.pagerank = 1.0 / N;
+			}
+			
+			
+			// Iterations
+			
+			for (int i = 0; i < iterations; i++) {
+				
+				double auxSum = 0;
+				
+				
+				// Compute the next iteration of PageRank and store it as aux 
+				
+				for (Entry<Long, Info> I : perVertexInfo.entrySet()) {
+					
+					long start = outputDetailedStatistics ? System.nanoTime() : 0;
+					
+					double a = 0;
+					int c = 0;
+					Long n = I.getKey();
+					for (int t : edgeTypes) {
+						com.sparsity.dex.gdb.Objects objs = graph.neighbors(n, t, EdgesDirection.Any);
+						com.sparsity.dex.gdb.ObjectsIterator objsItr = objs.iterator();
+								
+						while (objsItr.hasNext()) {
+							long v = objsItr.nextObject();
+							a += perVertexInfo.get(v).pagerank;
+							c++;
+						}
+								
+						objsItr.close();
+						objs.close();
+					}
+					if (c > 0) a /= c;
+					
+					if (outputDetailedStatistics) {
+						getAllNeighborsRuntimes[getAllNeighborsCount] = (int) (System.nanoTime() - start);
+					}
+					getAllNeighborsCount++;
+					
+					get_ops++;
+					get_vertex += c;
+					
+					double aux = (q / N) + (1.0 - q) * a;
+					auxSum += aux;
+					I.getValue().aux = aux;  
+				}
+				
+				
+				// Store and normalize the ProvRank
+				
+				for (Info I : perVertexInfo.values()) {
+					I.pagerank = I.aux / auxSum;
+					I.aux = 0;
+				}
+			}
+			
+			
+			// Finish
+			
+			setResult(N /* unique_vertices */ + ":1" /* real_hops */ + ":" + get_ops + ":" + get_vertex
+					+ ":" + iterations);
+		}
+
+		
+		@Override
+		protected void onFinalize() {
+			super.onFinalize();
+			
+			perVertexInfo = null;
+		}
+	}
 	
 	
 	/**
