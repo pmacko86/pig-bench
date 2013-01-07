@@ -2110,6 +2110,11 @@ public class BenchmarkMicro extends Benchmark {
 				operationFactories.add(new OperationFactoryGeneric(
 						OperationPageRank.class, 4));
             }
+			
+			if (options.has("blank")) {
+				operationFactories.add(new OperationFactoryGeneric(
+						OperationBlank.class, opCount));
+            }
 		}
 
 		return operationFactories;

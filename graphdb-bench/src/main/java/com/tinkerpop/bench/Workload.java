@@ -50,6 +50,8 @@ public class Workload {
 		Map<String, Workload> m = new TreeMap<String, Workload>();
 		m.put("add", new Workload("add", "Add nodes, edges, and properties",
 				"Add random nodes, edges, and properties", null, true, UpdateCategory.PERMANENT_UPDATE));
+		m.put("blank", new Workload("blank", "A blank operation (noop)",
+				"A blank operation (noop)", null, true, UpdateCategory.READ_ONLY));
 		m.put("clustering-coeff", new Workload("clustering-coeff", "Global and network average clustering coefficients",
 				"Global and network average clustering coefficients", null, false, UpdateCategory.READ_ONLY));
 		m.put("clustering-local", new Workload("clustering-local", "Local clustering coefficients",

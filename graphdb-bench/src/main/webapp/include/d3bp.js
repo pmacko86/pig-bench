@@ -369,6 +369,8 @@ d3bp.Appearance = CClass.create(function() {
 
 d3bp.AbstractChart = CClass.create(function() {
 	
+	this._super();
+	
 	return {
 	};
 });
