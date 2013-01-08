@@ -780,12 +780,10 @@ public class ModelAnalysis {
 		
 		// Read the log file
 		
-		OperationLogReader reader = new OperationLogReader(job.getLogFile(), operationName);
-		
 		Vector<Double> y = new Vector<Double>();
 		Vector<Double> x = new Vector<Double>();
 
-		for (OperationLogEntry e : reader) {
+		for (OperationLogEntry e : OperationLogReader.getTailEntries(job.getLogFile(), operationName)) {
 			
 			// Filter by the result values
 			
@@ -875,12 +873,10 @@ public class ModelAnalysis {
 		
 		// Read the log file
 		
-		OperationLogReader reader = new OperationLogReader(job.getLogFile(), operationName);
-		
 		Vector<Double> y = new Vector<Double>();
 		Vector<Double> x = new Vector<Double>();
 
-		for (OperationLogEntry e : reader) {
+		for (OperationLogEntry e : OperationLogReader.getTailEntries(job.getLogFile(), operationName)) {
 			
 			// Get the result values
 			
