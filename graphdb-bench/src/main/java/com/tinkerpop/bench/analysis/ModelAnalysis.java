@@ -7,6 +7,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.tinkerpop.bench.log.OperationLogEntry;
 import com.tinkerpop.bench.log.OperationLogReader;
+import com.tinkerpop.bench.log.SummaryLogEntry;
+import com.tinkerpop.bench.log.SummaryLogReader;
 import com.tinkerpop.bench.operation.Operation;
 import com.tinkerpop.bench.operation.operations.OperationAddManyEdges;
 import com.tinkerpop.bench.operation.operations.OperationAddManyVertices;
@@ -40,19 +42,37 @@ import com.tinkerpop.blueprints.Direction;
  */
 public class ModelAnalysis {
 
+	/// The directions
+	public static final Direction[] DIRECTIONS = new Direction[] { /*Direction.OUT, Direction.IN,*/ Direction.BOTH };
+	
+	
+	/*
+	 * Configuration
+	 */
+
 	/// Whether to use KHops operations with K=1 instead of the simpler (in theory, equivalent) primitives
-	public static boolean useKHops1 = true;
+	public static boolean useKHops1 = false;
 	
 	/// Whether to use robust linear fits
-	public static boolean useRobustFits = true;
-
-	/// The directions
-	public static final Direction[] DIRECTIONS = new Direction[] { Direction.OUT, Direction.IN, Direction.BOTH };
+	public static boolean useRobustFits = false;
+	
+	/// Whether to always use the detailed log files instead of the summary files
+	public static boolean alwaysUseDetailedLogs = false;
+	
+	
+	/*
+	 * Cache
+	 */
 	
 	/// The cache
 	private static ConcurrentHashMap<DatabaseEngineAndInstance, ModelAnalysis> cache =
 			new ConcurrentHashMap<DatabaseEngineAndInstance, ModelAnalysis>();
 
+	
+	/*
+	 * This instance
+	 */
+	
 	/// The database and instance pair
 	private DatabaseEngineAndInstance dbEI;
 	
@@ -77,28 +97,28 @@ public class ModelAnalysis {
 	public Double Rvup;
 	
 	/// The primitive traversals -- follow the first edge
-	public Double[] T             = new Double[3];
-	public Double[] T_prediction  = new Double[3];
+	public Double[] T             = new Double[DIRECTIONS.length];
+	public Double[] T_prediction  = new Double[DIRECTIONS.length];
 	
 	/// The primitive traversals -- follow the first edge with label
-	public Double[] Tl            = new Double[3];
-	public Double[] Tl_prediction = new Double[3];
+	public Double[] Tl            = new Double[DIRECTIONS.length];
+	public Double[] Tl_prediction = new Double[DIRECTIONS.length];
 	
 	/// The primitive traversals -- follow an edge using a property
-	public Double[][] Tp            = new Double[3][];
-	public Double[][] Tp_prediction = new Double[3][];
+	public Double[][] Tp            = new Double[DIRECTIONS.length][];
+	public Double[][] Tp_prediction = new Double[DIRECTIONS.length][];
 	
 	/// Get all neighbors -- follow all first edges
-	public Double[][] N             = new Double[3][];
-	public Double[][] N_prediction  = new Double[3][];
+	public Double[][] N             = new Double[DIRECTIONS.length][];
+	public Double[][] N_prediction  = new Double[DIRECTIONS.length][];
 	
 	/// Get all neighbors -- follow all first edges with label
-	public Double[][] Nl            = new Double[3][];
-	public Double[][] Nl_prediction = new Double[3][];
+	public Double[][] Nl            = new Double[DIRECTIONS.length][];
+	public Double[][] Nl_prediction = new Double[DIRECTIONS.length][];
 	
 	/// Get all neighbors -- follow edges using a property
-	//private Double[][] Np            = new Double[3][];
-	//private Double[][] Np_prediction = new Double[3][];
+	//private Double[][] Np            = new Double[DIRECTIONS.length][];
+	//private Double[][] Np_prediction = new Double[DIRECTIONS.length][];
 	
 	/// Get all K-hop neighbors -- follow all first edges
 	public Double[][][] K             = new Double[][][] { new Double[5][], new Double[5][], new Double[5][] };
@@ -208,6 +228,13 @@ public class ModelAnalysis {
 		
 		
 		/*
+		 * Pull out properties
+		 */
+		
+		Double averageDegree = getAverageResultValue("OperationGetAllNeighbors", new String[] { "both" });
+
+		
+		/*
 		 * Pull out the primitive traversals
 		 */
 		
@@ -223,9 +250,9 @@ public class ModelAnalysis {
 				Tp[index] = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighborsEdgeConditional.class, t + "-" + 1);
 			}
 			
-			T_prediction [index] = MathUtils.sum(Re, Rv);
-			Tl_prediction[index] = MathUtils.sum(Re, Rv);
-			Tp_prediction[index] = MathUtils.ifNeitherIsNull(MathUtils.sum(Re, Rv), Rp);
+			T_prediction [index] = MathUtils.product(MathUtils.sum(Re, Rv), averageDegree);
+			Tl_prediction[index] = MathUtils.product(MathUtils.sum(Re, Rv), averageDegree);
+			Tp_prediction[index] = MathUtils.multiplyElementwise(MathUtils.ifNeitherIsNull(MathUtils.sum(Re, Rv), Rp), averageDegree);
 		}
 		
 		
@@ -259,8 +286,8 @@ public class ModelAnalysis {
 				}
 			}
 			
-			N_prediction [index] = MathUtils.ifNeitherIsNull(new Double(0), T[index]);
-			Nl_prediction[index] = MathUtils.ifNeitherIsNull(new Double(0), Tl[index]);
+			N_prediction [index] = MathUtils.ifNeitherIsNull(new Double(0), MathUtils.sum(Re, Rv));
+			Nl_prediction[index] = MathUtils.ifNeitherIsNull(new Double(0), MathUtils.sum(Re, Rv));
 		}
 		
 		
@@ -277,13 +304,13 @@ public class ModelAnalysis {
 				Kl[index][k-1] = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighbors.class, t + "-withlabel-" + k);
 				Kp[index][k-1] = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighborsEdgeConditional.class, t + "-" + k);
 				
-				/*K_prediction [index][k-1] = N [index];
+				K_prediction [index][k-1] = N [index];
 				Kl_prediction[index][k-1] = Nl[index];
-				Kp_prediction[index][k-1] = Tp[index];*/
+				Kp_prediction[index][k-1] = Tp[index];
 				
-				K_prediction [index][k-1] = MathUtils.multiplyElementwise(N [index], (double) k);
+				/*K_prediction [index][k-1] = MathUtils.multiplyElementwise(N [index], (double) k);
 				Kl_prediction[index][k-1] = MathUtils.multiplyElementwise(Nl[index], (double) k);
-				Kp_prediction[index][k-1] = MathUtils.multiplyElementwise(Tp[index], (double) k);
+				Kp_prediction[index][k-1] = MathUtils.multiplyElementwise(Tp[index], (double) k);*/
 			}
 		}
 		
@@ -305,7 +332,7 @@ public class ModelAnalysis {
 				SP_prediction[k] = MathUtils.ifNeitherIsNull(Rv, (double) 0);
 			}
 			else {
-				SP_prediction[k] = MathUtils.multiplyElementwise(N[index], (double) k);
+				SP_prediction[k] = N[index];
 			}
 		}
 		
@@ -592,12 +619,11 @@ public class ModelAnalysis {
 	 */
 	public static int translateDirection(Direction d) {
 		
-		switch (d) {
-		case OUT : return 0;
-		case IN  : return 1;
-		case BOTH: return 2;
-		default  : throw new IllegalArgumentException();
+		for (int i = 0; i < DIRECTIONS.length; i++) {
+			if (DIRECTIONS[i].equals(d)) return i;
 		}
+		
+		throw new IllegalArgumentException();
 	}
 	
 	
@@ -634,63 +660,93 @@ public class ModelAnalysis {
 		
 		// Find the correct job
 		
-		SortedSet<Job> operationJobs = context.operationToJobs.get(operationName);
+		SortedSet<Job> operationJobs = null;		
+		if (tags.length == 0) {
+			operationJobs = context.operationWithTagsToJobs.get(operationName);
+		}
+		else if (tags.length == 1) {
+			operationJobs = context.operationWithTagsToJobs.get(operationName + "-" + tags[0]);
+		}
+		else {
+			throw new UnsupportedOperationException();
+		}
+
 		if (operationJobs == null || operationJobs.isEmpty()) return null;
 		Job job = operationJobs.last();
 		
 		
-		// Read the log file
+		// Get the average operation run time
 		
-		OperationLogReader reader = new OperationLogReader(job.getLogFile());
-		Vector<Double> times_ms = new Vector<Double>();
-		Vector<Integer> counts = new Vector<Integer>();
-		
-		for (OperationLogEntry e : reader) {
+		if (alwaysUseDetailedLogs || tags.length > 1) {
 			
-			if (tags.length == 0) {
-				if (!e.getName().equals(operationName)
-						&& !e.getName().startsWith(operationName + "-")) continue;
-			}
-			else {
-				boolean ok = false;
-				for (String t : tags) {
-					if (e.getName().equals(operationName + "-" + t)) { ok = true; break; }
+			// Read the log file
+			
+			OperationLogReader reader = new OperationLogReader(job.getLogFile());
+			Vector<Double> times_ms = new Vector<Double>();
+			Vector<Integer> counts = new Vector<Integer>();
+			
+			for (OperationLogEntry e : reader) {
+				
+				if (tags.length == 0) {
+					if (!e.getName().equals(operationName)
+							&& !e.getName().startsWith(operationName + "-")) continue;
 				}
-				if (!ok) continue;
+				else {
+					boolean ok = false;
+					for (String t : tags) {
+						if (e.getName().equals(operationName + "-" + t)) { ok = true; break; }
+					}
+					if (!ok) continue;
+				}
+				
+				int count;
+				if (many) {
+					String s = e.getArgs()[opCountArg >= 0 ? opCountArg : e.getArgs().length + opCountArg];
+					int opCount = Integer.parseInt(s);
+					if (!s.equals("" + opCount)) throw new NumberFormatException(s);
+					count = opCount;
+				}
+				else {
+					count = 1;
+				}
+				
+				counts.add(count);
+				times_ms.add(e.getTime() / 1000000.0);
 			}
 			
-			int count;
-			if (many) {
-				String s = e.getArgs()[opCountArg >= 0 ? opCountArg : e.getArgs().length + opCountArg];
-				int opCount = Integer.parseInt(s);
-				if (!s.equals("" + opCount)) throw new NumberFormatException(s);
-				count = opCount;
-			}
-			else {
-				count = 1;
-			}
+			assert counts.size() == times_ms.size();
+			if (counts.isEmpty()) return null;
 			
-			counts.add(count);
-			times_ms.add(e.getTime() / 1000000.0);
+			
+	    	// Compute the mean from the last 25%
+	    	
+	    	int l = counts.size();
+	    	int from = (3 * l) / 4; 
+	    	if (from >= l) from = 0;
+	    	
+	    	double time = 0; int count = 0;
+	    	for (int i = from; i < l; i++) {
+	    		time += times_ms.get(i).doubleValue();
+	    		count += counts.get(i).intValue();
+	    	}
+			
+			return time / count;
 		}
-		
-		assert counts.size() == times_ms.size();
-		if (counts.isEmpty()) return null;
-		
-		
-    	// Compute the mean from the last 25%
-    	
-    	int l = counts.size();
-    	int from = (3 * l) / 4; 
-    	if (from >= l) from = 0;
-    	
-    	double time = 0; int count = 0;
-    	for (int i = from; i < l; i++) {
-    		time += times_ms.get(i).doubleValue();
-    		count += counts.get(i).intValue();
-    	}
-		
-		return time / count;
+		else {
+			
+			// Read the log file
+			
+			String name = operationName;
+			if (tags.length == 1) name += "-" + tags[0];
+			SummaryLogEntry entry = SummaryLogReader.getEntryForOperation(job.getSummaryFile(), name);
+			if (entry == null) return null;
+			
+			if (many) {
+				entry = AnalysisUtils.convertLogEntryForManyOperation(entry, job);
+			}
+			
+			return entry.getDefaultRunTimes().getMean() / 1000000.0;
+		}
 	}
 	
 	
@@ -743,7 +799,17 @@ public class ModelAnalysis {
 		
 		// Find the correct job
 		
-		SortedSet<Job> operationJobs = context.operationToJobs.get(operationName);
+		SortedSet<Job> operationJobs = null;		
+		if (tags.length == 0) {
+			operationJobs = context.operationWithTagsToJobs.get(operationName);
+		}
+		else if (tags.length == 1) {
+			operationJobs = context.operationWithTagsToJobs.get(operationName + "-" + tags[0]);
+		}
+		else {
+			throw new UnsupportedOperationException();
+		}
+
 		if (operationJobs == null || operationJobs.isEmpty()) return null;
 		Job job = operationJobs.last();
 		
@@ -830,6 +896,104 @@ public class ModelAnalysis {
 		
 		return MathUtils.upgradeArray(
 				useRobustFits && ax.length >= 50 ? MathUtils.robustLinearFit(ax, ay) : MathUtils.linearFit(ax, ay));
+	}
+	
+	
+	/**
+	 * Get an average result value
+	 * 
+	 * @param operationName the operation name
+	 * @param tags the tags
+	 * @return the average result value, or null if not found
+	 */
+	private Double getAverageResultValue(String operationName, String[] tags) {
+	
+		int xArg = -1;
+		if (operationName.equals("OperationGetAllNeighbors"                )) xArg = 3;
+		if (operationName.equals("OperationGetNeighborEdgeConditional"     )) xArg = 3;
+		if (operationName.equals("OperationGetKHopNeighbors"               )) xArg = 3;
+		if (operationName.equals("OperationGetKHopNeighborsEdgeConditional")) xArg = 3;
+		if (operationName.equals("OperationLocalClusteringCoefficient"     )) xArg = 3;
+		if (operationName.equals("OperationGetShortestPath"                )) xArg = 3;
+		if (xArg < 0) {
+			throw new IllegalArgumentException("Unsupported operation " + operationName);
+		}
+		
+		
+		// Find the correct job
+		
+		SortedSet<Job> operationJobs = null;		
+		if (tags.length == 0) {
+			operationJobs = context.operationWithTagsToJobs.get(operationName);
+		}
+		else if (tags.length == 1) {
+			operationJobs = context.operationWithTagsToJobs.get(operationName + "-" + tags[0]);
+		}
+		else {
+			throw new UnsupportedOperationException();
+		}
+
+		if (operationJobs == null || operationJobs.isEmpty()) return null;
+		Job job = operationJobs.last();
+		
+		
+		// Read the log file
+		
+		OperationLogReader reader = new OperationLogReader(job.getLogFile());
+		
+		Vector<Double> y = new Vector<Double>();
+		Vector<Double> x = new Vector<Double>();
+
+		for (OperationLogEntry e : reader) {
+			
+			
+			// Filter by tags (if specified)
+
+			if (tags == null || tags.length == 0) {
+				if (!e.getName().equals(operationName)
+						&& !e.getName().startsWith(operationName + "-")) continue;
+			}
+			else {
+				boolean ok = false;
+				for (String t : tags) {
+					if (e.getName().equals(operationName + "-" + t)) { ok = true; break; }
+				}
+				if (!ok) continue;
+			}
+			
+			
+			// Get the result values
+			
+			String[] result = e.getResult().split(":");
+			
+			
+			// Get the data points
+
+			int    xv = Integer.parseInt(result[xArg]);
+			double yv = e.getTime() / 1000000.0;
+
+			x.add((double) xv);
+			y.add(yv);
+ 		}
+
+		if (x.size() <= 0) return null;
+		
+		
+		// Drop extreme 5% values
+		
+		double[] ax = MathUtils.downgradeArray(x.toArray(new Double[0]));
+		double[] ay = MathUtils.downgradeArray(y.toArray(new Double[0]));
+		double  min = MathUtils.quantile(ay, 0.05);
+		double  max = MathUtils.quantile(ay, 0.95);
+        
+		Pair<double[], double[]> filtered = MathUtils.filter(ay, ax, min, max);
+		ay = filtered.getFirst();
+		ax = filtered.getSecond();
+		
+		
+		// Finish
+		
+		return MathUtils.average(ax);
 	}
 	
 	
