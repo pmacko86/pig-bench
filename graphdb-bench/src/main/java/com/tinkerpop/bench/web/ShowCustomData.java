@@ -188,7 +188,7 @@ public class ShowCustomData extends HttpServlet {
 		// Get the writer and write out the log file
 		
 		PrintWriter writer = response.getWriter();
-		printData(writer, operationsToJobs, columns, delimiter, printHeader, convertManyOperations, 10000, 0.01, response);
+		printData(writer, operationsToJobs, columns, delimiter, printHeader, convertManyOperations, 0.01, response);
 	}
 	
 	
@@ -201,13 +201,12 @@ public class ShowCustomData extends HttpServlet {
 	 * @param delimiter the column delimiters
 	 * @param printHeader true to print header
 	 * @param convertManyOperations whether convert the "Many" operations into the single operations
-	 * @param tail return at most this number of runs (use 0 or a negative number to disable)
 	 * @param dropExtremes the fraction of extreme top and bottom values to drop (use a negative number to disable)
 	 * @param response the response, or null if none
 	 */
 	public static void printData(PrintWriter writer, Map<String, Collection<Job>> operationsToJobs,
 			String[] columns, String delimiter, boolean printHeader, boolean convertManyOperations,
-			int tail, double dropExtremes, HttpServletResponse response) {
+			double dropExtremes, HttpServletResponse response) {
 
 		
 		// Get the data for each operation
@@ -221,26 +220,13 @@ public class ShowCustomData extends HttpServlet {
 			for (Job job : operationsToJobs.get(operationName)) {
 				currentJobsEntries.clear();
 				
-				OperationLogReader reader = new OperationLogReader(job.getLogFile(), operationName);
-				for (OperationLogEntry e : reader) {
-					if (e.getName().equals(operationName)) {
-						
-						if (convertManyOperations && AnalysisUtils.isManyOperation(operationName)) {
-							e = AnalysisUtils.convertLogEntryForManyOperation(e);
-						}
-						
-						String s = e.getName();
-						currentJobsEntries.add(new Triple<String, Job, OperationLogEntry>(s, job, e));
+				for (OperationLogEntry e : OperationLogReader.getTailEntries(job.getLogFile(), operationName)) {
+					if (convertManyOperations && AnalysisUtils.isManyOperation(operationName)) {
+						e = AnalysisUtils.convertLogEntryForManyOperation(e);
 					}
-				}
-				
-				if (tail > 0 && currentJobsEntries.size() > tail) {
-					ArrayList<Triple<String, Job, OperationLogEntry>> a
-						= new ArrayList<Triple<String, Job, OperationLogEntry>>();
-					for (int i = currentJobsEntries.size() - tail; i < currentJobsEntries.size(); i++) {
-						a.add(currentJobsEntries.get(i));
-					}
-					currentJobsEntries = a;
+					
+					String s = e.getName();
+					currentJobsEntries.add(new Triple<String, Job, OperationLogEntry>(s, job, e));
 				}
 
 				if (dropExtremes > 0 && currentJobsEntries.size() > 0) {

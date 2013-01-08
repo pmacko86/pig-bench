@@ -99,7 +99,7 @@ public class ShowLogFile extends HttpServlet {
 	        return;
 		}
 		
-		OperationLogReader reader = new OperationLogReader(logFile);
+		OperationLogReader reader = new OperationLogReader(logFile);	/* get all entries, not just the tail */
 		
 		
 		// Depending on the format type...

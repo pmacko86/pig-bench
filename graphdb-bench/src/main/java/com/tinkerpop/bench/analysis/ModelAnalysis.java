@@ -231,7 +231,7 @@ public class ModelAnalysis {
 		 * Pull out properties
 		 */
 		
-		Double averageDegree = getAverageResultValue("OperationGetAllNeighbors", new String[] { "both" });
+		Double averageDegree = getAverageResultValue("OperationGetAllNeighbors-both");
 
 		
 		/*
@@ -634,11 +634,10 @@ public class ModelAnalysis {
 	 * repeated.
 	 * 
 	 * @param operation the operation type
-	 * @param tags the tags
 	 * @return the runtime in ms, or null if not found
 	 */
-	private Double getAverageOperationRuntime(Class<? extends Operation> operation, String... tags) {
-		return getAverageOperationRuntime(operation.getSimpleName(), tags);
+	private Double getAverageOperationRuntime(Class<? extends Operation> operation) {
+		return getAverageOperationRuntime(operation.getSimpleName());
 	}
 	
 	
@@ -648,11 +647,25 @@ public class ModelAnalysis {
 	 * type, then return the average runtime of the simpler operation that gets
 	 * repeated.
 	 * 
-	 * @param operationName the operation name
-	 * @param tags the tags
+	 * @param operation the operation type
+	 * @param tag the tag
 	 * @return the runtime in ms, or null if not found
 	 */
-	private Double getAverageOperationRuntime(String operationName, String... tags) {
+	private Double getAverageOperationRuntime(Class<? extends Operation> operation, String tag) {
+		return getAverageOperationRuntime(operation.getSimpleName() + "-" + tag);
+	}
+	
+	
+	/**
+	 * Get a runtime of an operation from the latest job, taking a simple average
+	 * if there is more than one within the job. If the operation is of the "Many"
+	 * type, then return the average runtime of the simpler operation that gets
+	 * repeated.
+	 * 
+	 * @param operationName the operation name including the tag
+	 * @return the runtime in ms, or null if not found
+	 */
+	private Double getAverageOperationRuntime(String operationName) {
 		
 		boolean many = AnalysisUtils.isManyOperation(operationName);
 		int opCountArg = !many ? -1 : AnalysisUtils.getManyOperationOpCountArgumentIndex(operationName);
@@ -660,90 +673,41 @@ public class ModelAnalysis {
 		
 		// Find the correct job
 		
-		SortedSet<Job> operationJobs = null;		
-		if (tags.length == 0) {
-			operationJobs = context.operationWithTagsToJobs.get(operationName);
-		}
-		else if (tags.length == 1) {
-			operationJobs = context.operationWithTagsToJobs.get(operationName + "-" + tags[0]);
-		}
-		else {
-			throw new UnsupportedOperationException();
-		}
-
+		SortedSet<Job> operationJobs = context.operationWithTagsToJobs.get(operationName);
 		if (operationJobs == null || operationJobs.isEmpty()) return null;
 		Job job = operationJobs.last();
 		
 		
 		// Get the average operation run time
 		
-		if (alwaysUseDetailedLogs || tags.length > 1) {
+		if (alwaysUseDetailedLogs) {
 			
-			// Read the log file
-			
-			OperationLogReader reader = new OperationLogReader(job.getLogFile());
-			Vector<Double> times_ms = new Vector<Double>();
-			Vector<Integer> counts = new Vector<Integer>();
-			
-			for (OperationLogEntry e : reader) {
+	    	double time = 0; int count = 0;			
+			for (OperationLogEntry e : OperationLogReader.getTailEntries(job.getLogFile(), operationName)) {
 				
-				if (tags.length == 0) {
-					if (!e.getName().equals(operationName)
-							&& !e.getName().startsWith(operationName + "-")) continue;
-				}
-				else {
-					boolean ok = false;
-					for (String t : tags) {
-						if (e.getName().equals(operationName + "-" + t)) { ok = true; break; }
-					}
-					if (!ok) continue;
-				}
-				
-				int count;
+				int c;
 				if (many) {
 					String s = e.getArgs()[opCountArg >= 0 ? opCountArg : e.getArgs().length + opCountArg];
 					int opCount = Integer.parseInt(s);
 					if (!s.equals("" + opCount)) throw new NumberFormatException(s);
-					count = opCount;
+					c = opCount;
 				}
 				else {
-					count = 1;
+					c = 1;
 				}
 				
-				counts.add(count);
-				times_ms.add(e.getTime() / 1000000.0);
+				count += c;
+				time += e.getTime() / 1000000.0;
 			}
 			
-			assert counts.size() == times_ms.size();
-			if (counts.isEmpty()) return null;
-			
-			
-	    	// Compute the mean from the last 25%
-	    	
-	    	int l = counts.size();
-	    	int from = (3 * l) / 4; 
-	    	if (from >= l) from = 0;
-	    	
-	    	double time = 0; int count = 0;
-	    	for (int i = from; i < l; i++) {
-	    		time += times_ms.get(i).doubleValue();
-	    		count += counts.get(i).intValue();
-	    	}
-			
+			if (count == 0) return null;
 			return time / count;
 		}
 		else {
 			
-			// Read the log file
-			
-			String name = operationName;
-			if (tags.length == 1) name += "-" + tags[0];
-			SummaryLogEntry entry = SummaryLogReader.getEntryForOperation(job.getSummaryFile(), name);
-			if (entry == null) return null;
-			
-			if (many) {
-				entry = AnalysisUtils.convertLogEntryForManyOperation(entry, job);
-			}
+			SummaryLogEntry entry = SummaryLogReader.getEntryForOperation(job.getSummaryFile(), operationName);
+			if (entry == null) return null;	
+			if (many) entry = AnalysisUtils.convertLogEntryForManyOperation(entry, job);
 			
 			return entry.getDefaultRunTimes().getMean() / 1000000.0;
 		}
@@ -754,11 +718,22 @@ public class ModelAnalysis {
 	 * Get a runtime of a job as a linear function of one of the operation results
 	 * 
 	 * @param operation the operation type
+	 * @return the runtime in ms as a function described by [intercept, slope], or null if not found
+	 */
+	private Double[] getOperationRuntimeAsLinearFunction(Class<? extends Operation> operation) {
+		return getOperationRuntimeAsLinearFunction(operation.getSimpleName(), null);
+	}
+	
+	
+	/**
+	 * Get a runtime of a job as a linear function of one of the operation results
+	 * 
+	 * @param operation the operation type
 	 * @param tag the tag
 	 * @return the runtime in ms as a function described by [intercept, slope], or null if not found
 	 */
-	private Double[] getOperationRuntimeAsLinearFunction(Class<? extends Operation> operation, String... tags) {
-		return getOperationRuntimeAsLinearFunction(operation.getSimpleName(), tags, null);
+	private Double[] getOperationRuntimeAsLinearFunction(Class<? extends Operation> operation, String tag) {
+		return getOperationRuntimeAsLinearFunction(operation.getSimpleName() + "-" + tag, null);
 	}
 	
 	
@@ -771,27 +746,26 @@ public class ModelAnalysis {
 	 */
 	private Double[] getOperationRuntimeAsLinearFunctionWithResultFilter(
 			Class<? extends Operation> operation, Integer... resultFilter) {
-		return getOperationRuntimeAsLinearFunction(operation.getSimpleName(), new String[0], resultFilter);
+		return getOperationRuntimeAsLinearFunction(operation.getSimpleName(), resultFilter);
 	}
 	
 	
 	/**
 	 * Get a runtime of a job as a linear function of one of the operation results
 	 * 
-	 * @param operationName the operation name
-	 * @param tags the tags
+	 * @param operationName the operation name including a tag
 	 * @param resultFilter the result filter
 	 * @return the runtime in ms as a function described by [intercept, slope], or null if not found
 	 */
-	private Double[] getOperationRuntimeAsLinearFunction(String operationName, String[] tags, Integer[] resultFilter) {
+	private Double[] getOperationRuntimeAsLinearFunction(String operationName, Integer[] resultFilter) {
 	
 		int xArg = -1;
-		if (operationName.equals("OperationGetAllNeighbors"                )) xArg = 3;
-		if (operationName.equals("OperationGetNeighborEdgeConditional"     )) xArg = 3;
-		if (operationName.equals("OperationGetKHopNeighbors"               )) xArg = 3;
-		if (operationName.equals("OperationGetKHopNeighborsEdgeConditional")) xArg = 3;
-		if (operationName.equals("OperationLocalClusteringCoefficient"     )) xArg = 3;
-		if (operationName.equals("OperationGetShortestPath"                )) xArg = 3;
+		if (operationName.startsWith("OperationGetAllNeighbors"                )) xArg = 3;
+		if (operationName.startsWith("OperationGetNeighborEdgeConditional"     )) xArg = 3;
+		if (operationName.startsWith("OperationGetKHopNeighbors"               )) xArg = 3;
+		if (operationName.startsWith("OperationGetKHopNeighborsEdgeConditional")) xArg = 3;
+		if (operationName.startsWith("OperationLocalClusteringCoefficient"     )) xArg = 3;
+		if (operationName.startsWith("OperationGetShortestPath"                )) xArg = 3;
 		if (xArg < 0) {
 			throw new IllegalArgumentException("Unsupported operation " + operationName);
 		}
@@ -799,45 +773,19 @@ public class ModelAnalysis {
 		
 		// Find the correct job
 		
-		SortedSet<Job> operationJobs = null;		
-		if (tags.length == 0) {
-			operationJobs = context.operationWithTagsToJobs.get(operationName);
-		}
-		else if (tags.length == 1) {
-			operationJobs = context.operationWithTagsToJobs.get(operationName + "-" + tags[0]);
-		}
-		else {
-			throw new UnsupportedOperationException();
-		}
-
+		SortedSet<Job> operationJobs = context.operationWithTagsToJobs.get(operationName);
 		if (operationJobs == null || operationJobs.isEmpty()) return null;
 		Job job = operationJobs.last();
 		
 		
 		// Read the log file
 		
-		OperationLogReader reader = new OperationLogReader(job.getLogFile());
+		OperationLogReader reader = new OperationLogReader(job.getLogFile(), operationName);
 		
 		Vector<Double> y = new Vector<Double>();
 		Vector<Double> x = new Vector<Double>();
 
 		for (OperationLogEntry e : reader) {
-			
-			
-			// Filter by tags (if specified)
-
-			if (tags == null || tags.length == 0) {
-				if (!e.getName().equals(operationName)
-						&& !e.getName().startsWith(operationName + "-")) continue;
-			}
-			else {
-				boolean ok = false;
-				for (String t : tags) {
-					if (e.getName().equals(operationName + "-" + t)) { ok = true; break; }
-				}
-				if (!ok) continue;
-			}
-			
 			
 			// Filter by the result values
 			
@@ -887,7 +835,6 @@ public class ModelAnalysis {
 		// Find the bounds and store them for later
 		
 		String key = operationName;
-		if (tags != null) for (String t : tags) key += "-" + t;
 		if (resultFilter != null) for (Integer n : resultFilter) key += ":" + n;
 		xBounds.put(key, new Double[] { MathUtils.min(ax), MathUtils.max(ax) });
 		
@@ -902,19 +849,18 @@ public class ModelAnalysis {
 	/**
 	 * Get an average result value
 	 * 
-	 * @param operationName the operation name
-	 * @param tags the tags
+	 * @param operationName the operation name including the tag
 	 * @return the average result value, or null if not found
 	 */
-	private Double getAverageResultValue(String operationName, String[] tags) {
+	private Double getAverageResultValue(String operationName) {
 	
 		int xArg = -1;
-		if (operationName.equals("OperationGetAllNeighbors"                )) xArg = 3;
-		if (operationName.equals("OperationGetNeighborEdgeConditional"     )) xArg = 3;
-		if (operationName.equals("OperationGetKHopNeighbors"               )) xArg = 3;
-		if (operationName.equals("OperationGetKHopNeighborsEdgeConditional")) xArg = 3;
-		if (operationName.equals("OperationLocalClusteringCoefficient"     )) xArg = 3;
-		if (operationName.equals("OperationGetShortestPath"                )) xArg = 3;
+		if (operationName.startsWith("OperationGetAllNeighbors"                )) xArg = 3;
+		if (operationName.startsWith("OperationGetNeighborEdgeConditional"     )) xArg = 3;
+		if (operationName.startsWith("OperationGetKHopNeighbors"               )) xArg = 3;
+		if (operationName.startsWith("OperationGetKHopNeighborsEdgeConditional")) xArg = 3;
+		if (operationName.startsWith("OperationLocalClusteringCoefficient"     )) xArg = 3;
+		if (operationName.startsWith("OperationGetShortestPath"                )) xArg = 3;
 		if (xArg < 0) {
 			throw new IllegalArgumentException("Unsupported operation " + operationName);
 		}
@@ -922,45 +868,19 @@ public class ModelAnalysis {
 		
 		// Find the correct job
 		
-		SortedSet<Job> operationJobs = null;		
-		if (tags.length == 0) {
-			operationJobs = context.operationWithTagsToJobs.get(operationName);
-		}
-		else if (tags.length == 1) {
-			operationJobs = context.operationWithTagsToJobs.get(operationName + "-" + tags[0]);
-		}
-		else {
-			throw new UnsupportedOperationException();
-		}
-
+		SortedSet<Job> operationJobs = context.operationWithTagsToJobs.get(operationName);
 		if (operationJobs == null || operationJobs.isEmpty()) return null;
 		Job job = operationJobs.last();
 		
 		
 		// Read the log file
 		
-		OperationLogReader reader = new OperationLogReader(job.getLogFile());
+		OperationLogReader reader = new OperationLogReader(job.getLogFile(), operationName);
 		
 		Vector<Double> y = new Vector<Double>();
 		Vector<Double> x = new Vector<Double>();
 
 		for (OperationLogEntry e : reader) {
-			
-			
-			// Filter by tags (if specified)
-
-			if (tags == null || tags.length == 0) {
-				if (!e.getName().equals(operationName)
-						&& !e.getName().startsWith(operationName + "-")) continue;
-			}
-			else {
-				boolean ok = false;
-				for (String t : tags) {
-					if (e.getName().equals(operationName + "-" + t)) { ok = true; break; }
-				}
-				if (!ok) continue;
-			}
-			
 			
 			// Get the result values
 			

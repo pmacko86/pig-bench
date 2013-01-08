@@ -163,7 +163,7 @@ public class ShowOperationRunTimes extends HttpServlet {
 		}
 		else if ("details".equals(show)) {
 			printRunTimesDetails(writer, operationsToJobs, format, response, groupBy, convertManyOperations,
-					customSeriesPatterns, 10000 /* XXX hard-coded */, 0.25 /* XXX hard-coded */, 0 /* XXX hard-coded */);
+					customSeriesPatterns, 0 /* XXX hard-coded */);
 		}
 		else {
 			if (response != null) {
@@ -435,7 +435,7 @@ public class ShowOperationRunTimes extends HttpServlet {
 	 */
 	public static void printRunTimesDetails(PrintWriter writer, Map<String, Collection<Job>> operationsToJobs,
 			String format, HttpServletResponse response, String groupBy, boolean convertManyOperations,
-			Map<String, String> customSeriesPatterns, int tail, double tailFraction, double dropExtremes) {
+			Map<String, String> customSeriesPatterns, double dropExtremes) {
 		
 		long start = System.currentTimeMillis();
 		
@@ -468,55 +468,36 @@ public class ShowOperationRunTimes extends HttpServlet {
 			
 			for (Job job : operationsToJobs.get(operationName)) {
 				
-				OperationLogReader reader = new OperationLogReader(job.getLogFile(), operationName);
 				currentJobsEntries.clear();
 				
-				for (OperationLogEntry e : reader) {
-					if (e.getName().equals(operationName)) {
-						
-						if (convertManyOperations && AnalysisUtils.isManyOperation(operationName)) {
-							e = AnalysisUtils.convertLogEntryForManyOperation(e);
-						}
-						
-						// XXX Hack
-						String s = e.getName();
-						if ("run".equals(groupBy)) {
-							String d = differenceStrigns.get(job);
-							if ("".equals(d)) d = "<default>";
-							if (operationsToJobs.size() == 1) {
-								s = d;
-							}
-							else {
-								s += " " + d;
-							}
-							s = dateTimeFormatter.format(job.getExecutionTime()) + " " + s;
-						}
-						
-						for (Pair<String, Pattern> p : customSeriesNamesAndCompiledPatterns) {
-							if (p.getSecond().matcher(s).matches()) {
-								s = p.getFirst();
-								break;
-							}
-						}
-						
-						currentJobsEntries.add(new Triple<String, Job, OperationLogEntry>(s, job, e));
+				for (OperationLogEntry e : OperationLogReader.getTailEntries(job.getLogFile(), operationName)) {
+					
+					if (convertManyOperations && AnalysisUtils.isManyOperation(operationName)) {
+						e = AnalysisUtils.convertLogEntryForManyOperation(e);
 					}
-				}
-
-				if (tail > 0 || tailFraction > 0) {
-					int n = currentJobsEntries.size();
-					int keep1 = tail > 0 ? Math.max(tail, n) : n;
-					int keep2 = tailFraction > 0 ? (int) Math.round(tailFraction * n) : n;
-					int keep  = Math.min(keep1, keep2);
-				
-					if (keep > 0 && currentJobsEntries.size() > keep) {
-						ArrayList<Triple<String, Job, OperationLogEntry>> a
-							= new ArrayList<Triple<String, Job, OperationLogEntry>>();
-						for (int i = currentJobsEntries.size() - keep; i < currentJobsEntries.size(); i++) {
-							a.add(currentJobsEntries.get(i));
+					
+					// XXX Hack
+					String s = e.getName();
+					if ("run".equals(groupBy)) {
+						String d = differenceStrigns.get(job);
+						if ("".equals(d)) d = "<default>";
+						if (operationsToJobs.size() == 1) {
+							s = d;
 						}
-						currentJobsEntries = a;
+						else {
+							s += " " + d;
+						}
+						s = dateTimeFormatter.format(job.getExecutionTime()) + " " + s;
 					}
+					
+					for (Pair<String, Pattern> p : customSeriesNamesAndCompiledPatterns) {
+						if (p.getSecond().matcher(s).matches()) {
+							s = p.getFirst();
+							break;
+						}
+					}
+					
+					currentJobsEntries.add(new Triple<String, Job, OperationLogEntry>(s, job, e));
 				}
 
 				if (dropExtremes > 0 && currentJobsEntries.size() > 0) {

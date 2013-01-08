@@ -24,7 +24,6 @@ import com.tinkerpop.bench.operationFactory.OperationFactory;
 import com.tinkerpop.bench.operationFactory.OperationFactoryGeneric;
 import com.tinkerpop.bench.operationFactory.OperationFactoryLog;
 import com.tinkerpop.bench.util.ConsoleUtils;
-import com.tinkerpop.bench.util.LogUtils;
 import com.tinkerpop.bench.util.OutputUtils;
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Graph;
@@ -100,7 +99,7 @@ public class BenchRunner {
 		this.numThreads = numThreads;
 		this.logFile = logFile;
 
-		logWriter = LogUtils.getOperationLogWriter(this.logFile);
+		logWriter = new OperationLogWriter(this.logFile);
 
 		openFactory = new OperationFactoryGeneric(OperationOpenGraph.class, new Object[] { openMode });
 		shutdownFactory = new OperationFactoryGeneric(OperationShutdownGraph.class);

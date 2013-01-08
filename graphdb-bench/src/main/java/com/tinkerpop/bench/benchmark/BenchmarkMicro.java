@@ -1412,7 +1412,7 @@ public class BenchmarkMicro extends Benchmark {
 					// Consolidate and retain the jobs in the main log file
 					// (do not even attempt to process the warmup file)
 					
-					OperationLogReader logReader = new OperationLogReader(job.getLogFile(), false);
+					OperationLogReader logReader = new OperationLogReader(job.getLogFile());
 					OperationLogWriter logWriter = new OperationLogWriter(consolidatedLogFile);
 					
 					for (OperationLogEntry e : logReader) {

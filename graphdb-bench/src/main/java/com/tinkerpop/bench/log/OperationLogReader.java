@@ -14,67 +14,38 @@ import au.com.bytecode.opencsv.CSVParser;
 
 import com.tinkerpop.bench.util.LogUtils;
 
+
 /**
  * @author Alex Averbuch (alex.averbuch@gmail.com)
  * @author Peter Macko (pmacko@eecs.harvard.edu)
  */
 public class OperationLogReader implements Iterable<OperationLogEntry> {
 
-	public static boolean CACHE_BY_DEFAULT = true;
+	public static int TAIL_MIN_ROWS = 1;
+	public static int TAIL_MAX_ROWS = 10000;
+	public static double TAIL_MAX_FRACTION = 0.25;	
 	
 	private final char logDelim = LogUtils.LOG_DELIMITER.charAt(0);
+	
 	private File logFile = null;
-	private Iterable<OperationLogEntry> cachedIterable = null;
 	private String operationNameFilter;
 	
-	private static WeakHashMap<String, Iterable<OperationLogEntry>> cache
-		= new WeakHashMap<String, Iterable<OperationLogEntry>>();
+	
+	private static WeakHashMap<String, List<OperationLogEntry>> operationEntriesTailCache
+		= new WeakHashMap<String, List<OperationLogEntry>>();
 
-	public OperationLogReader(File logFile, String operationNameFilter, boolean cached) {
+	
+	public OperationLogReader(File logFile, String operationNameFilter) {
 		this.logFile = logFile;
 		this.operationNameFilter = operationNameFilter;
-		
-		if (cached) {
-			String cacheKey = logFile.getAbsolutePath();
-			if (operationNameFilter != null) {
-				cacheKey += "----" + operationNameFilter;
-			}
-			synchronized (cache) {
-				this.cachedIterable = cache.get(cacheKey);
-			}
-			if (this.cachedIterable == null) {
-				try {
-					synchronized (cache) {
-						Iterator<OperationLogEntry> i = new OperationLogEntryIterator(this.logFile);
-						ArrayList<OperationLogEntry> l = new ArrayList<OperationLogEntry>();
-						while (i.hasNext()) l.add(i.next());
-						this.cachedIterable = l;
-						cache.put(cacheKey, l);
-					}
-				} catch (IOException e) {
-					throw new RuntimeException(
-							"Could not create OperationLogEntryIterator: Cannot open '" + logFile + "'", e.getCause());
-				}
-			}
-		}
-		else {
-			this.cachedIterable = null;
-		}
 	}
 
 	public OperationLogReader(File logFile) {
-		this(logFile, null, CACHE_BY_DEFAULT);
-	}
-
-	public OperationLogReader(File logFile, boolean cached) {
-		this(logFile, null, cached);
-	}
-
-	public OperationLogReader(File logFile, String operationNameFilter) {
-		this(logFile, operationNameFilter, CACHE_BY_DEFAULT);
+		this(logFile, null);
 	}
 	
-	public static List<OperationLogEntry> getEntriesForOperation(File logFile, String operationName) {
+	
+	public static List<OperationLogEntry> getAllEntries(File logFile, String operationName) {
 		OperationLogReader reader = new OperationLogReader(logFile, operationName);
 		List<OperationLogEntry> r = new ArrayList<OperationLogEntry>();
 		for (OperationLogEntry e : reader) {
@@ -82,19 +53,51 @@ public class OperationLogReader implements Iterable<OperationLogEntry> {
 		}
 		return r;
 	}
+	
+	public static List<OperationLogEntry> getTailEntries(File logFile, String operationName) {
+		synchronized (operationEntriesTailCache) {
+			
+			String cacheKey = logFile.getAbsolutePath() + "----" + operationName;
+			List<OperationLogEntry> entries = operationEntriesTailCache.get(cacheKey);
+			
+			if (entries == null) {			
+				OperationLogReader reader = new OperationLogReader(logFile, operationName);
+				ArrayList<OperationLogEntry> r = new ArrayList<OperationLogEntry>();
+				for (OperationLogEntry e : reader) {
+					if (e.getName().equals(operationName)) r.add(e);
+				}
+				
+				int n = r.size();
+				
+				int keep1 = TAIL_MAX_ROWS     > 0 ? Math.max(TAIL_MAX_ROWS, n) : n;
+				int keep2 = TAIL_MAX_FRACTION > 0 ? (int) Math.round(TAIL_MAX_FRACTION * n) : n;
+				int keep  = Math.min(keep1, keep2);
+				
+				if (keep < TAIL_MIN_ROWS) keep = Math.min(TAIL_MIN_ROWS, n);
+			
+				if (keep > 0 && n > keep) {
+					ArrayList<OperationLogEntry> a = new ArrayList<OperationLogEntry>(keep);
+					for (int i = r.size() - keep; i < r.size(); i++) {
+						a.add(r.get(i));
+					}
+					r = a;
+				}
+				
+				entries = r;
+				operationEntriesTailCache.put(cacheKey, entries);
+			}
+			
+			return entries;
+		}
+	}
 
 
 	public Iterator<OperationLogEntry> iterator() {
-		if (cachedIterable == null) {
-			try {
-				return new OperationLogEntryIterator(this.logFile);
-			} catch (IOException e) {
-				throw new RuntimeException(
-						"Could not create OperationLogEntryIterator: Cannot open '" + logFile + "'", e.getCause());
-			}
-		}
-		else {
-			return cachedIterable.iterator();
+		try {
+			return new OperationLogEntryIterator(this.logFile);
+		} catch (IOException e) {
+			throw new RuntimeException(
+					"Could not create OperationLogEntryIterator: Cannot open '" + logFile + "'", e.getCause());
 		}
 	}
 

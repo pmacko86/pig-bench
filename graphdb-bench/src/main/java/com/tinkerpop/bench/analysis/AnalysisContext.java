@@ -38,7 +38,7 @@ public class AnalysisContext {
 	private List<Job> finishedJobs;
 	
 	/// The map of operations to finished jobs
-	HashMap<String, SortedSet<Job>> operationToJobs;
+	HashMap<String, SortedSet<Job>> operationTypesToJobs;
 	
 	/// The map of operations with tags to finished jobs
 	HashMap<String, SortedSet<Job>> operationWithTagsToJobs;
@@ -96,7 +96,7 @@ public class AnalysisContext {
 		 */
 	
 		finishedJobs = new ArrayList<Job>();
-		operationToJobs = new HashMap<String, SortedSet<Job>>();
+		operationTypesToJobs = new HashMap<String, SortedSet<Job>>();
 		operationWithTagsToJobs = new HashMap<String, SortedSet<Job>>();
 		numFinishedJobs = jobs.size();
 		
@@ -143,10 +143,10 @@ public class AnalysisContext {
 				int tagStart = name.indexOf('-');
 				if (tagStart > 0) name = name.substring(0, tagStart);
 				
-				ojs = operationToJobs.get(name);
+				ojs = operationTypesToJobs.get(name);
 				if (ojs == null) {
 					ojs = new TreeSet<Job>();
-					operationToJobs.put(name, ojs);
+					operationTypesToJobs.put(name, ojs);
 				}
 				ojs.add(job);
 			}
@@ -168,7 +168,7 @@ public class AnalysisContext {
 	 * @return the jobs sorted by time (ascending), or null if none
 	 */
 	public SortedSet<Job> getJobs(Class<? extends Operation> operation) {
-		SortedSet<Job> operationJobs = operationToJobs.get(operation.getSimpleName());
+		SortedSet<Job> operationJobs = operationTypesToJobs.get(operation.getSimpleName());
 		if (operationJobs == null || operationJobs.isEmpty()) return null;
 		return operationJobs;
 	}
@@ -182,7 +182,7 @@ public class AnalysisContext {
 	 */
 	public SortedSet<Job> getJobs(String operationName) {
 		String s = operationName.indexOf('-') > 0 ? operationName.substring(0, operationName.indexOf('-')) : operationName;
-		SortedSet<Job> operationJobs = operationToJobs.get(s);
+		SortedSet<Job> operationJobs = operationTypesToJobs.get(s);
 		if (operationJobs == null || operationJobs.isEmpty()) return null;
 		return operationJobs;
 	}

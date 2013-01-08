@@ -4,8 +4,8 @@ import java.io.File;
 import java.util.Iterator;
 
 import com.tinkerpop.bench.log.OperationLogEntry;
+import com.tinkerpop.bench.log.OperationLogReader;
 import com.tinkerpop.bench.operation.Operation;
-import com.tinkerpop.bench.util.LogUtils;
 
 /**
  * @author Alex Averbuch (alex.averbuch@gmail.com)
@@ -16,7 +16,7 @@ public final class OperationFactoryLog extends OperationFactory {
 	private Iterator<OperationLogEntry> operationLogIterator = null;
 
 	public OperationFactoryLog(File file) {
-		operationLogIterator = LogUtils.getOperationLogReader(file).iterator();
+		operationLogIterator = (new OperationLogReader(file)).iterator();
 	}
 
 	@Override
