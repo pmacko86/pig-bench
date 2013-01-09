@@ -152,8 +152,7 @@ public class AnalysisUtils {
 		
 		Vector<Double> averageRunTimes = new Vector<Double>();
 		
-		OperationLogReader reader = new OperationLogReader(job.getLogFile(), entry.getName());
-		for (OperationLogEntry e : reader) {
+		for (OperationLogEntry e : OperationLogReader.getTailEntries(job.getLogFile(), entry.getName())) {
 			String s = e.getArgs()[opCountArg >= 0 ? opCountArg : e.getArgs().length + opCountArg];
 			int opCount;
 			try {

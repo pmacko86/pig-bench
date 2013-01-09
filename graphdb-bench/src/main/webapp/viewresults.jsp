@@ -4,8 +4,6 @@
 <%@ page import="com.tinkerpop.bench.util.LogUtils"%>
 <%@ page import="com.tinkerpop.bench.Workload"%>
 <%@ page import="com.tinkerpop.bench.benchmark.BenchmarkMicro"%>
-<%@ page import="com.tinkerpop.bench.log.OperationLogEntry"%>
-<%@ page import="com.tinkerpop.bench.log.OperationLogReader"%>
 <%@ page import="com.tinkerpop.bench.util.Pair"%>
 <%@ page import="com.tinkerpop.bench.web.*"%>
 <%@ page import="java.io.*"%>

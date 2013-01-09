@@ -6,8 +6,6 @@ import java.text.SimpleDateFormat;
 import java.util.Map;
 
 import com.tinkerpop.bench.Bench;
-import com.tinkerpop.bench.log.OperationLogReader;
-import com.tinkerpop.bench.log.OperationLogWriter;
 import com.tinkerpop.bench.log.SummaryLogWriter;
 
 public class LogUtils {
@@ -25,15 +23,6 @@ public class LogUtils {
 			Map<String, String> resultFilePaths) throws IOException {
 		SummaryLogWriter summaryLogWriter = new SummaryLogWriter(resultFilePaths);
 		summaryLogWriter.writeSummaryText(summaryFilePath);
-	}
-
-	public static OperationLogReader getOperationLogReader(File logFile) {
-		return new OperationLogReader(logFile);
-	}
-
-	public static OperationLogWriter getOperationLogWriter(File logFile)
-			throws IOException {
-		return new OperationLogWriter(logFile);
 	}
 
 	public static String pathToName(String filename) {

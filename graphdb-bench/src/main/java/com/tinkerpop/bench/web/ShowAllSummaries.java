@@ -241,7 +241,7 @@ public class ShowAllSummaries extends HttpServlet {
 	            			|| s.contains("GetManyVertices") || s.contains("GetManyEdges")))
 	            			|| s.contains("GetFirstN") || s.contains("GetAllN")) {
 	            		
-		            	List<OperationLogEntry> entries = OperationLogReader.getEntriesForOperation(job.getLogFile(), s);
+		            	List<OperationLogEntry> entries = OperationLogReader.getTailEntries(job.getLogFile(), s);
 		            	
 		            	if (AnalysisUtils.isManyOperation(s)) {
 			            	List<OperationLogEntry> convertedEntries = new ArrayList<OperationLogEntry>(entries.size());
@@ -252,15 +252,11 @@ public class ShowAllSummaries extends HttpServlet {
 		            	}
 		            	
 		            	
-		            	// Compute the mean from the last 25%
-		            	
-		            	int l = entries.size();
-		            	int from = (3 * l) / 4; 
-		            	if (from >= l) from = 0;
+		            	// Compute the mean
 		            	
 		            	double time = 0; int count = 0;
-		            	for (int i = from; i < l; i++) {
-		            		time += entries.get(i).getTime() / 1000000.0;
+		            	for (OperationLogEntry e : entries) {
+		            		time += e.getTime() / 1000000.0;
 		            		count++;
 		            	}
 		            	
