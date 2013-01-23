@@ -364,6 +364,581 @@ d3bp.Appearance = CClass.create(function() {
 
 
 /*****************************************************************************
+ * Class d3bp.DataValue                                                      *
+ *****************************************************************************/
+
+d3bp.DataValue = CClass.create(function() {
+	
+	this._super();
+	
+	var __valuefn = null;			// extract the value
+	var __valueaxislabel = null;	// the axis label
+	var __valuelabelfn = null;		// convert the value to string
+
+
+	/*
+	* Public
+	*/
+	return {
+		
+		
+		/**
+		 * Set the value function or property, the axis label, and the to-string
+		 * function
+		 * 
+		 * @param property_or_function the name of the property, or a function
+		 * @param axislabel the value axis label (optional)
+		 * @param strfn the to string function for data labels (optional)
+		 * @return this
+		 */
+		set: function(property_or_function, axislabel, strfn) {
+			
+			if (property_or_function === undefined) {
+				throw "No arguments";
+			}
+			
+			this.extractFunction(property_or_function);
+			
+			if (axislabel === undefined) {
+				__valueaxislabel = null;
+			}
+			else {
+				__valueaxislabel = axislabel;
+			}
+			if (strfn === undefined) {
+				__valuelabelfn = null;
+			}
+			else {
+				__valuelabelfn = strfn;
+			}
+			
+			return this;
+		},
+		
+		
+		/**
+		 * Set or get the value extract function
+		 * 
+		 * @param property_or_function the name of the property, or a function
+		 * @return the function if no arguments are given, otherwise this
+		 */
+		extractFunction: function(property_or_function) {
+			if (property_or_function === undefined) {
+				return __valuefn;
+			}
+			if (typeof(property_or_function) == "string") {
+				__valuefn = function(d) {
+					return d[property_or_function];
+				};
+			}
+			else if (typeof(property_or_function) == "function") {
+				__valuefn = property_or_function;
+			}
+			else {
+				throw "Invalid type of the argument";
+			}
+			return this;
+		},
+		
+		
+		/**
+		 * Set or get the value axis label
+		 * 
+		 * @param axislabel the value axis label
+		 * @return the axis label if no arguments are given, otherwise this
+		 */
+		axisLabel: function(axislabel) {
+			if (axislabel === undefined) {
+				return __valueaxislabel;
+			}
+			__valueaxislabel = axislabel
+			return this;
+		},
+		
+		
+		/**
+		 * Set or get the value to-string function
+		 * 
+		 * @param strfn the to string function for data labels
+		 * @return the axis label if no arguments are given, otherwise this
+		 */
+		toStringFunction: function(strfn) {
+			if (strfn === undefined) {
+				return __valuelabelfn;
+			}
+			__valuelabelfn = strfn
+			return this;
+		},
+		
+		
+		/**
+		 * Extract the value from the datum
+		 * 
+		 * @param d the datum
+		 * @return the extracted value
+		 */
+		extract: function(d) {
+			return __valuefn(d);
+		},
+		
+		
+		/**
+		 * Convert the value to string
+		 * 
+		 * @param value the value
+		 * @return the string
+		 */
+		toString: function(value) {
+			if (__valuelabelfn == undefined || __valuelabelfn == null) {
+				return "" + value;
+			}
+			else {
+				return __valuelabelfn(value);
+			}
+		}
+	};
+});
+
+
+
+/*****************************************************************************
+ * Class d3bp.Scale                                                          *
+ *****************************************************************************/
+
+d3bp.Scale = CClass.create(function() {
+	
+	this._super();
+	
+	var __scaletype = "linear";
+	
+	
+	/*
+	 * Public
+	 */
+	return {
+		
+		
+		/**
+		 * Get or set the scale type
+		 * 
+		 * @param type the scale type (linear or log)
+		 * @return the type if no arguments are given, otherwise return this
+		 */
+		type: function(type) {
+			if (type === undefined) {
+				return __scaletype;
+			}
+			if (type == "linear" || type == "log") {
+				__scaletype = type;
+			}
+			else {
+				throw "Invalid scale type: " + type;
+			}
+			return this;
+		},
+		
+		
+		/**
+		 * Instantiate
+		 * 
+		 * @return a new instance of d3bp.InstantiatedScale
+		 */
+		instantiate: function() {
+			return new d3bp.InstantiatedScale(this);
+		}
+	};
+});
+
+
+
+/*****************************************************************************
+ * Class d3bp.InstantiatedScale                                              *
+ *****************************************************************************/
+
+d3bp.InstantiatedScale = CClass.create(function(scale) {
+	
+	this._super();
+	
+	var __scale = scale;
+	var __scaletype = scale.type();
+	
+	var __d3scale = null;
+	if (__scaletype == "linear") {
+		__d3scale = d3.scale.linear();
+	}
+	else if (__scaletype == "log") {
+		__d3scale = d3.scale.log();
+	}
+	else {
+		throw "Unsupported scale type: " + __scaletype;
+	}
+	
+	
+	/*
+	 * Public
+	 */
+	return {
+		
+		
+		/**
+		 * Get the scale type
+		 * 
+		 * @return the scale type
+		 */
+		type: function() {
+			return __scaletype;
+		},
+		
+		
+		/**
+		 * Get the underlying d3 scale or convert a domain value to the
+		 * corresponding range value
+		 * 
+		 * @param value the domain value to convert (optional)
+		 * @return the d3 scale if no arguments are given, or the converted value
+		 */
+		d3scale: function(value) {
+			if (value === undefined) {
+				return __d3scale;
+			}
+			else {
+				return __d3scale(value);
+			}
+		},
+		
+		
+		/**
+		 * Get or set the domain
+		 * 
+		 * @param domain the new d3 domain
+		 * @return this, or the current domain if no arguments are given
+		 */
+		domain: function(domain) {
+			if (domain === undefined) {
+				return __d3scale.domain();
+			}
+			__d3scale.domain(domain);
+			return this;
+		},
+		
+		
+		/**
+		 * Set the domain from the numerical data
+		 * 
+		 * @param data the data (an instance of d3bp.Data)
+		 * @param value the value wrapper (an instance of d3bp.DataValue)
+		 * @param stdev the stdev wrapper (optional)
+		 * @return this
+		 */
+		domainFromData: function(data, value, stdev) {
+			
+			var have_stdev = false;
+			if (stdev != undefined && stdev != null) {
+				have_stdev = stdev.extractFunction() != null;
+			}
+			
+			var data_max = d3.max(data.data(),
+								  function(d) {
+									  var v = 1 * value.extract(d);
+									  if (!have_stdev) {
+										  return v;
+									  }
+									  else {
+										  var s = 1 * stdev.extract(d);
+										  return v + s;
+									  }
+								  });
+			
+			var data_min_ignoring_nonpositives = d3.min(data.data(),
+														function(d) {
+															var v = 1 * value.extract(d);
+															if (!have_stdev) {
+																return v < 0 ? Infinity : v;
+															}
+															else {
+																var s = 1 * stdev.extract(d);
+																return v - s < 0 ? Infinity : v - s;
+															}
+														});
+			
+			if (__scaletype == "log") {
+				__d3scale.domain([0.9 * data_min_ignoring_nonpositives, 1.1 * data_max]);
+			}
+			else {
+				__d3scale.domain([0, 1.1 * data_max]);
+			}
+			
+			return this;
+		},
+		
+		
+		/**
+		 * Get or set the range
+		 * 
+		 * @param range the new d3 range (will be automatically adjusted)
+		 * @return this, or the current range if no arguments are given
+		 */
+		range: function(range) {
+			if (range === undefined) {
+				return __d3scale.range();
+			}
+			__d3scale.range(range).nice();
+			return this;
+		},
+		
+		
+		/**
+		 * Compute the locations of ticks
+		 * 
+		 * @param num_ticks the desired number of ticks (might be adjusted)
+		 * @return the ticks
+		 */
+		ticks: function(num_ticks) {
+			var ticks = __d3scale.ticks(num_ticks);
+			if (__scaletype == "log" && ticks.length > num_ticks) {
+				ticks = []
+				
+				ticks.push(__d3scale.domain()[1]);
+				while (ticks[ticks.length - 1] / 10 >= __d3scale.domain()[0]) {
+					ticks.push(ticks[ticks.length - 1] / 10);
+				}
+			}
+			return ticks;
+		}
+	};
+});
+
+
+
+/*****************************************************************************
+ * Class d3bp.BoundingBox                                                    *
+ *****************************************************************************/
+
+d3bp.BoundingBox = CClass.create(function() {
+	
+	this._super();
+	
+	
+	/*
+	 * Public
+	 */
+	return {
+		
+		x1: Infinity,
+		y1: Infinity,
+		x2: -Infinity,
+		y2: -Infinity,
+		
+		
+		/**
+		 * Return the box width
+		 * 
+		 * @return the width
+		 */
+		width: function() {
+			return this.x2 - this.x1;
+		},
+		
+		
+		/**
+		 * Return the box height
+		 * 
+		 * @return the height
+		 */
+		height: function() {
+			return this.y2 - this.y1;
+		},
+		
+		
+		/**
+		 * Update from an instance of another bounding box
+		 * 
+		 * @return bbox the other bounding box
+		 * @return this
+		 */
+		updateFromBoundingBox: function(bbox) {
+			
+			// Is it d3bp.BoundingBox?
+			
+			if (bbox.x1 != undefined && bbox.x2 != undefined
+				&& bbox.y1 != undefined && bbox.y2 != undefined) {
+				
+				if (bbox.x1 < this.x1) {
+					this.x1 = bbox.x1;
+				}
+				
+				if (bbox.y1 < this.y1) {
+					this.y1 = bbox.y1;
+				}
+				
+				if (bbox.x2 > this.x2) {
+					this.x2 = bbox.x2;
+				}
+				
+				if (bbox.y2 > this.y2) {
+					this.y2 = bbox.y2;
+				}
+				
+				return this;
+			}
+			
+			
+			// Is it SVGRect?
+			
+			if (bbox.x != undefined && bbox.width != undefined
+				&& bbox.y != undefined && bbox.height != undefined) {
+				
+				if (bbox.x < this.x1) {
+					this.x1 = bbox.x;
+				}
+				
+				if (bbox.y < this.y1) {
+					this.y1 = bbox.y;
+				}
+				
+				if (bbox.x + bbox.width > this.x2) {
+					this.x2 = bbox.x + bbox.width;
+				}
+				
+				if (bbox.y + bbox.height > this.y2) {
+					this.y2 = bbox.y + bbox.height;
+				}
+				
+				return this;
+			}
+			
+			
+			// Is it ClientRect?
+			
+			if (bbox.left != undefined && bbox.right != undefined
+				&& bbox.top != undefined && bbox.bottom != undefined) {
+				
+				if (bbox.left < this.x1) {
+					this.x1 = bbox.left;
+				}
+				
+				if (bbox.top < this.y1) {
+					this.y1 = bbox.top;
+				}
+				
+				if (bbox.right > this.x2) {
+					this.x2 = bbox.right;
+				}
+				
+				if (bbox.bottom > this.y2) {
+					this.y2 = bbox.bottom;
+				}
+				
+				return this;
+			}
+			
+			
+			// Something else?
+			
+			throw "Invalid or unrecognized bounding box type";
+		},
+		
+		
+		/**
+		 * Update the bounding box using BBox of an *untranslated* d3 component
+		 *
+		 * @param component the d3 component
+		 * @return this
+		 */
+		updateFromUntranslatedD3: function(component) {
+			
+			for (var ti = 0; ti < component[0].length; ti++) {
+				var r = component[0][ti].getBBox();
+				if (r.x < this.x1) {
+					this.x1 = r.x;
+				}
+				if (r.y < this.y1) {
+					this.y1 = r.y;
+				}
+				if (r.x + r.width > this.x2) {
+					this.x2 = r.x + r.width;
+				}
+				if (r.y + r.height > this.y2) {
+					this.y2 = r.y + r.height;
+				}
+			}
+			
+			return this;
+		},
+		
+		
+		/**
+		 * Update the bounding box using BBox of a translated d3 component
+		 *
+		 * @param component the d3 component
+		 * @param x the X coordinate
+		 * @param y the Y coordinate
+		 * @return this
+		 */
+		updateFromTranslatedD3: function(component, x, y) {
+			
+			if (x === undefined) {
+				 x = 0;
+			}
+			if (y === undefined) {
+				y = 0;
+			}
+			
+			for (var ti = 0; ti < component[0].length; ti++) {
+				var r = component[0][ti].getBoundingClientRect();
+				if (x - r.width < this.x1) {
+					this.x1 = x - r.width;
+				}
+				if (y - r.height < this.y1) {
+					this.y1 = y - r.height;
+				}
+				if (x + r.width > this.x2) {
+					this.x2 = x + r.width;
+				}
+				if (y + r.height > this.y2) {
+					this.y2 = y + r.height;
+				}
+			}
+			
+			return this;
+		}
+	};
+});
+
+
+
+/*****************************************************************************
+ * Class d3bp.AbstractChartElement                                           *
+ *****************************************************************************/
+
+d3bp.AbstractChartElement = CClass.create(function(chart) {
+	
+	this._super();
+	
+	var __chart = chart;
+	var __bbox  = new d3bp.BoundingBox();
+	
+	
+	/*
+	 * Public
+	 */
+	return {
+		
+		
+		/**
+		 * Get the parent chart
+		 * 
+		 * @return the parent chart
+		 */
+		chart: function() {
+			return __chart;
+		}
+	};
+});
+
+
+
+/*****************************************************************************
  * Class d3bp.AbstractChart                                                  *
  *****************************************************************************/
 
@@ -371,56 +946,7 @@ d3bp.AbstractChart = CClass.create(function() {
 	
 	this._super();
 	
-	return {
-	};
-});
-
-
-
-/*****************************************************************************
- * Class d3bp.BarChart                                                       *
- *****************************************************************************/
-
-d3bp.BarChart = d3bp.AbstractChart.extend(function() {
-	
-	this._super();
-	
 	var __data = null;
-	var __valuefn = null;			// extract the value (usually y)
-	var __stdevfn = null;			// extract the standard deviation
-	var __labelfn = null;			// extract the label value (usually x)
-	var __categoryfn = null;		// extract the category
-	
-	var __valuelabelfn = null;		// convert the value to string
-	var __categorylabelfn = null;	// convert the category to string
-	
-	var __appearance = new d3bp.Appearance();
-	var __valueaxislabel = null;
-	
-	var __stacked = false;
-	var __scaletype = "linear";
-	
-	var __d3scale = null;
-	
-	var __inner_height = 400;
-	var __num_ticks = 10;
-	
-	
-	/*
-	 * Compute the locations of ticks
-	 */
-	var __ticks = function() {
-		var ticks = __d3scale.ticks(__num_ticks);
-		if (__scaletype == "log" && ticks.length > __num_ticks) {
-			ticks = []
-			
-			ticks.push(__d3scale.domain()[1]);
-			while (ticks[ticks.length - 1] / 10 >= __d3scale.domain()[0]) {
-				ticks.push(ticks[ticks.length - 1] / 10);
-			}
-		}
-		return ticks;
-	};
 	
 	
 	/*
@@ -436,114 +962,106 @@ d3bp.BarChart = d3bp.AbstractChart.extend(function() {
 		 * @return the data if no arguments are given, otherwise return this
 		 */
 		data: function(data) {
-			if (data === undefined) return __data;
+			if (data === undefined) {
+				return __data;
+			}
 			__data = data;
 			return this;
-		},
-		
+		}
+	};
+});
+
+
+
+/*****************************************************************************
+ * Class d3bp.BarChart                                                       *
+ *****************************************************************************/
+
+d3bp.BarChart = d3bp.AbstractChart.extend(function() {
+	
+	this._super();
+	
+	var __value = new d3bp.DataValue();			// the data value (usually y)
+	var __stdev = new d3bp.DataValue();			// the standard deviation
+	var __label = new d3bp.DataValue();			// the label value (usually x)
+	var __category = new d3bp.DataValue();		// the category
+	
+	var __appearance = new d3bp.Appearance();	// the appearance specs
+	var __scale = new d3bp.Scale();				// the scale specs
+	
+	var __stacked = false;
+	
+	var __inner_height = 400;
+	var __num_ticks = 10;
+	
+	
+	/*
+	 * Public
+	 */
+	return {
 		
 		/**
-		 * Set the value function or property
+		 * Set the value function or property, the axis label, and the to-string
+		 * function (usually for the Y axis)
 		 * 
 		 * @param property_or_function the name of the property, or a function
 		 * @param axislabel the value axis label (optional)
 		 * @param strfn the to string function for data labels (optional)
-		 * @return the function if no arguments are given, otherwise this
+		 * @return this, or the data wrapper if no arguments are given
 		 */
 		value: function(property_or_function, axislabel, strfn) {
-			if (property_or_function === undefined) return __valuefn;
-			if (typeof(property_or_function) == "string") {
-				__valuefn = function(d) { return d[property_or_function]; };
+			if (property_or_function === undefined) {
+				return __value;
 			}
-			else if (typeof(property_or_function) == "function") {
-				__valuefn = property_or_function;
-			}
-			else {
-				throw "Invalid type of the argument";
-			}
-			if (axislabel === undefined) {
-				__valueaxislabel = null;
-			}
-			else {
-				__valueaxislabel = axislabel;
-			}
-			if (strfn === undefined) {
-				__valuelabelfn = null;
-			}
-			else {
-				__valuelabelfn = strfn;
-			}
+			__value.set(property_or_function, axislabel, strfn);
 			return this;
 		},
 		
 		
 		/**
-		 * Set the function or property that determines the standard deviation
+		 * Set the standard deviation function or property
 		 * 
 		 * @param property_or_function the name of the property, or a function
-		 * @return the function if no arguments are given, otherwise this
+		 * @return this, or the data wrapper if no arguments are given
 		 */
 		stdev: function(property_or_function) {
-			if (property_or_function === undefined) return __stdevfn;
-			if (typeof(property_or_function) == "string") {
-				__stdevfn = function(d) { return d[property_or_function]; };
+			if (property_or_function === undefined) {
+				return __stdev;
 			}
-			else if (typeof(property_or_function) == "function") {
-				__stdevfn = property_or_function;
-			}
-			else {
-				throw "Invalid type of the argument";
-			}
+			__stdev.set(property_or_function, null, null);
 			return this;
 		},
 		
 		
 		/**
-		 * Set the function or property that determines the label of a datum
+		 * Set the label function or property (usually for the X axis)
 		 * 
 		 * @param property_or_function the name of the property, or a function
-		 * @return the function if no arguments are given, otherwise this
+		 * @return this, or the data wrapper if no arguments are given
 		 */
 		label: function(property_or_function) {
-			if (property_or_function === undefined) return __labelfn;
-			if (typeof(property_or_function) == "string") {
-				__labelfn = function(d) { return d[property_or_function]; };
+			if (property_or_function === undefined) {
+				return __label;
 			}
-			else if (typeof(property_or_function) == "function") {
-				__labelfn = property_or_function;
-			}
-			else {
-				throw "Invalid type of the argument";
-			}
+			__label.set(property_or_function, null, null);
 			return this;
 		},
 		
 		
 		/**
-		 * Set the function or property that determines the category, as in what appears
-		 * in the legent and what determines how each bar should be colored
+		 * Set the function or property that determines the category, as in what
+		 * appears in the legend and what determines how each bar should be
+		 * colored
 		 * 
 		 * @param property_or_function the name of the property, or a function
 		 * @param labelfn the label function to be used in the legend (optional)
-		 * @return the function if no arguments are given, otherwise this
+		 * @return this, or the data wrapper if no arguments are given
 		 */
 		category: function(property_or_function, labelfn) {
-			if (property_or_function === undefined) return __categoryfn;
-			if (typeof(property_or_function) == "string") {
-				__categoryfn = function(d) { return d[property_or_function]; };
+			if (property_or_function === undefined) {
+				return __category;
 			}
-			else if (typeof(property_or_function) == "function") {
-				__categoryfn = property_or_function;
-			}
-			else {
-				throw "Invalid type of the argument";
-			}
-			if (labelfn === undefined) {
-				__categorylabelfn = function(category) { return "" + category; };
-			}
-			else {
-				__categorylabelfn = labelfn;
-			}
+			__category.set(property_or_function, null, labelfn);
 			return this;
 		},
 		
@@ -551,17 +1069,14 @@ d3bp.BarChart = d3bp.AbstractChart.extend(function() {
 		/**
 		 * Set or get the scale type
 		 * 
-		 * @param scale the new scale type
-		 * @return the scale type if no arguments are given, otherwise this
+		 * @param type the new scale type
+		 * @return the scale wrapper if no arguments are given, otherwise this
 		 */
-		scale: function(scale) {
-			if (scale === undefined) return __scaletype;
-			if (scale == "linear" || scale == "log") {
-				__scaletype = scale;
+		scale: function(type) {
+			if (type === undefined) {
+				return __scale;
 			}
-			else {
-				throw "Invalid data scale: " + __scaletype;
-			}
+			__scale.type(type);
 			return this;
 		},
 		
@@ -573,7 +1088,9 @@ d3bp.BarChart = d3bp.AbstractChart.extend(function() {
 		 * @return the appearance if no arguments are given, otherwise this
 		 */
 		appearance: function(appearance) {
-			if (appearance === undefined) return __appearance;
+			if (appearance === undefined) {
+				return __appearance;
+			}
 			__appearance = appearance;
 			return this;
 		},
@@ -609,18 +1126,20 @@ d3bp.BarChart = d3bp.AbstractChart.extend(function() {
 			var t = this;
 			var a = __appearance;
 			
-			if (__data == null) {
+			if (this.data() == null) {
 				throw "The data has not yet been specified";
 			}
 			
-			if (__valuefn == null) {
-				throw "The value function has not been specified";
+			if (__value.extractFunction() == null) {
+				throw "The value extract function has not been specified";
 			}
 			
-			__data.run(function() {
+			this.data().run(function() {
 				
 				var data = t.data();
 				var num_bars = data.data().length;
+				
+				var boundingBox = new d3bp.BoundingBox();
 				
 				
 				// Create the chart with the initial size estimates, but we will
@@ -646,63 +1165,10 @@ d3bp.BarChart = d3bp.AbstractChart.extend(function() {
 				// Data scale
 				//
 				
-				var data_max = d3.max(data.data(),
-										function(d) {
-											var value = 1 * __valuefn(d);
-											if (__stdevfn == null) {
-												return value;
-											}
-											else {
-												var stdev = 1 * __stdevfn(d);
-												return value + stdev;
-											}
-										});
-				
-				var data_min_ignoring_nonpositives = d3.min(data.data(),
-															function(d) {
-																var value = 1 * __valuefn(d);
-																if (__stdevfn == null) {
-																	return value < 0 ? Infinity : value;
-																}
-																else {
-																	var stdev = 1 * __stdevfn(d);
-																	return value - stdev < 0 ? Infinity : value - stdev;
-																}
-															});
-				
-				
-				if (__scaletype == "linear") {
-					__d3scale = d3.scale.linear().domain([0, 1.1 * data_max]);
-				}
-				else if (__scaletype == "log") {
-					__d3scale = d3.scale.log()
-					.domain([0.9 * data_min_ignoring_nonpositives, 1.1 * data_max]);
-				}
-				else {
-					throw "Invalid data scale: " + __scaletype;
-				}
-				
-				__d3scale.range([__inner_height, 0]).nice();
-				var ticks = __ticks(__d3scale, __scaletype, __num_ticks);
-				
-				/*__d3y = d3.scale.<%= chartProperties.yscale %>()
-				 *		.domain([<%= "log".equals(chartProperties.yscale)
-				 *		? "0.9 * d3.min(data, function(d) { "
-				 *		+ "  if (d.label.indexOf('----') == 0) return 1000 * 1000 * 1000;"
-				 *		+ "  if (stacked && d.mean == 0 && d.stdev == 0) return 1000 * 1000 * 1000;"
-				 *		+ "  if (d.mean <= d.stdev) return 1000 * 1000 * 1000;"	// is this correct?
-				 *		+ "  return d.mean - d.stdev < 0 ? 0 : d.mean - d.stdev;"
-				 *		+ "})"
-				 *		: "0" %>, 
-				 *		1.1 * (stacked ? d3.max(subgroup_sums) : d3.max(data, function(d) { return d.mean + d.stdev; }))])*/
-				
-				
-				//
-				// Prepare for the upcoming chart adjustments
-				//
-				
-				var min_chart_y = 0;
-				var min_chart_x = 0;
+				var scale = __scale.instantiate()
+				.domainFromData(data, __value, __stdev)
+				.range([__inner_height, 0]);
+				var ticks = scale.ticks(__num_ticks);
 				
 				
 				//
@@ -714,8 +1180,8 @@ d3bp.BarChart = d3bp.AbstractChart.extend(function() {
 				.enter().append("line")
 				.attr("x1", -a.bars_margin)
 				.attr("x2", num_bars * a.bar_width + a.bars_margin)
-				.attr("y1", __d3scale)
-				.attr("y2", __d3scale)
+				.attr("y1", scale.d3scale())
+				.attr("y2", scale.d3scale())
 				.style("stroke", "#ccc");
 				
 				var data_ticks_text = chart.selectAll(".rule")
@@ -723,21 +1189,13 @@ d3bp.BarChart = d3bp.AbstractChart.extend(function() {
 				.enter().append("text")
 				.attr("class", "rule")
 				.attr("x", -a.chart_margin-a.bars_margin)
-				.attr("y", __d3scale)
+				.attr("y", scale.d3scale())
 				.attr("dx", 0)
 				.attr("dy", ".35em")
 				.attr("text-anchor", "end")
 				.text(String);
 				
-				for (var ti = 0; ti < data_ticks_text[0].length; ti++) {
-					var r = data_ticks_text[0][ti].getBBox();
-					if (r.x < min_chart_x) {
-						min_chart_x = r.x;
-					}
-					if (r.y < min_chart_y) {
-						min_chart_y = r.y;
-					}
-				}
+				boundingBox.updateFromUntranslatedD3(data_ticks_text);
 				
 				chart.append("line")
 				.attr("x1", -a.bars_margin)
@@ -746,8 +1204,8 @@ d3bp.BarChart = d3bp.AbstractChart.extend(function() {
 				.attr("y2", __inner_height)
 				.style("stroke", "#000");
 				
-				if (__valueaxislabel != undefined && __valueaxislabel != null) {
-					var left = min_chart_x - a.ylabel_from_data_tick_text;
+				if (__value.axisLabel() != undefined && __value.axisLabel() != null) {
+					var left = boundingBox.x1 - a.ylabel_from_data_tick_text;
 					var text = chart.append("text")
 					.attr("x", 0)
 					.attr("y", 0)
@@ -756,11 +1214,8 @@ d3bp.BarChart = d3bp.AbstractChart.extend(function() {
 					.attr("text-anchor", "middle")
 					.attr("transform", "translate(" + left + ", "
 					+ (__inner_height/2)  + ") rotate(-90)")
-					.text(__valueaxislabel);
-					var r = text[0][0].getBoundingClientRect();
-					if (left - r.width < min_chart_x) {
-						min_chart_x = left - r.width;
-					}
+					.text(__value.axisLabel());
+					boundingBox.updateFromTranslatedD3(text, left, __inner_height/2);
 				}
 				
 				
@@ -803,19 +1258,19 @@ d3bp.BarChart = d3bp.AbstractChart.extend(function() {
 					
 					for (var di = 0; di < series_data.length; di++) {
 						var d = series_data[di];
-						var value = 1 * __valuefn(d);
-						var stdev = __stdevfn == null ? NaN : 1 * __stdevfn(d);
-						var label = __labelfn == null ? null : __labelfn(d);
-						var category = __categoryfn == null ? null : __categoryfn(d);
+						var value = 1 * __value.extract(d);
+						var stdev = __stdev.extractFunction() == null ? NaN : 1 * __stdev.extract(d);
+						var label = __label.extractFunction() == null ? null : __label.extract(d);
+						var category = __category.extractFunction() == null ? null : __category.extract(d);
 						
 						
 						// Data
 						
 						var bar = chart.append("rect")
 						.attr("x", pos)
-						.attr("y", __d3scale(value))
+						.attr("y", scale.d3scale(value))
 						.attr("width", a.bar_width)
-						.attr("height", __inner_height - __d3scale(value));
+						.attr("height", __inner_height - scale.d3scale(value));
 						
 						
 						// Category
@@ -894,8 +1349,8 @@ d3bp.BarChart = d3bp.AbstractChart.extend(function() {
 						if (!isNaN(stdev) && stdev > 0) {
 							var top = value + stdev;
 							var bottom = value - stdev;
-							if (bottom < __d3scale.domain()[0]) {
-								bottom = __d3scale.domain()[0];
+							if (bottom < scale.d3scale().domain()[0]) {
+								bottom = scale.d3scale().domain()[0];
 							}
 							
 							// Middle
@@ -903,24 +1358,24 @@ d3bp.BarChart = d3bp.AbstractChart.extend(function() {
 							.style("stroke", "#000")
 							.attr("x1", pos + 0.5 * a.bar_width)
 							.attr("x2", pos + 0.5 * a.bar_width)
-							.attr("y1", __d3scale(top))
-							.attr("y2", __d3scale(bottom));
+							.attr("y1", scale.d3scale(top))
+							.attr("y2", scale.d3scale(bottom));
 							
 							// Top
 							chart.append("line")
 							.style("stroke", "#000")
 							.attr("x1", pos + 0.25 * a.bar_width)
 							.attr("x2", pos + 0.75 * a.bar_width)
-							.attr("y1", __d3scale(top))
-							.attr("y2", __d3scale(top));
+							.attr("y1", scale.d3scale(top))
+							.attr("y2", scale.d3scale(top));
 							
 							// Bottom
 							chart.append("line")
 							.style("stroke", "#000")
 							.attr("x1", pos + 0.25 * a.bar_width)
 							.attr("x2", pos + 0.75 * a.bar_width)
-							.attr("y1", __d3scale(bottom))
-							.attr("y2", __d3scale(bottom));
+							.attr("y1", scale.d3scale(bottom))
+							.attr("y2", scale.d3scale(bottom));
 						}
 						
 						
@@ -942,27 +1397,23 @@ d3bp.BarChart = d3bp.AbstractChart.extend(function() {
 						
 						// Value label
 						
-						if (__valuelabelfn != undefined && __valuelabelfn != null) {
+						if (__value.toStringFunction() != undefined && __value.toStringFunction != null) {
 							if (!isNaN(stdev) && stdev > 0) {
 								var top = value + stdev;
 							}
 							else {
 								var top = value;
 							}
-							var y = __d3scale(top) - 10;
+							var x = pos +  0.5 * a.bar_width;
+							var y = scale.d3scale(top) - 10;
 							var text = chart.append("text")
 							.attr("x", 0)
 							.attr("y", 0)
 							.attr("dx", 0)
 							.attr("dy", ".35em") // vertical-align: middle
-							.attr("transform", "translate("
-							+ (pos +  0.5 * a.bar_width) + ", "
-							+ y + ") rotate(-90)")
-							.text(__valuelabelfn(value));
-							var r = text[0][0].getBoundingClientRect();
-							if (y - r.height < min_chart_y) {
-								min_chart_y = y - r.height;
-							}
+							.attr("transform", "translate(" + x + ", " + y + ") rotate(-90)")
+							.text(__value.toString(value));
+							boundingBox.updateFromTranslatedD3(text, x, y);
 						}
 						
 						
@@ -1032,8 +1483,12 @@ d3bp.BarChart = d3bp.AbstractChart.extend(function() {
 				// Prepare for the upcoming chart adjustments
 				//
 				
-				var max_chart_y = __inner_height;
-				var max_chart_x = chart_inner_width + a.bars_margin;
+				if (__inner_height > boundingBox.y2) {
+					boundingBox.y2 = __inner_height;
+				}
+				if (chart_inner_width + a.bars_margin > boundingBox.x2) {
+					boundingBox.x2 = chart_inner_width + a.bars_margin;
+				}
 				
 				
 				//
@@ -1152,13 +1607,13 @@ d3bp.BarChart = d3bp.AbstractChart.extend(function() {
 							max_height = h;
 						}
 						var w = l.text.getBoundingClientRect().width;
-						if (l.x_pos + w > max_chart_x) {
-							max_chart_x = l.x_pos + w;
+						if (l.x_pos + w > boundingBox.x2) {
+							boundingBox.x2 = l.x_pos + w;
 						}
 					}
 					
-					if (max_height + label_y_pos > max_chart_y) {
-						max_chart_y = max_height + label_y_pos;
+					if (max_height + label_y_pos > boundingBox.y2) {
+						boundingBox.y2 = max_height + label_y_pos;
 					}
 					
 					label_y_pos += max_height + 4;
@@ -1197,12 +1652,9 @@ d3bp.BarChart = d3bp.AbstractChart.extend(function() {
 						+ a.legend_padding_top + 0.5 * a.legend_bar_height)
 						.attr("dx", 0)
 						.attr("dy", ".35em") // vertical-align: middle
-						.text(__categorylabelfn(categories[ci]));
+						.text(__category.toString(categories[ci]));
 						
-						var b = text[0][0].getBBox();
-						if (b.x + b.width > max_chart_x) {
-							max_chart_x = b.x + b.width;
-						}
+						boundingBox.updateFromUntranslatedD3(text);
 					}
 				}
 				
@@ -1211,9 +1663,9 @@ d3bp.BarChart = d3bp.AbstractChart.extend(function() {
 				// Adjust the chart size
 				//
 				
-				chart_svg[0][0].setAttribute("width" , max_chart_x - min_chart_x);
-				chart_svg[0][0].setAttribute("height", max_chart_y - min_chart_y);
-				chart[0][0].setAttribute("transform", "translate(" + (-min_chart_x) + ", " + (-min_chart_y) + ")");
+				chart_svg[0][0].setAttribute("width" , boundingBox.width());
+				chart_svg[0][0].setAttribute("height", boundingBox.height());
+				chart[0][0].setAttribute("transform", "translate(" + (-boundingBox.x1) + ", " + (-boundingBox.y1) + ")");
 			});
 			
 			return this;
