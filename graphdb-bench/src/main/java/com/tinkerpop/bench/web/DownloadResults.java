@@ -11,6 +11,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.tinkerpop.bench.log.OperationLogReader;
+
 
 /**
  * A servlet for downloading results
@@ -45,8 +47,9 @@ public class DownloadResults extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
 		String directories = "";
-		String grep = "| grep -v /db | grep -v /warmup | grep -v /org | grep -v /bad | grep -v /wait | grep -v /backup";
-		String command = "tar -czf - `find" + directories + " -maxdepth 1 " + grep + " | grep /`";
+		String grep = "| grep -v /db | grep -v /warmup | grep -v /org | grep -v /bad "
+				+ "| grep -v /wait | grep -v /backup | grep -v /" + OperationLogReader.TAIL_CACHE_DIR;
+		String command;
 		
 		boolean all = WebUtils.getBooleanParameter(request, "all", false);
 		
@@ -95,7 +98,7 @@ public class DownloadResults extends HttpServlet {
 			
 			// Create the tar command
 			
-			command = "tar -czf - `find" + directories + " -maxdepth 1 | grep -v /db | grep -v /warmup | grep /`";
+			command = "tar -czf - `find" + directories + " -maxdepth 1 " + grep + " | grep /`";
 		}
 		
 		

@@ -1,7 +1,11 @@
 package com.tinkerpop.bench.log;
 
-public class OperationLogEntry {
+import java.io.Serializable;
 
+public class OperationLogEntry implements Serializable {
+
+	private static final long serialVersionUID = 5560227280010464454L;
+	
 	private int opId = -1;
 	private String name = null;
 	private String type = null;

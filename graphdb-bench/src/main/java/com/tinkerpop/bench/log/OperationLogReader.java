@@ -1,14 +1,20 @@
 package com.tinkerpop.bench.log;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.WeakHashMap;
+import java.util.regex.Pattern;
 
 import au.com.bytecode.opencsv.CSVParser;
 
@@ -21,9 +27,14 @@ import com.tinkerpop.bench.util.LogUtils;
  */
 public class OperationLogReader implements Iterable<OperationLogEntry> {
 
+	private static Pattern opNamePattern = Pattern.compile("^[A-Za-z][A-Za-z0-9_-]*$");
+	
+	public static final String TAIL_CACHE_DIR = "cache";
+	public static boolean PERSISTENT_TAIL_CACHE = true;
+
 	public static int TAIL_MIN_ROWS = 1;
 	public static int TAIL_MAX_ROWS = 10000;
-	public static double TAIL_MAX_FRACTION = 0.25;	
+	public static double TAIL_MAX_FRACTION = 0.25;
 	
 	private final char logDelim = LogUtils.LOG_DELIMITER.charAt(0);
 	
@@ -54,36 +65,108 @@ public class OperationLogReader implements Iterable<OperationLogEntry> {
 		return r;
 	}
 	
+	@SuppressWarnings("unchecked")
 	public static List<OperationLogEntry> getTailEntries(File logFile, String operationName) {
+		
+		if (!opNamePattern.matcher(operationName).matches()) {
+			throw new RuntimeException("Invalid operation name");
+		}
+		
 		synchronized (operationEntriesTailCache) {
 			
 			String cacheKey = logFile.getAbsolutePath() + "----" + operationName;
 			List<OperationLogEntry> entries = operationEntriesTailCache.get(cacheKey);
 			
-			if (entries == null) {			
-				OperationLogReader reader = new OperationLogReader(logFile, operationName);
-				ArrayList<OperationLogEntry> r = new ArrayList<OperationLogEntry>();
-				for (OperationLogEntry e : reader) {
-					if (e.getName().equals(operationName)) r.add(e);
-				}
-				
-				int n = r.size();
-				
-				int keep1 = TAIL_MAX_ROWS     > 0 ? Math.max(TAIL_MAX_ROWS, n) : n;
-				int keep2 = TAIL_MAX_FRACTION > 0 ? (int) Math.round(TAIL_MAX_FRACTION * n) : n;
-				int keep  = Math.min(keep1, keep2);
-				
-				if (keep < TAIL_MIN_ROWS) keep = Math.min(TAIL_MIN_ROWS, n);
 			
-				if (keep > 0 && n > keep) {
-					ArrayList<OperationLogEntry> a = new ArrayList<OperationLogEntry>(keep);
-					for (int i = r.size() - keep; i < r.size(); i++) {
-						a.add(r.get(i));
+			// Read the data from disk, if it was not found in the cache
+			
+			if (entries == null) {
+				
+				
+				// Check the persistent tail cache
+				
+				int logDatePos = logFile.getName().indexOf("__date_");
+				String logDate = "";
+				if (logDatePos >= 0) {
+					int logDateEnd = logFile.getName().indexOf("__", logDatePos + "__date_".length());
+					if (logDateEnd < 0) logDateEnd = logFile.getName().indexOf('.', logDatePos + "__date_".length());
+					if (logDateEnd > 0) {
+						logDate = logFile.getName().substring(logDatePos, logDateEnd);
 					}
-					r = a;
 				}
 				
-				entries = r;
+				File tailCacheDir = new File(logFile.getParentFile(), TAIL_CACHE_DIR);
+				String tailCacheFileName = "tail" + logDate + "__hash_" + Integer.toHexString(logFile.hashCode())
+						+ "__op_" + operationName
+						+ "__tail_" + TAIL_MIN_ROWS + "_" + TAIL_MAX_ROWS + "_" + ((int) (100 * TAIL_MAX_FRACTION))
+						+ ".dat";
+						
+				if (PERSISTENT_TAIL_CACHE) {
+					File f = new File(tailCacheDir, tailCacheFileName);
+					if (f.exists()) {
+						try {
+							ObjectInputStream in = new ObjectInputStream(new BufferedInputStream(new FileInputStream(f)));
+							entries = (List<OperationLogEntry>) in.readObject();
+							in.close();
+						}
+						catch (IOException e) {
+							throw new RuntimeException(e);
+						}
+						catch (ClassNotFoundException e) {
+							throw new RuntimeException(e);
+						}
+					}
+				}
+				
+				
+				// Read the data from the log file, if it was not found in the persistent tail cache
+				
+				if (entries == null) {
+				
+					OperationLogReader reader = new OperationLogReader(logFile, operationName);
+					ArrayList<OperationLogEntry> r = new ArrayList<OperationLogEntry>();
+					for (OperationLogEntry e : reader) {
+						if (e.getName().equals(operationName)) r.add(e);
+					}
+					
+					int n = r.size();
+					
+					int keep1 = TAIL_MAX_ROWS     > 0 ? Math.max(TAIL_MAX_ROWS, n) : n;
+					int keep2 = TAIL_MAX_FRACTION > 0 ? (int) Math.round(TAIL_MAX_FRACTION * n) : n;
+					int keep  = Math.min(keep1, keep2);
+					
+					if (keep < TAIL_MIN_ROWS) keep = Math.min(TAIL_MIN_ROWS, n);
+				
+					if (keep > 0 && n > keep) {
+						ArrayList<OperationLogEntry> a = new ArrayList<OperationLogEntry>(keep);
+						for (int i = r.size() - keep; i < r.size(); i++) {
+							a.add(r.get(i));
+						}
+						r = a;
+					}
+					
+					entries = r;
+					
+					
+					// Store the tail in the persistent cache, if enabled
+					
+					if (PERSISTENT_TAIL_CACHE) {
+						tailCacheDir.mkdirs();
+						File f = new File(tailCacheDir, tailCacheFileName);
+						try {
+							ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(f));
+							out.writeObject(entries);
+							out.close();
+						}
+						catch (IOException e) {
+							throw new RuntimeException(e);
+						}
+					}
+				}
+				
+				
+				// Store the loaded tail entries in the in-memory tail cache
+				
 				operationEntriesTailCache.put(cacheKey, entries);
 			}
 			
