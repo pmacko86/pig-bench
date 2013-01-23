@@ -44,6 +44,8 @@ var d3bp = {};
 
 d3bp.Data = CClass.create(function(input) {
 	
+	this._super();
+	
 	var __datasource = null;
 	
 	var __preprocessfunctions = [];
@@ -267,6 +269,8 @@ d3bp.Data = CClass.create(function(input) {
 
 d3bp.Series = CClass.create(function(parent, value, valueLabelFn) {
 	
+	this._super();
+	
 	var __parent = parent;				// parent series
 	
 	var __value = value;				// the common property value
@@ -341,6 +345,11 @@ d3bp.Series = CClass.create(function(parent, value, valueLabelFn) {
 
 d3bp.Appearance = CClass.create(function() {
 	
+	this._super();
+	
+	/*
+	 * Public
+	 */
 	return {
 		chart_margin: 10,
 		
@@ -357,7 +366,134 @@ d3bp.Appearance = CClass.create(function() {
 		legend_bar_height: 20,
 		legend_vertical_spacing: 2,
 		
-		fill: "solid"
+		fill: "solid",
+		
+		
+		/**
+		 * Create the appearance helper
+		 * 
+		 * @param svg the SVG component
+		 * @return a new instance of d3bp.AppearanceHelper
+		 */
+		createHelper: function(svg) {
+			return new d3bp.AppearanceHelper(this, svg);
+		}
+	};
+});
+
+
+
+/*****************************************************************************
+ * Class d3bp.AppearanceHelper                                               *
+ *****************************************************************************/
+
+d3bp.AppearanceHelper = CClass.create(function(appearance, svg) {
+	
+	this._super();
+	
+	var __appearance = appearance;
+	var __svg = svg;
+	var __svg_defs = svg.append('svg:defs');
+	
+	var __num_patterns = 0;			// patterns in the definition
+	
+	
+	var __ensure_pattern = function(index) {
+		if (index >= __num_patterns) {
+			for (var pi = __num_patterns;
+				 pi <= index; pi++) {
+				
+				__num_patterns++;
+				var pmod = pi % 6;
+				var pattern = defs.append("svg:pattern")
+				.attr("id", "pattern-" + pi)
+				.attr("x", 0)
+				.attr("y", 0)
+				.attr("width" , pmod == 3 || pmod == 5 ? 6 : 8)
+				.attr("height", pmod == 2 || pmod == 5 ? 6 : 8)
+				.attr("patternUnits", "userSpaceOnUse")
+				.append("g")
+				.style("fill", "none")
+				.style("stroke", a.bar_colors(pi))
+				.style("stroke-width", "1")
+				.style("stroke-linecap", "square");
+				
+				switch (pmod) {
+					case 0:
+						pattern.append("path")
+						.attr("d", "M 0 0 L 8 8 M 0 -8 L 8 0 "
+						+ "M 0 8 L 8 16");
+						break;
+					case 1:
+						pattern.append("path")
+						.attr("d", "M 8 0 L 0 8 M 8 -8 L 0 0 "
+						+ "M 8 8 L 0 16");
+						break;
+					case 2:
+						pattern.append("path")
+						.attr("d", "M 0 3 L 8 3");
+						break;
+					case 3:
+						pattern.append("path")
+						.attr("d", "M 3 0 L 3 8");
+						break;
+					case 4:
+						pattern.append("path")
+						.attr("d", "M 0 0 L 8 8 M 0 -8 L 8 0 "
+						+ "M 0 8 L 8 16 M 8 0 L 0 8 "
+						+ "M 8 -8 L 0 0 M 8 8 L 0 16");
+						break;
+					case 5:
+						pattern.append("path")
+						.attr("d", "M 0 3 L 8 3 M 3 0 L 3 8");
+						break;
+					default:
+						throw "Internal error";
+				}
+			}
+		}
+	};
+	
+	
+	/*
+	 * Public
+	 */
+	return {
+		
+		/**
+		 * Apply the style to a bar
+		 * 
+		 * @param bar the d3 bar component
+		 * @param categoryIndex the category index
+		 * @return this
+		 */
+		applyStyleToFilledBar: function(bar, categoryIndex) {
+			
+			// Solid fill
+			
+			if (__appearance.fill == "solid") {
+				bar.style("fill", __appearance.bar_colors(categoryIndex));
+				return this;
+			}
+			
+			
+			// Pattern fill
+			
+			if (__appearance.fill == "pattern") {
+				
+				__ensure_pattern(categoryIndex);
+				bar.attr("style",
+						 "fill:url(#pattern-" + categoryIndex + ");"
+						 + "stroke:" + a.bar_colors(categoryIndex));
+				
+				return this;
+			}
+			
+			
+			// Error
+			
+			throw "Invalid bar fill type: " + __appearance.fill;
+		}
 	};
 });
 
@@ -377,8 +513,8 @@ d3bp.DataValue = CClass.create(function() {
 
 
 	/*
-	* Public
-	*/
+	 * Public
+	 */
 	return {
 		
 		
@@ -1139,8 +1275,6 @@ d3bp.BarChart = d3bp.AbstractChart.extend(function() {
 				var data = t.data();
 				var num_bars = data.data().length;
 				
-				var boundingBox = new d3bp.BoundingBox();
-				
 				
 				// Create the chart with the initial size estimates, but we will
 				// correct them later
@@ -1153,12 +1287,11 @@ d3bp.BarChart = d3bp.AbstractChart.extend(function() {
 				
 				
 				//
-				// Prepare a framework for fill patterns
+				// Further initialization
 				//
 				
-				var defs = chart.append('svg:defs');
-				var num_patterns = 0;
-				var use_patterns = a.fill == "pattern";
+				var boundingBox = new d3bp.BoundingBox();
+				var appearanceHelper = a.createHelper(chart);
 				
 				
 				//
@@ -1282,65 +1415,7 @@ d3bp.BarChart = d3bp.AbstractChart.extend(function() {
 								categories.push(category);
 							}
 							
-							if (use_patterns) {
-								if (category_index >= num_patterns) {
-									for (var pi = num_patterns;
-											pi <= category_index; pi++) {
-										
-										num_patterns++;
-									var pmod = pi % 6;
-									var pattern = defs.append("svg:pattern")
-									.attr("id", "pattern-" + pi)
-									.attr("x", 0)
-									.attr("y", 0)
-									.attr("width" , pmod == 3 || pmod == 5 ? 6 : 8)
-									.attr("height", pmod == 2 || pmod == 5 ? 6 : 8)
-									.attr("patternUnits", "userSpaceOnUse")
-									.append("g")
-									.style("fill", "none")
-									.style("stroke", a.bar_colors(pi))
-									.style("stroke-width", "1")
-									.style("stroke-linecap", "square");
-									
-									switch (pmod) {
-										case 0:
-											pattern.append("path")
-											.attr("d", "M 0 0 L 8 8 M 0 -8 L 8 0 "
-											+ "M 0 8 L 8 16");
-											break;
-										case 1:
-											pattern.append("path")
-											.attr("d", "M 8 0 L 0 8 M 8 -8 L 0 0 "
-											+ "M 8 8 L 0 16");
-											break;
-										case 2:
-											pattern.append("path")
-											.attr("d", "M 0 3 L 8 3");
-											break;
-										case 3:
-											pattern.append("path")
-											.attr("d", "M 3 0 L 3 8");
-											break;
-										case 4:
-											pattern.append("path")
-											.attr("d", "M 0 0 L 8 8 M 0 -8 L 8 0 "
-											+ "M 0 8 L 8 16 M 8 0 L 0 8 "
-											+ "M 8 -8 L 0 0 M 8 8 L 0 16");
-											break;
-										case 5:
-											pattern.append("path")
-											.attr("d", "M 0 3 L 8 3 M 3 0 L 3 8");
-											break;
-									}
-											}
-								}
-								bar.attr("style",
-								"fill:url(#pattern-" + category_index + ");"
-								+ "stroke:" + a.bar_colors(category_index));
-							}
-							else {
-								bar.style("fill", a.bar_colors(category_index));
-							}
+							appearanceHelper.applyStyleToFilledBar(bar, category_index);
 						}
 						
 						
@@ -1440,7 +1515,7 @@ d3bp.BarChart = d3bp.AbstractChart.extend(function() {
 							if (info == null) {
 								info = [];
 								info.series = s;
-								info.min_pos = 1000 * 1000 * 1000;
+								info.min_pos = Infinity;
 								info.max_pos = 0;
 								seriesinfo.push(info);
 							}
@@ -1637,14 +1712,7 @@ d3bp.BarChart = d3bp.AbstractChart.extend(function() {
 						.attr("width", a.legend_bar_width)
 						.attr("height", a.legend_bar_height);
 						
-						if (use_patterns) {
-							bar.attr("style",
-							"fill:url(#pattern-" + ci + ");"
-							+ "stroke:" + a.bar_colors(ci));
-						}
-						else {
-							bar.style("fill", a.bar_colors(ci));
-						}
+						appearanceHelper.applyStyleToFilledBar(bar, ci);
 						
 						var text = chart.append("text")
 						.attr("x", x + a.legend_bar_width + a.legend_bar_padding_right)
