@@ -333,6 +333,37 @@ d3bp.Series = CClass.create(function(parent, value, valueLabelFn) {
 		 */
 		label: function() {
 			return __label;
+		},
+		
+		
+		/**
+		 * Process the series recursively in the breath-first order
+		 * 
+		 * @param callback the callback function
+		 * @return this
+		 */
+		processBFS: function(callback) {
+			
+			var seriesqueue = [];
+			seriesqueue.push(this);
+			
+			while (seriesqueue.length > 0) {
+				var series = seriesqueue.shift();
+				var series_data = series.data();
+				if (series_data.length == 0) {
+					continue;
+				}
+				
+				if (series_data[0] instanceof d3bp.Series) {
+					for (var di = 0; di < series_data.length; di++) {
+						var s = series_data[di];
+						seriesqueue.push(s);
+					}
+					continue;
+				}
+				
+				callback(series);
+			}
 		}
 	};
 });
@@ -1356,9 +1387,6 @@ d3bp.BarChart = d3bp.AbstractChart.extend(function() {
 				// Process the series recursively
 				//
 				
-				var seriesqueue = [];
-				seriesqueue.push(data.seriesRoot());
-				
 				var index = 0;
 				var pos = 0;
 				var lastparent = null;
@@ -1367,19 +1395,11 @@ d3bp.BarChart = d3bp.AbstractChart.extend(function() {
 				var seriesinfo = [];
 				var max_level = 0;
 				
-				while (seriesqueue.length > 0) {
-					var series = seriesqueue.shift();
+				data.seriesRoot().processBFS(function(series) {
+					
 					var series_data = series.data();
 					if (series_data.length == 0) {
-						continue;
-					}
-					
-					if (series_data[0] instanceof d3bp.Series) {
-						for (var di = 0; di < series_data.length; di++) {
-							var s = series_data[di];
-							seriesqueue.push(s);
-						}
-						continue;
+						return;
 					}
 					
 					if (series.parent() != lastparent) {
@@ -1541,7 +1561,7 @@ d3bp.BarChart = d3bp.AbstractChart.extend(function() {
 							inv_level++;
 						}
 					}
-				}
+				});
 				
 				
 				//
@@ -1582,23 +1602,13 @@ d3bp.BarChart = d3bp.AbstractChart.extend(function() {
 				// Series labels
 				//
 				
-				seriesqueue = [];
-				seriesqueue.push(data.seriesRoot());
-				
 				var label_at_inv_levels = [];
 				
-				while (seriesqueue.length > 0) {
-					var series = seriesqueue.shift();
+				data.seriesRoot().processBFS(function(series) {
+					
 					var series_data = series.data();
 					if (series_data.length == 0) {
-						continue;
-					}
-					
-					if (series_data[0] instanceof d3bp.Series) {
-						for (var di = 0; di < series_data.length; di++) {
-							var s = series_data[di];
-							seriesqueue.push(s);
-						}
+						return;
 					}
 					
 					var info = null;
@@ -1641,7 +1651,7 @@ d3bp.BarChart = d3bp.AbstractChart.extend(function() {
 					x.x_pos = (info.min_pos + info.max_pos) / 2;
 					x.too_long = 0.9 * (info.max_pos - info.min_pos) < w;
 					labels_at_level.push(x);
-				}
+				});
 				
 				var label_y_pos = __inner_height + a.chart_margin;
 				for (var inv_level = 0; inv_level < label_at_inv_levels.length; inv_level++) {
