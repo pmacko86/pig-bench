@@ -104,6 +104,10 @@ public class OperationLogReader implements Iterable<OperationLogEntry> {
 				if (PERSISTENT_TAIL_CACHE) {
 					File f = new File(tailCacheDir, tailCacheFileName);
 					if (f.exists()) {
+						
+						// TODO Make it so that if we update OperationLogEntry, the code will recreate the cached files
+						//      automatically without failing (check serialVersionUID)
+						
 						try {
 							ObjectInputStream in = new ObjectInputStream(new BufferedInputStream(new FileInputStream(f)));
 							entries = (List<OperationLogEntry>) in.readObject();
