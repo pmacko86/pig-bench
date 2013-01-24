@@ -337,12 +337,13 @@ d3bp.Series = CClass.create(function(parent, value, valueLabelFn) {
 		
 		
 		/**
-		 * Process the series recursively in the breath-first order
+		 * Process the series recursively in the breath-first sort order
 		 * 
 		 * @param callback the callback function
+		 * @param internalNodes true to include the series tree internal nodes
 		 * @return this
 		 */
-		processBFS: function(callback) {
+		processBFS: function(callback, internalNodes) {
 			
 			var seriesqueue = [];
 			seriesqueue.push(this);
@@ -359,7 +360,9 @@ d3bp.Series = CClass.create(function(parent, value, valueLabelFn) {
 						var s = series_data[di];
 						seriesqueue.push(s);
 					}
-					continue;
+					if (!internalNodes) {
+						continue;
+					}
 				}
 				
 				callback(series);
@@ -424,19 +427,28 @@ d3bp.AppearanceHelper = CClass.create(function(appearance, svg) {
 	
 	var __appearance = appearance;
 	var __svg = svg;
-	var __svg_defs = svg.append('svg:defs');
+	var __defs = null;
 	
 	var __num_patterns = 0;			// patterns in the definition
 	
+	if (appearance != undefined) {
+		__defs = svg.append('svg:defs');
+	}
 	
+	
+	/**
+	 * Ensure that the pattern with the given index and all fill patterns with
+	 * smaller indices exist in the SVG element's definitions.
+	 * 
+	 * @param index the pattern index
+	 */
 	var __ensure_pattern = function(index) {
 		if (index >= __num_patterns) {
-			for (var pi = __num_patterns;
-				 pi <= index; pi++) {
+			for (var pi = __num_patterns; pi <= index; pi++) {
 				
 				__num_patterns++;
 				var pmod = pi % 6;
-				var pattern = defs.append("svg:pattern")
+				var pattern = __defs.append("svg:pattern")
 				.attr("id", "pattern-" + pi)
 				.attr("x", 0)
 				.attr("y", 0)
@@ -445,7 +457,7 @@ d3bp.AppearanceHelper = CClass.create(function(appearance, svg) {
 				.attr("patternUnits", "userSpaceOnUse")
 				.append("g")
 				.style("fill", "none")
-				.style("stroke", a.bar_colors(pi))
+				.style("stroke", __appearance.bar_colors(pi))
 				.style("stroke-width", "1")
 				.style("stroke-linecap", "square");
 				
@@ -515,7 +527,7 @@ d3bp.AppearanceHelper = CClass.create(function(appearance, svg) {
 				__ensure_pattern(categoryIndex);
 				bar.attr("style",
 						 "fill:url(#pattern-" + categoryIndex + ");"
-						 + "stroke:" + a.bar_colors(categoryIndex));
+						 + "stroke:" + __appearance.bar_colors(categoryIndex));
 				
 				return this;
 			}
@@ -795,14 +807,18 @@ d3bp.InstantiatedScale = CClass.create(function(scale) {
 		 * @param data the data (an instance of d3bp.Data)
 		 * @param value the value wrapper (an instance of d3bp.DataValue)
 		 * @param stdev the stdev wrapper (optional)
+		 * @param startAtZero whether to start the domain at zero (if applicable)
+		 * @param ignoreNegatives true to ignore the negative values
 		 * @return this
 		 */
-		domainFromData: function(data, value, stdev) {
+		domainFromData: function(data, value, stdev, startAtZero, ignoreNegatives) {
 			
 			var have_stdev = false;
 			if (stdev != undefined && stdev != null) {
 				have_stdev = stdev.extractFunction() != null;
 			}
+			
+			var ignoreZero = __scaletype == "log";
 			
 			var data_max = d3.max(data.data(),
 								  function(d) {
@@ -816,23 +832,35 @@ d3bp.InstantiatedScale = CClass.create(function(scale) {
 									  }
 								  });
 			
-			var data_min_ignoring_nonpositives = d3.min(data.data(),
-														function(d) {
-															var v = 1 * value.extract(d);
-															if (!have_stdev) {
-																return v < 0 ? Infinity : v;
-															}
-															else {
-																var s = 1 * stdev.extract(d);
-																return v - s < 0 ? Infinity : v - s;
-															}
-														});
+			var data_min = d3.min(data.data(),
+								  function(d) {
+									  var v = 1 * value.extract(d);
+									  if (!have_stdev) {
+										  if (ignoreNegatives && v < 0) {
+											  return Infinity;
+										  }
+										  if (ignoreZero && v == 0) {
+											  return Infinity;
+										  }
+										  return v;
+									  }
+									  else {
+										  var s = 1 * stdev.extract(d);
+										  if (ignoreNegatives && v - s < 0) {
+											  return Infinity;
+										  }
+										  if (ignoreZero && v - s == 0) {
+											  return Infinity;
+										  }
+										  return v - s;
+									  }
+								  });
 			
 			if (__scaletype == "log") {
-				__d3scale.domain([0.9 * data_min_ignoring_nonpositives, 1.1 * data_max]);
+				__d3scale.domain([0.9 * data_min, 1.1 * data_max]);
 			}
 			else {
-				__d3scale.domain([0, 1.1 * data_max]);
+				__d3scale.domain([startAtZero ? 0 : data_min, 1.1 * data_max]);
 			}
 			
 			return this;
@@ -1075,14 +1103,97 @@ d3bp.BoundingBox = CClass.create(function() {
 
 
 /*****************************************************************************
- * Class d3bp.AbstractChartElement                                           *
+ * Class d3bp.InstantiatedChart                                              *
  *****************************************************************************/
 
-d3bp.AbstractChartElement = CClass.create(function(chart) {
+d3bp.InstantiatedChart = CClass.create(function(chart, anchorId) {
 	
 	this._super();
 	
 	var __chart = chart;
+	var __bbox  = new d3bp.BoundingBox();
+	
+	var __anchor_id = anchorId;
+	var __svg_root = null;
+	var __container = null;
+	
+	var __appearanceHelper = null;
+	
+	if (chart != undefined) {
+		__svg_root = d3.select("#" + __anchor_id).append("svg");
+		__container = __svg_root.append("g");
+		__appearanceHelper = __chart.appearance().createHelper(__container);
+	}
+	
+	
+	/*
+	 * Public
+	 */
+	return {
+		
+		
+		/**
+		 * Get the chart
+		 * 
+		 * @return the chart
+		 */
+		chart: function() {
+			return __chart;
+		},
+		
+		
+		/**
+		 * Get the bounding box
+		 * 
+		 * @return the bounding box
+		 */
+		boundingBox: function() {
+			return __bbox;
+		},
+		
+		
+		/**
+		 * Get the SVG root element
+		 * 
+		 * @return the SVG root element
+		 */
+		svgRootElement: function() {
+			return __svg_root;
+		},
+		
+		
+		/**
+		 * Get the SVG content container
+		 * 
+		 * @return the container
+		 */
+		container: function() {
+			return __container;
+		},
+		
+		
+		/**
+		 * Get the corresponding instance of the d3bp.AppearanceHelper
+		 * 
+		 * @return the appearance helper
+		 */
+		appearanceHelper: function() {
+			return __appearanceHelper;
+		}
+	};
+});
+
+
+
+/*****************************************************************************
+ * Class d3bp.AbstractChartElement                                           *
+ *****************************************************************************/
+
+d3bp.AbstractChartElement = CClass.create(function(instantiatedChart) {
+	
+	this._super();
+	
+	var __instantiatedChart = instantiatedChart;
 	var __bbox  = new d3bp.BoundingBox();
 	
 	
@@ -1098,7 +1209,94 @@ d3bp.AbstractChartElement = CClass.create(function(chart) {
 		 * @return the parent chart
 		 */
 		chart: function() {
-			return __chart;
+			return __instantiatedChart.chart();
+		},
+		
+		
+		/**
+		 * Get the instantiated parent chart
+		 * 
+		 * @return the instantiated parent chart
+		 */
+		instantiatedChart: function() {
+			return __instantiatedChart;
+		},
+		
+		
+		/**
+		 * Get the bounding box
+		 * 
+		 * @return the bounding box
+		 */
+		boundingBox: function() {
+			return __bbox;
+		}
+	};
+});
+
+
+
+/*****************************************************************************
+ * Class d3bp.Legend                                                         *
+ *****************************************************************************/
+
+d3bp.Legend = d3bp.AbstractChartElement.extend(function(chart) {
+	
+	this._super(chart);
+	
+	
+	/*
+	 * Public
+	 */
+	return {
+		
+		
+		/**
+		 * Render the legend
+		 * 
+		 * @param categories a list of data values describing their categories
+		 * @param categoryWrapper the corresponding instance of d3bp.DataValue
+		 * @return this
+		 */
+		render: function(categories, categoryWrapper) {
+			
+			if (categories.length == 0) {
+				return this;
+			}
+			
+			var a = this.chart().appearance();
+			var boundingBox = this.boundingBox();
+			var appearanceHelper = this.instantiatedChart().appearanceHelper();
+			var chart_inner_width = this.instantiatedChart().innerWidth();
+			
+			var x = chart_inner_width + a.bars_margin + a.chart_margin + a.legend_padding_left;
+			
+			var container = this.instantiatedChart().container().append("g");
+			
+			for (var ci = 0; ci < categories.length; ci++) {
+				var c = categories[ci];
+				
+				var bar = container.append("rect")
+				.attr("x", x)
+				.attr("y", ci * (a.legend_bar_height + a.legend_vertical_spacing) + a.legend_padding_top)
+				.attr("width", a.legend_bar_width)
+				.attr("height", a.legend_bar_height);
+				
+				appearanceHelper.applyStyleToFilledBar(bar, ci);
+				boundingBox.updateFromUntranslatedD3(bar);
+				
+				var text = container.append("text")
+				.attr("x", x + a.legend_bar_width + a.legend_bar_padding_right)
+				.attr("y", ci * (a.legend_bar_height + a.legend_vertical_spacing)
+				+ a.legend_padding_top + 0.5 * a.legend_bar_height)
+				.attr("dx", 0)
+				.attr("dy", ".35em") // vertical-align: middle
+				.text(categoryWrapper.toString(categories[ci]));
+				
+				boundingBox.updateFromUntranslatedD3(text);
+			}
+			
+			return this;
 		}
 	};
 });
@@ -1113,7 +1311,8 @@ d3bp.AbstractChart = CClass.create(function() {
 	
 	this._super();
 	
-	var __data = null;
+	var __data = null;							// the data
+	var __appearance = new d3bp.Appearance();	// the appearance specs
 	
 	
 	/*
@@ -1134,6 +1333,21 @@ d3bp.AbstractChart = CClass.create(function() {
 			}
 			__data = data;
 			return this;
+		},
+		
+		
+		/**
+		 * Set or return the chart appearance object
+		 * 
+		 * @param appearance the new appearance
+		 * @return the appearance if no arguments are given, otherwise this
+		 */
+		appearance: function(appearance) {
+			if (appearance === undefined) {
+				return __appearance;
+			}
+			__appearance = appearance;
+			return this;
 		}
 	};
 });
@@ -1153,7 +1367,6 @@ d3bp.BarChart = d3bp.AbstractChart.extend(function() {
 	var __label = new d3bp.DataValue();			// the label value (usually x)
 	var __category = new d3bp.DataValue();		// the category
 	
-	var __appearance = new d3bp.Appearance();	// the appearance specs
 	var __scale = new d3bp.Scale();				// the scale specs
 	
 	var __stacked = false;
@@ -1249,21 +1462,6 @@ d3bp.BarChart = d3bp.AbstractChart.extend(function() {
 		
 		
 		/**
-		 * Set or return the chart appearance object
-		 * 
-		 * @param appearance the new appearance
-		 * @return the appearance if no arguments are given, otherwise this
-		 */
-		appearance: function(appearance) {
-			if (appearance === undefined) {
-				return __appearance;
-			}
-			__appearance = appearance;
-			return this;
-		},
-		
-		
-		/**
 		 * Set or return the chart height object
 		 * 
 		 * @param innerHeight the intended inner height
@@ -1291,7 +1489,6 @@ d3bp.BarChart = d3bp.AbstractChart.extend(function() {
 		render: function(id) {
 			
 			var t = this;
-			var a = __appearance;
 			
 			if (this.data() == null) {
 				throw "The data has not yet been specified";
@@ -1301,456 +1498,471 @@ d3bp.BarChart = d3bp.AbstractChart.extend(function() {
 				throw "The value extract function has not been specified";
 			}
 			
-			this.data().run(function() {
+			var instantiatedChart = d3bp.InstantiatedChart.extend(function() {
 				
-				var data = t.data();
-				var num_bars = data.data().length;
+				this._super(t, id);
 				
-				
-				// Create the chart with the initial size estimates, but we will
-				// correct them later
-				
-				var chart_svg = d3.select("#" + id).append("svg")
-				.attr("class", "chart")
-				.attr("width",  a.bar_width * num_bars)
-				.attr("height", __inner_height);
-				var chart = chart_svg.append("g");
+				var chart_inner_width = null;
 				
 				
-				//
-				// Further initialization
-				//
-				
-				var boundingBox = new d3bp.BoundingBox();
-				var appearanceHelper = a.createHelper(chart);
-				
-				
-				//
-				// Data scale
-				//
-				
-				var scale = __scale.instantiate()
-				.domainFromData(data, __value, __stdev)
-				.range([__inner_height, 0]);
-				var ticks = scale.ticks(__num_ticks);
-				
-				
-				//
-				// Data axis
-				//
-				
-				var h_tick_lines = chart.selectAll("line")
-				.data(ticks)
-				.enter().append("line")
-				.attr("x1", -a.bars_margin)
-				.attr("x2", num_bars * a.bar_width + a.bars_margin)
-				.attr("y1", scale.d3scale())
-				.attr("y2", scale.d3scale())
-				.style("stroke", "#ccc");
-				
-				var data_ticks_text = chart.selectAll(".rule")
-				.data(ticks)
-				.enter().append("text")
-				.attr("class", "rule")
-				.attr("x", -a.chart_margin-a.bars_margin)
-				.attr("y", scale.d3scale())
-				.attr("dx", 0)
-				.attr("dy", ".35em")
-				.attr("text-anchor", "end")
-				.text(String);
-				
-				boundingBox.updateFromUntranslatedD3(data_ticks_text);
-				
-				chart.append("line")
-				.attr("x1", -a.bars_margin)
-				.attr("y1", 0)
-				.attr("x2", -a.bars_margin)
-				.attr("y2", __inner_height)
-				.style("stroke", "#000");
-				
-				if (__value.axisLabel() != undefined && __value.axisLabel() != null) {
-					var left = boundingBox.x1 - a.ylabel_from_data_tick_text;
-					var text = chart.append("text")
-					.attr("x", 0)
-					.attr("y", 0)
-					.attr("dx", 0)
-					.attr("dy", 0)
-					.attr("text-anchor", "middle")
-					.attr("transform", "translate(" + left + ", "
-					+ (__inner_height/2)  + ") rotate(-90)")
-					.text(__value.axisLabel());
-					boundingBox.updateFromTranslatedD3(text, left, __inner_height/2);
-				}
-				
-				
-				//
-				// Process the series recursively
-				//
-				
-				var index = 0;
-				var pos = 0;
-				var lastparent = null;
-				var categories = [];
-				
-				var seriesinfo = [];
-				var max_level = 0;
-				
-				data.seriesRoot().processBFS(function(series) {
+				/**
+				 * Public
+				 */
+				return {
 					
-					var series_data = series.data();
-					if (series_data.length == 0) {
-						return;
-					}
+					/**
+					 * Get the inner width of the chart
+					 * 
+					 * @return the inner width
+					 */
+					innerWidth: function() {
+						return chart_inner_width;
+					},
 					
-					if (series.parent() != lastparent) {
-						lastparent = series.parent();
-						if (index > 0) {
-							pos += a.bar_width;
-						}
-					}
 					
-					for (var di = 0; di < series_data.length; di++) {
-						var d = series_data[di];
-						var value = 1 * __value.extract(d);
-						var stdev = __stdev.extractFunction() == null ? NaN : 1 * __stdev.extract(d);
-						var label = __label.extractFunction() == null ? null : __label.extract(d);
-						var category = __category.extractFunction() == null ? null : __category.extract(d);
+					/**
+					 * Get the inner height of the chart
+					 * 
+					 * @return the inner width
+					 */
+					innerHeight: function() {
+						return __inner_height;
+					},
+					
+					
+					/**
+					 * Render
+					 */
+					render: function() {
+						
+						var chart_svg = this.svgRootElement();
+						var chart = this.container();
+						
+						var data = t.data();
+						var num_bars = data.data().length;
+						var boundingBox = this.boundingBox();
+						
+						var a = t.appearance();
+						var appearanceHelper = this.appearanceHelper();
 						
 						
-						// Data
+						//
+						// Further initialization
+						//
 						
-						var bar = chart.append("rect")
-						.attr("x", pos)
-						.attr("y", scale.d3scale(value))
-						.attr("width", a.bar_width)
-						.attr("height", __inner_height - scale.d3scale(value));
+						chart_svg.attr("class", "chart");
 						
 						
-						// Category
+						//
+						// Data scale
+						//
 						
-						if (category != undefined && category != null) {
-							var category_index = categories.indexOf(category);
-							if (category_index < 0) {
-								category_index = categories.length;
-								categories.push(category);
-							}
-							
-							appearanceHelper.applyStyleToFilledBar(bar, category_index);
-						}
+						var scale = __scale.instantiate()
+						.domainFromData(data, __value, __stdev, true, true)
+						.range([__inner_height, 0]);
+						var ticks = scale.ticks(__num_ticks);
 						
 						
-						// Error bars
+						//
+						// Data axis
+						//
 						
-						if (!isNaN(stdev) && stdev > 0) {
-							var top = value + stdev;
-							var bottom = value - stdev;
-							if (bottom < scale.d3scale().domain()[0]) {
-								bottom = scale.d3scale().domain()[0];
-							}
-							
-							// Middle
-							chart.append("line")
-							.style("stroke", "#000")
-							.attr("x1", pos + 0.5 * a.bar_width)
-							.attr("x2", pos + 0.5 * a.bar_width)
-							.attr("y1", scale.d3scale(top))
-							.attr("y2", scale.d3scale(bottom));
-							
-							// Top
-							chart.append("line")
-							.style("stroke", "#000")
-							.attr("x1", pos + 0.25 * a.bar_width)
-							.attr("x2", pos + 0.75 * a.bar_width)
-							.attr("y1", scale.d3scale(top))
-							.attr("y2", scale.d3scale(top));
-							
-							// Bottom
-							chart.append("line")
-							.style("stroke", "#000")
-							.attr("x1", pos + 0.25 * a.bar_width)
-							.attr("x2", pos + 0.75 * a.bar_width)
-							.attr("y1", scale.d3scale(bottom))
-							.attr("y2", scale.d3scale(bottom));
-						}
+						var h_tick_lines = chart.selectAll("line")
+						.data(ticks)
+						.enter().append("line")
+						.attr("x1", -a.bars_margin)
+						.attr("x2", num_bars * a.bar_width + a.bars_margin)
+						.attr("y1", scale.d3scale())
+						.attr("y2", scale.d3scale())
+						.style("stroke", "#ccc");
 						
+						var data_ticks_text = chart.selectAll(".rule")
+						.data(ticks)
+						.enter().append("text")
+						.attr("class", "rule")
+						.attr("x", -a.chart_margin-a.bars_margin)
+						.attr("y", scale.d3scale())
+						.attr("dx", 0)
+						.attr("dy", ".35em")
+						.attr("text-anchor", "end")
+						.text(String);
 						
-						// Datum label
+						boundingBox.updateFromUntranslatedD3(data_ticks_text);
 						
-						if (label != undefined && label != null) {
-							chart.append("text")
-							.attr("x", 0)
-							.attr("y", 0)
-							.attr("dx", 0) 			// padding-right
-							.attr("dy", ".35em") 	// vertical-align: middle
-							.attr("transform", "translate("
-							+ (pos +  0.5 * a.bar_width) + ", "
-							+ (__inner_height + a.chart_margin)
-							+ ") rotate(45)")
-							.text(label);
-						}
+						chart.append("line")
+						.attr("x1", -a.bars_margin)
+						.attr("y1", 0)
+						.attr("x2", -a.bars_margin)
+						.attr("y2", __inner_height)
+						.style("stroke", "#000");
 						
-						
-						// Value label
-						
-						if (__value.toStringFunction() != undefined && __value.toStringFunction != null) {
-							if (!isNaN(stdev) && stdev > 0) {
-								var top = value + stdev;
-							}
-							else {
-								var top = value;
-							}
-							var x = pos +  0.5 * a.bar_width;
-							var y = scale.d3scale(top) - 10;
+						if (__value.axisLabel() != undefined && __value.axisLabel() != null) {
+							var left = boundingBox.x1 - a.ylabel_from_data_tick_text;
 							var text = chart.append("text")
 							.attr("x", 0)
 							.attr("y", 0)
 							.attr("dx", 0)
-							.attr("dy", ".35em") // vertical-align: middle
-							.attr("transform", "translate(" + x + ", " + y + ") rotate(-90)")
-							.text(__value.toString(value));
-							boundingBox.updateFromTranslatedD3(text, x, y);
+							.attr("dy", 0)
+							.attr("text-anchor", "middle")
+							.attr("transform", "translate(" + left + ", "
+							+ (__inner_height/2)  + ") rotate(-90)")
+							.text(__value.axisLabel());
+							boundingBox.updateFromTranslatedD3(text, left, __inner_height/2);
 						}
 						
 						
-						// Advance the counters
+						//
+						// Process the series recursively
+						//
 						
-						var old_pos = pos;
-						pos += a.bar_width;
-						index++;
+						var index = 0;
+						var pos = 0;
+						var lastparent = null;
+						var categories = [];
+						
+						var seriesinfo = [];
+						var max_level = 0;
+						
+						data.seriesRoot().processBFS(function(series) {
+							
+							var series_data = series.data();
+							if (series_data.length == 0) {
+								return;
+							}
+							
+							if (series.parent() != lastparent) {
+								lastparent = series.parent();
+								if (index > 0) {
+									pos += a.bar_width;
+								}
+							}
+							
+							for (var di = 0; di < series_data.length; di++) {
+								var d = series_data[di];
+								var value = 1 * __value.extract(d);
+								var stdev = __stdev.extractFunction() == null ? NaN : 1 * __stdev.extract(d);
+								var label = __label.extractFunction() == null ? null : __label.extract(d);
+								var category = __category.extractFunction() == null ? null : __category.extract(d);
+								
+								
+								// Data
+								
+								var bar = chart.append("rect")
+								.attr("x", pos)
+								.attr("y", scale.d3scale(value))
+								.attr("width", a.bar_width)
+								.attr("height", __inner_height - scale.d3scale(value));
+								
+								
+								// Category
+								
+								if (category != undefined && category != null) {
+									var category_index = categories.indexOf(category);
+									if (category_index < 0) {
+										category_index = categories.length;
+										categories.push(category);
+									}
+									
+									appearanceHelper.applyStyleToFilledBar(bar, category_index);
+								}
+								
+								
+								// Error bars
+								
+								if (!isNaN(stdev) && stdev > 0) {
+									var top = value + stdev;
+									var bottom = value - stdev;
+									if (bottom < scale.d3scale().domain()[0]) {
+										bottom = scale.d3scale().domain()[0];
+									}
+									
+									// Middle
+									chart.append("line")
+									.style("stroke", "#000")
+									.attr("x1", pos + 0.5 * a.bar_width)
+									.attr("x2", pos + 0.5 * a.bar_width)
+									.attr("y1", scale.d3scale(top))
+									.attr("y2", scale.d3scale(bottom));
+									
+									// Top
+									chart.append("line")
+									.style("stroke", "#000")
+									.attr("x1", pos + 0.25 * a.bar_width)
+									.attr("x2", pos + 0.75 * a.bar_width)
+									.attr("y1", scale.d3scale(top))
+									.attr("y2", scale.d3scale(top));
+									
+									// Bottom
+									chart.append("line")
+									.style("stroke", "#000")
+									.attr("x1", pos + 0.25 * a.bar_width)
+									.attr("x2", pos + 0.75 * a.bar_width)
+									.attr("y1", scale.d3scale(bottom))
+									.attr("y2", scale.d3scale(bottom));
+								}
+								
+								
+								// Datum label
+								
+								if (label != undefined && label != null) {
+									chart.append("text")
+									.attr("x", 0)
+									.attr("y", 0)
+									.attr("dx", 0) 			// padding-right
+									.attr("dy", ".35em") 	// vertical-align: middle
+									.attr("transform", "translate("
+									+ (pos +  0.5 * a.bar_width) + ", "
+									+ (__inner_height + a.chart_margin)
+									+ ") rotate(45)")
+									.text(label);
+								}
+								
+								
+								// Value label
+								
+								if (__value.toStringFunction() != undefined && __value.toStringFunction != null) {
+									if (!isNaN(stdev) && stdev > 0) {
+										var top = value + stdev;
+									}
+									else {
+										var top = value;
+									}
+									var x = pos +  0.5 * a.bar_width;
+									var y = scale.d3scale(top) - 10;
+									var text = chart.append("text")
+									.attr("x", 0)
+									.attr("y", 0)
+									.attr("dx", 0)
+									.attr("dy", ".35em") // vertical-align: middle
+									.attr("transform", "translate(" + x + ", " + y + ") rotate(-90)")
+									.text(__value.toString(value));
+									boundingBox.updateFromTranslatedD3(text, x, y);
+								}
+								
+								
+								// Advance the counters
+								
+								var old_pos = pos;
+								pos += a.bar_width;
+								index++;
+								
+								
+								// Update the series info
+								
+								var inv_level = 0;
+								for (var s = series; s != null; s = s.parent()) {
+									
+									var info = null;
+									for (var si = 0; si < seriesinfo.length; si++) {
+										var x = seriesinfo[si];
+										if (x.series == s) {
+											info = x;
+											break;
+										}
+									}
+									if (info == null) {
+										info = [];
+										info.series = s;
+										info.min_pos = Infinity;
+										info.max_pos = 0;
+										seriesinfo.push(info);
+									}
+									
+									
+									// Update min and max
+									
+									if (info.min_pos > old_pos) {
+										info.min_pos = old_pos;
+									}
+									
+									if (info.max_pos < pos) {
+										info.max_pos = pos;
+									}
+									
+									
+									// Advance the inverse level
+									
+									if (max_level < inv_level) {
+										max_level = inv_level;
+									}
+									
+									inv_level++;
+								}
+							}
+						});
 						
 						
-						// Update the series info
+						//
+						// Adjust the tick lines
+						//
 						
-						var inv_level = 0;
-						for (var s = series; s != null; s = s.parent()) {
+						chart_inner_width = pos;
+						for (var ti = 0; ti < h_tick_lines[0].length; ti++) {
+							h_tick_lines[0][ti].setAttribute("x2", chart_inner_width + a.bars_margin);
+						}
+						
+						
+						//
+						// Prepare for the upcoming chart adjustments
+						//
+						
+						if (__inner_height > boundingBox.y2) {
+							boundingBox.y2 = __inner_height;
+						}
+						if (chart_inner_width + a.bars_margin > boundingBox.x2) {
+							boundingBox.x2 = chart_inner_width + a.bars_margin;
+						}
+						
+						
+						//
+						// Horizontal axis
+						//
+						
+						chart.append("line")
+						.attr("x1", -a.bars_margin)
+						.attr("y1", __inner_height)
+						.attr("x2", chart_inner_width + a.bars_margin)
+						.attr("y2", __inner_height)
+						.style("stroke", "#000");
+						
+						
+						//
+						// Series labels
+						//
+						
+						var label_at_inv_levels = [];
+						
+						data.seriesRoot().processBFS(function(series) {
+							
+							var series_data = series.data();
+							if (series_data.length == 0) {
+								return;
+							}
 							
 							var info = null;
 							for (var si = 0; si < seriesinfo.length; si++) {
 								var x = seriesinfo[si];
-								if (x.series == s) {
+								if (x.series == series) {
 									info = x;
 									break;
 								}
 							}
 							if (info == null) {
-								info = [];
-								info.series = s;
-								info.min_pos = Infinity;
-								info.max_pos = 0;
-								seriesinfo.push(info);
+								throw "Could not find series info for " + series;
 							}
 							
-							
-							// Update min and max
-							
-							if (info.min_pos > old_pos) {
-								info.min_pos = old_pos;
+							var level = -1;
+							for (var s = series; s != null; s = s.parent()) {
+								level++;
 							}
 							
-							if (info.max_pos < pos) {
-								info.max_pos = pos;
+							var text = chart.append("text")
+							.attr("x", 0)
+							.attr("y", 0)
+							.attr("dx", 0)
+							.attr("dy", ".35em") // vertical-align: middle
+							.attr("text-anchor", "middle")
+							.attr("transform", "translate("
+							+ ((info.min_pos + info.max_pos) / 2) + ", "
+							+ (__inner_height + a.chart_margin)  + ") rotate(0)")
+							.text(series.label());
+							
+							var labels_at_level = label_at_inv_levels[max_level - level];
+							if (labels_at_level == undefined || labels_at_level == null) {
+								labels_at_level = [];
+								label_at_inv_levels[max_level - level] = labels_at_level;
 							}
 							
+							var x = [];
+							var w = text[0][0].getBoundingClientRect().width;
+							x.text = text[0][0];
+							x.x_pos = (info.min_pos + info.max_pos) / 2;
+							x.too_long = 0.9 * (info.max_pos - info.min_pos) < w;
+							labels_at_level.push(x);
 							
-							// Advance the inverse level
+						}, true /* include the internal series tree nodes */);
+					
+						var label_y_pos = __inner_height + a.chart_margin;
+						for (var inv_level = 0; inv_level < label_at_inv_levels.length; inv_level++) {
+							var labels_at_level = label_at_inv_levels[inv_level];
 							
-							if (max_level < inv_level) {
-								max_level = inv_level;
+							var too_long = false;
+							for (var li = 0; li < labels_at_level.length; li++) {
+								if (labels_at_level[li].too_long) {
+									too_long = true;
+									break;
+								}
 							}
 							
-							inv_level++;
+							if (too_long) {
+								for (var li = 0; li < labels_at_level.length; li++) {
+									var l = labels_at_level[li];
+									l.text.setAttribute("text-anchor", "start");
+									l.text.setAttribute("transform", "translate("
+									+ (l.x_pos) + ", "
+									+ (label_y_pos)  + ") rotate(45)");
+								}
+							}
+							else {
+								for (var li = 0; li < labels_at_level.length; li++) {
+									var l = labels_at_level[li];
+									l.text.setAttribute("text-anchor", "middle");
+									l.text.setAttribute("transform", "translate("
+									+ (l.x_pos) + ", "
+									+ (label_y_pos)  + ") rotate(0)");
+								}
+							}
+							
+							var max_height = 0;
+							for (var li = 0; li < labels_at_level.length; li++) {
+								var l = labels_at_level[li];
+								var h = l.text.getBoundingClientRect().height;
+								if (h > max_height) {
+									max_height = h;
+								}
+								var w = l.text.getBoundingClientRect().width;
+								if (l.x_pos + w > boundingBox.x2) {
+									boundingBox.x2 = l.x_pos + w;
+								}
+							}
+							
+							if (max_height + label_y_pos > boundingBox.y2) {
+								boundingBox.y2 = max_height + label_y_pos;
+							}
+							
+							label_y_pos += max_height + 4;
 						}
-					}
-				});
-				
-				
-				//
-				// Adjust the tick lines
-				//
-				
-				var chart_inner_width = pos;
-				for (var ti = 0; ti < h_tick_lines[0].length; ti++) {
-					h_tick_lines[0][ti].setAttribute("x2", chart_inner_width + a.bars_margin);
-				}
-				
-				
-				//
-				// Prepare for the upcoming chart adjustments
-				//
-				
-				if (__inner_height > boundingBox.y2) {
-					boundingBox.y2 = __inner_height;
-				}
-				if (chart_inner_width + a.bars_margin > boundingBox.x2) {
-					boundingBox.x2 = chart_inner_width + a.bars_margin;
-				}
-				
-				
-				//
-				// Horizontal axis
-				//
-				
-				chart.append("line")
-				.attr("x1", -a.bars_margin)
-				.attr("y1", __inner_height)
-				.attr("x2", chart_inner_width + a.bars_margin)
-				.attr("y2", __inner_height)
-				.style("stroke", "#000");
-				
-				
-				//
-				// Series labels
-				//
-				
-				var label_at_inv_levels = [];
-				
-				data.seriesRoot().processBFS(function(series) {
-					
-					var series_data = series.data();
-					if (series_data.length == 0) {
-						return;
-					}
-					
-					var info = null;
-					for (var si = 0; si < seriesinfo.length; si++) {
-						var x = seriesinfo[si];
-						if (x.series == series) {
-							info = x;
-							break;
-						}
-					}
-					if (info == null) {
-						throw "Could not find series info for " + series;
-					}
-					
-					var level = -1;
-					for (var s = series; s != null; s = s.parent()) {
-						level++;
-					}
-					
-					var text = chart.append("text")
-					.attr("x", 0)
-					.attr("y", 0)
-					.attr("dx", 0)
-					.attr("dy", ".35em") // vertical-align: middle
-					.attr("text-anchor", "middle")
-					.attr("transform", "translate("
-					+ ((info.min_pos + info.max_pos) / 2) + ", "
-					+ (__inner_height + a.chart_margin)  + ") rotate(0)")
-					.text(series.label());
-					
-					var labels_at_level = label_at_inv_levels[max_level - level];
-					if (labels_at_level == undefined || labels_at_level == null) {
-						labels_at_level = [];
-						label_at_inv_levels[max_level - level] = labels_at_level;
-					}
-					
-					var x = [];
-					var w = text[0][0].getBoundingClientRect().width;
-					x.text = text[0][0];
-					x.x_pos = (info.min_pos + info.max_pos) / 2;
-					x.too_long = 0.9 * (info.max_pos - info.min_pos) < w;
-					labels_at_level.push(x);
-				});
-				
-				var label_y_pos = __inner_height + a.chart_margin;
-				for (var inv_level = 0; inv_level < label_at_inv_levels.length; inv_level++) {
-					var labels_at_level = label_at_inv_levels[inv_level];
-					
-					var too_long = false;
-					for (var li = 0; li < labels_at_level.length; li++) {
-						if (labels_at_level[li].too_long) {
-							too_long = true;
-							break;
-						}
-					}
-					
-					if (too_long) {
-						for (var li = 0; li < labels_at_level.length; li++) {
-							var l = labels_at_level[li];
-							l.text.setAttribute("text-anchor", "start");
-							l.text.setAttribute("transform", "translate("
-							+ (l.x_pos) + ", "
-							+ (label_y_pos)  + ") rotate(45)");
-						}
-					}
-					else {
-						for (var li = 0; li < labels_at_level.length; li++) {
-							var l = labels_at_level[li];
-							l.text.setAttribute("text-anchor", "middle");
-							l.text.setAttribute("transform", "translate("
-							+ (l.x_pos) + ", "
-							+ (label_y_pos)  + ") rotate(0)");
-						}
-					}
-					
-					var max_height = 0;
-					for (var li = 0; li < labels_at_level.length; li++) {
-						var l = labels_at_level[li];
-						var h = l.text.getBoundingClientRect().height;
-						if (h > max_height) {
-							max_height = h;
-						}
-						var w = l.text.getBoundingClientRect().width;
-						if (l.x_pos + w > boundingBox.x2) {
-							boundingBox.x2 = l.x_pos + w;
-						}
-					}
-					
-					if (max_height + label_y_pos > boundingBox.y2) {
-						boundingBox.y2 = max_height + label_y_pos;
-					}
-					
-					label_y_pos += max_height + 4;
-				}
-				
-				
-				//
-				// Legend
-				//
-				
-				if (categories.length > 1) {
-					var x = chart_inner_width + a.bars_margin + a.chart_margin
-					+ a.legend_padding_left;
-					
-					for (var ci = 0; ci < categories.length; ci++) {
-						var c = categories[ci];
 						
-						var bar = chart.append("rect")
-						.attr("x", x)
-						.attr("y", ci * (a.legend_bar_height + a.legend_vertical_spacing) + a.legend_padding_top)
-						.attr("width", a.legend_bar_width)
-						.attr("height", a.legend_bar_height);
 						
-						appearanceHelper.applyStyleToFilledBar(bar, ci);
+						//
+						// Legend
+						//
 						
-						var text = chart.append("text")
-						.attr("x", x + a.legend_bar_width + a.legend_bar_padding_right)
-						.attr("y", ci * (a.legend_bar_height + a.legend_vertical_spacing)
-						+ a.legend_padding_top + 0.5 * a.legend_bar_height)
-						.attr("dx", 0)
-						.attr("dy", ".35em") // vertical-align: middle
-						.text(__category.toString(categories[ci]));
+						if (categories.length > 1) {
+							var legend = new d3bp.Legend(this);
+							legend.render(categories, __category);
+							boundingBox.updateFromBoundingBox(legend.boundingBox());
+						}
 						
-						boundingBox.updateFromUntranslatedD3(text);
+						
+						//
+						// Adjust the chart size
+						//
+						
+						chart_svg[0][0].setAttribute("width" , boundingBox.width());
+						chart_svg[0][0].setAttribute("height", boundingBox.height());
+						chart[0][0].setAttribute("transform",
+												 "translate(" + (-boundingBox.x1) + ", " + (-boundingBox.y1) + ")");
 					}
-				}
-				
-				
-				//
-				// Adjust the chart size
-				//
-				
-				chart_svg[0][0].setAttribute("width" , boundingBox.width());
-				chart_svg[0][0].setAttribute("height", boundingBox.height());
-				chart[0][0].setAttribute("transform", "translate(" + (-boundingBox.x1) + ", " + (-boundingBox.y1) + ")");
+				};
 			});
+			
+			this.data().run(function() { (new instantiatedChart()).render(); });
 			
 			return this;
 		}
 	};
 });
-
 
 
 
