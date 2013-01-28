@@ -63,7 +63,7 @@ MAVEN_OUTPUT_LEVEL_OPTS=
 #
 
 JROCKIT_HOME=/usr/lib/jvm/java-6-jrockit
-JROCKIT_GC_MAIN=
+JROCKIT_GC_MAIN="-Xgc:singlecon"
 
 
 #
