@@ -44,6 +44,9 @@ PROGRAM="`basename $0`"
 
 MAIN_CLASS="com.tinkerpop.bench.BenchmarkSuite"
 
+JVM_TYPE=server
+PATH_EXTRA=
+
 OPT_MEMORY_SIZE=1G
 OPT_MEMORY_SIZE_IS_DEFAULT=yes
 OPT_GC_MAIN="-XX:+UseConcMarkSweepGC -XX:+UseParNewGC"
@@ -51,8 +54,16 @@ OPT_GC_MAIN="-XX:+UseConcMarkSweepGC -XX:+UseParNewGC"
 MAVEN_TARGET=exec:java
 MAVEN_CMD_OPTS=
 MAVEN_D_OPTS=
-MAVEN_OPTS=-server
+MAVEN_OPTS=
 MAVEN_OUTPUT_LEVEL_OPTS=
+
+
+#
+# JRockit
+#
+
+JROCKIT_HOME=/usr/lib/jvm/java-6-jrockit
+JROCKIT_GC_MAIN=
 
 
 #
@@ -78,8 +89,11 @@ usage() {
 	echo "Script options:" >&2
 	echo "  +debug:gc      Debug the memory usage and the garbage collector" >&2
 	echo "  +debug:jit     Debug the usage of the JIT compiler" >&2
+	echo "  +debug:jitjit  Debug the JIT compiler even more" >&2
+	echo "  +debug:this    Debug this script" >&2
 	echo "  +help          Print this help information" >&2
 	echo "  +itc           Use initialization time compilation (requires Oracle Java RTS)" >&2
+	echo "  +jrockit       Use the JRockit JVM" >&2
 	echo "  +main:CLASS    Set a custom main class" >&2
 	echo "  +memory:SIZE   Set the Java memory (heap) size" >&2
 	echo "  +ocsf          Run the optimal cache settings finder" >&2
@@ -120,7 +134,6 @@ while [ "x${1:0:1}" = "x+" ]; do
 		#   http://java.dzone.com/articles/just-time-compiler-jit-hotspot
 		#   https://gist.github.com/1165804#file_notes.md
 		MAVEN_OPTS="$MAVEN_OPTS -XX:+PrintCompilation"
-		#MAVEN_OPTS="$MAVEN_OPTS -XX:+PrintInlining"
 		continue
 	fi
 	
@@ -130,7 +143,19 @@ while [ "x${1:0:1}" = "x+" ]; do
 	#
 
 	if [ $ARG = "+debug:jitjit" ]; then
+		#MAVEN_OPTS="$MAVEN_OPTS -XX:+PrintInlining"
 		MAVEN_OPTS="$MAVEN_OPTS -XX:+LogCompilation -XX:+UnlockDiagnosticVMOptions"
+		continue
+	fi
+	
+	
+	#
+	# Option: debug this script
+	#
+
+	if [ $ARG = "+debug:this" ]; then
+		echo "Starting debugging of this script -- found $ARG"
+		set -x
 		continue
 	fi
 	
@@ -151,6 +176,18 @@ while [ "x${1:0:1}" = "x+" ]; do
 
 	if [ $ARG = "+itc" ]; then
 		MAVEN_OPTS="$MAVEN_OPTS -XX:+UseITC -XX:+ITCJLT"
+		continue
+	fi
+	
+	
+	#
+	# Option: JRockit
+	#
+
+	if [ $ARG = "+jrockit" ]; then
+		PATH_EXTRA="$PATH_EXTRA:$JROCKIT_HOME/bin"
+		OPT_GC_MAIN="$JROCKIT_GC_MAIN"
+		JVM_TYPE=jrockit
 		continue
 	fi
 	
@@ -252,14 +289,19 @@ done
 # Run the benchmark suite
 #
 
-MAVEN_OPTS="$MAVEN_OPTS -Xms$OPT_MEMORY_SIZE -Xmx$OPT_MEMORY_SIZE"
+MAVEN_OPTS="-$JVM_TYPE $MAVEN_OPTS -Xms$OPT_MEMORY_SIZE -Xmx$OPT_MEMORY_SIZE"
 MAVEN_OPTS="$MAVEN_OPTS $OPT_GC_MAIN"
 
 if [ "x$MAVEN_TARGET" == "xexec:java" ]; then
 	MAVEN_D_OPTS="$MAVEN_D_OPTS -Dexec.mainClass=$MAIN_CLASS"
 fi
 
-MAVEN_OPTS="$MAVEN_OPTS" \
+NEW_PATH="$PATH"
+if [ "x$PATH_EXTRA" != "x" ]; then
+	NEW_PATH="${PATH_EXTRA:1}:$NEW_PATH"
+fi
+
+PATH="$NEW_PATH" MAVEN_OPTS="$MAVEN_OPTS" \
 	mvn $MAVEN_OUTPUT_LEVEL_OPTS $MAVEN_CMD_OPTS $MAVEN_TARGET $MAVEN_D_OPTS \
 		-Dexec.args="$*"
 
