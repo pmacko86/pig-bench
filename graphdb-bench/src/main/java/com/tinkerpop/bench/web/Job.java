@@ -222,6 +222,8 @@ public class Job implements Comparable<Job> {
 		String s_opCount = WebUtils.getStringParameter(request, "op_count");
 		String s_warmupOpCount = WebUtils.getStringParameter(request, "warmup_op_count");
 		String s_kHops = WebUtils.getStringParameter(request, "k_hops");
+		
+		boolean useJRockit = WebUtils.getBooleanParameter(request, "use_jrockit", false);
 		boolean noProvenance = WebUtils.getBooleanParameter(request, "no_provenance", false);
 		boolean forceBlueprints = WebUtils.getBooleanParameter(request, "force_blueprints", false);
 		boolean useStoredProcedures = WebUtils.getBooleanParameter(request, "use_stored_procedures", false);
@@ -280,6 +282,10 @@ public class Job implements Comparable<Job> {
 		// Build the list of command-line arguments
 		
 		arguments.add(Bench.graphdbBenchDir + "/runBenchmarkSuite.sh");
+		
+		if (useJRockit) {
+			arguments.add("+jrockit");
+		}
 
 		if (s_javaHeapSize   != null) {
 			if (!s_javaHeapSize.equalsIgnoreCase(BenchmarkMicro.DEFAULT_JVM_HEAP_SIZE)) {

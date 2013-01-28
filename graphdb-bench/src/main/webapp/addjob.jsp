@@ -122,6 +122,7 @@
 			b_edge_cond_prop = false;
 			for (i = 0; i < checked.length; i++) {
 				if (["get"].indexOf(checked[i]) >= 0) b_edge_cond_prop = true;
+				if (["get--traversals"].indexOf(checked[i]) >= 0) b_edge_cond_prop = true;
 				if (["get-label"].indexOf(checked[i]) >= 0) b_edge_cond_prop = true;
 				if (["get-k"].indexOf(checked[i]) >= 0) b_edge_cond_prop = true;
 				if (["get-k-label"].indexOf(checked[i]) >= 0) b_edge_cond_prop = true;
@@ -217,6 +218,12 @@
 			</label>
 			<input type="text" name="db_cache_size" id="db_cache_size" value="<%=
 				Bench.getProperty(Bench.DB_CACHE_SIZE, "" + GlobalConfig.databaseCacheSize) %>" />
+		
+			<label class="checkbox">
+				<input class="checkbox" type="checkbox" name="use_jrockit"
+						value="true" checked="checked"/>
+				Use Oracle JRockit JVM
+			</label>
 		
 			<label class="checkbox">
 				<input class="checkbox" type="checkbox" name="no_provenance"
