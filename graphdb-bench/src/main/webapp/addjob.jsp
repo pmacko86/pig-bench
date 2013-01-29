@@ -186,6 +186,7 @@
 		<form id="form" name="form" method="post" action="/AddJob">
 			<h1>Add a Job</h1>
 			<p class="header">Please enter the information to specify the benchmark</p>
+			<p class="header2">Select one or more database engine names and instances:</p>
 			
 			<%
 				boolean dbinst_simple = false;
@@ -193,8 +194,10 @@
 				boolean dbinst_choose_nonexistent = true;
 				boolean dbinst_choose_based_on_available_datasets = false;
 				String dbinst_onchange = null;
-			%>	
-			<%@ include file="include/dbinsttable.jsp" %>			
+			%>
+			<div class="db_table_div">
+				<%@ include file="include/dbinsttable.jsp" %>
+			</div>			
 			
 			<p class="middle">Configure the benchmark:</p>
 			

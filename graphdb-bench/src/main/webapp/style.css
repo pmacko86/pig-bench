@@ -398,7 +398,7 @@ table.db_table, table.db_table td, table.db_table th {
 table.db_table {
 	border-collapse:collapse;
 	margin: 0 auto;
-	width: 100%;
+
 }
 
 table.db_table td, table.db_table th {
@@ -501,7 +501,7 @@ table.db_table td.db_table_checkbox {
 }
 
 .basic_form div.db_table_div {
-	padding-right: 210px;
+	/* padding-right: 210px; */
 	clear: none;
 	float:left;
 }
