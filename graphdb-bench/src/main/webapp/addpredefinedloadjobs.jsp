@@ -30,7 +30,9 @@
 				boolean dbinst_choose_based_on_available_datasets = true;
 				String dbinst_onchange = null;
 			%>	
-			<%@ include file="include/dbinsttable.jsp" %>
+			<div class="db_table_div">
+				<%@ include file="include/dbinsttable.jsp" %>
+			</div>
 			
 			<input id="type" name="type" type="hidden" value="load" />
 

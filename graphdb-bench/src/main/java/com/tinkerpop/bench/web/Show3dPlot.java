@@ -101,7 +101,7 @@ public class Show3dPlot extends HttpServlet {
 			}
 			else {
 				for (DatabaseEngineAndInstance dbei : dbeis) {
-					SortedSet<Job> j = AnalysisContext.getInstance(dbei).getJobs(operationName);
+					SortedSet<Job> j = AnalysisContext.getInstance(dbei).getJobsWithTag(operationName);
 					if (j != null && !j.isEmpty()) jobs.add(j.last());
 				}
 			}

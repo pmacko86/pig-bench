@@ -1341,7 +1341,7 @@ public class BenchmarkMicro extends Benchmark {
 					
 					SortedSet<Job> jobs;
 					if (operation.endsWith("-*")) {
-						jobs = context.getJobs(operation.substring(0, operation.length() - 2));
+						jobs = context.getJobsForType(operation.substring(0, operation.length() - 2));
 					}
 					else {
 						jobs = context.getJobsWithTag(operation);
@@ -1360,7 +1360,7 @@ public class BenchmarkMicro extends Benchmark {
 						
 						SortedSet<Job> xJobs;
 						if (x.endsWith("-*")) {
-							xJobs = context.getJobs(x.substring(0, x.length() - 2));
+							xJobs = context.getJobsForType(x.substring(0, x.length() - 2));
 						}
 						else {
 							xJobs = context.getJobsWithTag(x);

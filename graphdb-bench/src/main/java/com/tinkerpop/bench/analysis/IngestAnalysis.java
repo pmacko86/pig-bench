@@ -180,7 +180,7 @@ public class IngestAnalysis {
 		 * Find the load FGF operations
 		 */
 		
-		ArrayList<Job> jobs = new ArrayList<Job>(m.getContext().getJobs(OperationLoadFGF.class));
+		ArrayList<Job> jobs = new ArrayList<Job>(m.getContext().getJobsForType(OperationLoadFGF.class));
 		Collections.reverse(jobs);
 		
 		for (Job j : jobs) {
@@ -233,7 +233,7 @@ public class IngestAnalysis {
 		 * Find the create index job
 		 */
 		
-		SortedSet<Job> createIndexJobs = m.getContext().getJobs(OperationCreateKeyIndex.class);
+		SortedSet<Job> createIndexJobs = m.getContext().getJobsForType(OperationCreateKeyIndex.class);
 		
 		Job createIndexJob = createIndexJobs == null || createIndexJobs.isEmpty() ? null : createIndexJobs.last();
 		if (createIndexJob != null) {

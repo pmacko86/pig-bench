@@ -197,7 +197,7 @@
 			%>
 			<div class="db_table_div">
 				<%@ include file="include/dbinsttable.jsp" %>
-			</div>			
+			</div>
 			
 			<p class="middle">Configure the benchmark:</p>
 			

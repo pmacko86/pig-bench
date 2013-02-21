@@ -32,7 +32,7 @@ import com.tinkerpop.blueprints.impls.neo4j.Neo4jGraph;
 import com.tinkerpop.blueprints.impls.neo4j.Neo4jVertex;
 
 
-@SuppressWarnings("unused")
+//@SuppressWarnings("unused")
 public class OperationGetKHopNeighbors extends Operation {
 
 	protected Vertex startVertex;
@@ -180,7 +180,7 @@ public class OperationGetKHopNeighbors extends Operation {
 			next.delete();*/
 			
 		
-			ArrayList<com.sparsity.dex.gdb.Objects> curr = new ArrayList<com.sparsity.dex.gdb.Objects>();
+			/*ArrayList<com.sparsity.dex.gdb.Objects> curr = new ArrayList<com.sparsity.dex.gdb.Objects>();
 			ArrayList<com.sparsity.dex.gdb.Objects> next = new ArrayList<com.sparsity.dex.gdb.Objects>();
 			
 			long start = ((Long) startVertex.getId()).longValue();
@@ -257,7 +257,55 @@ public class OperationGetKHopNeighbors extends Operation {
 			
 			for (com.sparsity.dex.gdb.Objects c : curr) {
 				c.close();
+			}*/
+			
+			
+			OIDList curr = new OIDList();
+			OIDList next = new OIDList();
+			
+			curr.add(((Long) startVertex.getId()).longValue());
+			
+			for (real_hops = 0; real_hops < k; real_hops++) {
+
+				int nextSize = 0;
+				boolean first = true;
+				
+				for (int t : types) {
+					OIDListIterator currItr = curr.iterator();
+					while (currItr.hasNext()) {
+						long u = currItr.nextOID();
+						
+						if (first) get_ops++;
+						
+						com.sparsity.dex.gdb.Objects objs = graph.neighbors(u, t, d);
+						com.sparsity.dex.gdb.ObjectsIterator objsItr = objs.iterator();
+						
+						while (objsItr.hasNext()) {
+							get_vertex++;
+							long v = objsItr.nextObject();
+							if (result.add(v)) {
+								next.add(v);
+								nextSize++;
+							}
+						}
+						
+						objsItr.close();
+						objs.close();
+					}
+					first = false;
+				}
+				
+				if (nextSize == 0) break;
+				
+				OIDList tmp = curr;
+				curr = next;
+				tmp.clear();
+				next = tmp;
 			}
+			
+			curr.delete();
+			next.delete();
+
 			
 			
 			setResult(result.size() + ":" + real_hops + ":" + get_ops + ":" + get_vertex);

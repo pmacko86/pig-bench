@@ -20,7 +20,10 @@ import javax.servlet.http.HttpServletResponse;
 import au.com.bytecode.opencsv.CSVWriter;
 
 import com.tinkerpop.bench.DatabaseEngine;
+import com.tinkerpop.bench.analysis.AnalysisContext;
 import com.tinkerpop.bench.analysis.AnalysisUtils;
+import com.tinkerpop.bench.analysis.OperationModel;
+import com.tinkerpop.bench.analysis.Prediction;
 import com.tinkerpop.bench.log.GraphRunTimes;
 import com.tinkerpop.bench.log.OperationLogEntry;
 import com.tinkerpop.bench.log.OperationLogReader;
@@ -117,13 +120,15 @@ public class ShowOperationRunTimes extends HttpServlet {
 		String show = WebUtils.getStringParameter(request, "show");
 		if (show == null) show = "summary";
 		
+		boolean predictions = WebUtils.getBooleanParameter(request, "predictions", false);
 		boolean convertManyOperations = WebUtils.getBooleanParameter(request, "convert_many_operations", false);
 		
 		
 		// Get the writer and write out the log file
 		
 		PrintWriter writer = response.getWriter();
-		printRunTimes(writer, operationsToJobs, format, response, groupBy, show, convertManyOperations, customSeriesPatterns);
+		printRunTimes(writer, operationsToJobs, format, response, groupBy, show,
+				convertManyOperations, customSeriesPatterns, predictions);
 	}
 	
 	
@@ -137,7 +142,7 @@ public class ShowOperationRunTimes extends HttpServlet {
 	 */
 	public static void printRunTimes(PrintWriter writer, Map<String, Collection<Job>> operationsToJobs,
 			String format, HttpServletResponse response) {
-		printRunTimes(writer, operationsToJobs, format, response, null, "summary", false, null);
+		printRunTimes(writer, operationsToJobs, format, response, null, "summary", false, null, false);
 	}
 	
 	
@@ -153,13 +158,15 @@ public class ShowOperationRunTimes extends HttpServlet {
 	 * @param convertManyOperations whether convert the "Many" operations into the single operations
 	 * @param customSeriesPatterns specify custom series; a map (series name &mdash;&gt; regex defining the series);
 	 *                             for show == "details" only
+	 * @param predictions whether to include predictions (summaries only)
 	 */
 	public static void printRunTimes(PrintWriter writer, Map<String, Collection<Job>> operationsToJobs,
 			String format, HttpServletResponse response, String groupBy, String show, boolean convertManyOperations,
-			Map<String, String> customSeriesPatterns) {
+			Map<String, String> customSeriesPatterns, boolean predictions) {
 		
 		if ("summary".equals(show)) {
-			printRunTimesSummary(writer, operationsToJobs, format, response, groupBy, convertManyOperations);
+			printRunTimesSummary(writer, operationsToJobs, format, response, groupBy, convertManyOperations,
+					predictions);
 		}
 		else if ("details".equals(show)) {
 			printRunTimesDetails(writer, operationsToJobs, format, response, groupBy, convertManyOperations,
@@ -184,9 +191,11 @@ public class ShowOperationRunTimes extends HttpServlet {
 	 * @param response the response, or null if none
 	 * @param groupBy the group by column, or null if none
 	 * @param convertManyOperations whether convert the "Many" operations into the single operations
+	 * @param predictions whether to include predictions
 	 */
 	public static void printRunTimesSummary(PrintWriter writer, Map<String, Collection<Job>> operationsToJobs,
-			String format, HttpServletResponse response, String groupBy, boolean convertManyOperations) {
+			String format, HttpServletResponse response, String groupBy, boolean convertManyOperations,
+			boolean predictions) {
 		
 		
 		// Get the run time for each job
@@ -303,6 +312,7 @@ public class ShowOperationRunTimes extends HttpServlet {
 			if (!sameDbEngine) writer.println("\t<th>Database Engine</th>");
 			if (!sameDbInstance) writer.println("\t<th>Database Instance</th>");
 			writer.println("\t<th class=\"numeric\">Mean (ms)</th>");
+			if (predictions) writer.println("\t<th class=\"numeric\">Prediction (ms)</th>");
 			writer.println("\t<th class=\"numeric\">Stdev (ms)</th>");
 			writer.println("\t<th class=\"numeric\">Min (ms)</th>");
 			writer.println("\t<th class=\"numeric\">Max (ms)</th>");
@@ -322,6 +332,25 @@ public class ShowOperationRunTimes extends HttpServlet {
 				}
 				GraphRunTimes r = p.getThird();
 				writer.println("\t<td class=\"numeric\">" + String.format("%.3f", r.getMean() / 1000000.0) + "</td>");
+				if (predictions) {
+					OperationModel m = AnalysisContext.getInstance(p.getSecond().getDatabaseEngineAndInstance())
+							.getModelFor(p.getFirst());
+					List<Prediction> l = m == null ? null : m.predictFromName(p.getFirst());
+					if (l == null || l.isEmpty()) {
+						if (m == null)
+							writer.println("\t<td class=\"na_right\">N/A</td>");
+						else
+							writer.println("\t<td class=\"na_right\">&mdash;</td>");
+					}
+					else {
+						String s = "";
+						for (Prediction x : l) {
+							if (!"".equals(s)) s += ", ";
+							s += String.format("%.3f", x.getPredictedAverageRuntime());
+						}
+						writer.println("\t<td class=\"numeric\">" + s + "</td>");
+					}
+				}
 				writer.println("\t<td class=\"numeric\">" + String.format("%.3f", r.getStdev() / 1000000.0) + "</td>");
 				writer.println("\t<td class=\"numeric\">" + String.format("%.3f", r.getMin() / 1000000.0) + "</td>");
 				writer.println("\t<td class=\"numeric\">" + String.format("%.3f", r.getMax() / 1000000.0) + "</td>");

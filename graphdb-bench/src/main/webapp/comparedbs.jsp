@@ -582,7 +582,7 @@
 				
 				StringWriter writer = new StringWriter();
 				ShowOperationRunTimes.printRunTimesSummary(new PrintWriter(writer), operationsToJobs,
-						"html", null, null, convertManyOperations);
+						"html", null, null, convertManyOperations, modelAnalysisPredictions);
 				
 				String link = "/ShowOperationRunTimes?group_by=operation&convert_many_operations=" + convertManyOperations;
 				boolean sameDbInstance = true;
@@ -605,7 +605,7 @@
 				List<Triple<String, DatabaseEngineAndInstance, Collection<LinearFunction>>> predictionData
 					= new ArrayList<Triple<String, DatabaseEngineAndInstance, Collection<LinearFunction>>>();
 				
-				if (modelAnalysisPredictions) {
+				/*if (modelAnalysisPredictions) {
 					for (String operationName : selectedOperations) {
 						for (Job j : operationsToJobs.get(operationName)) {
 							DatabaseEngineAndInstance dbei = j.getDatabaseEngineAndInstance();
@@ -643,7 +643,7 @@
 							}
 						}
 					}
-				}
+				}*/
 				
 				String additonalScatterPlotRequestFlags = "";
 				

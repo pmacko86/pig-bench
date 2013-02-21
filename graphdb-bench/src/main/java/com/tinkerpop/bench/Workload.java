@@ -55,7 +55,7 @@ public class Workload {
 		m.put("clustering-coeff", new Workload("clustering-coeff", "Global and network average clustering coefficients",
 				"Global and network average clustering coefficients", null, false, UpdateCategory.READ_ONLY));
 		m.put("clustering-local", new Workload("clustering-local", "Local clustering coefficients",
-				"Local clustering coefficients", null, false, UpdateCategory.READ_ONLY));
+				"Local clustering coefficients", null, true, UpdateCategory.READ_ONLY));
 		m.put("create-index", new Workload("create-index", "Create index",
 				"Create an index", "KEYS", false, UpdateCategory.LOAD_UPDATE));
 		/*m.put("delete-graph", new Workload("delete-graph", "Delete graph",

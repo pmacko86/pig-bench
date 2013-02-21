@@ -7,8 +7,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.tinkerpop.bench.log.OperationLogEntry;
 import com.tinkerpop.bench.log.OperationLogReader;
-import com.tinkerpop.bench.log.SummaryLogEntry;
-import com.tinkerpop.bench.log.SummaryLogReader;
 import com.tinkerpop.bench.operation.Operation;
 import com.tinkerpop.bench.operation.operations.OperationAddManyEdges;
 import com.tinkerpop.bench.operation.operations.OperationAddManyVertices;
@@ -44,21 +42,7 @@ public class ModelAnalysis {
 
 	/// The directions
 	public static final Direction[] DIRECTIONS = new Direction[] { /*Direction.OUT, Direction.IN,*/ Direction.BOTH };
-	
-	
-	/*
-	 * Configuration
-	 */
 
-	/// Whether to use KHops operations with K=1 instead of the simpler (in theory, equivalent) primitives
-	public static boolean useKHops1 = false;
-	
-	/// Whether to use robust linear fits
-	public static boolean useRobustFits = false;
-	
-	/// Whether to always use the detailed log files instead of the summary files
-	public static boolean alwaysUseDetailedLogs = false;
-	
 	
 	/*
 	 * Cache
@@ -214,17 +198,17 @@ public class ModelAnalysis {
 		 * Pull out the primitive operations
 		 */
 		
-		Rv = getAverageOperationRuntime(OperationGetManyVertices.class);
-		Re = getAverageOperationRuntime(OperationGetManyEdges.class);
-		Rp = MathUtils.averageIgnoreNulls(getAverageOperationRuntime(OperationGetManyVertexProperties.class),
-				getAverageOperationRuntime(OperationGetManyEdgeProperties.class));
+		Rv = context.getAverageOperationRuntimeNoTag(OperationGetManyVertices.class);
+		Re = context.getAverageOperationRuntimeNoTag(OperationGetManyEdges.class);
+		Rp = MathUtils.averageIgnoreNulls(context.getAverageOperationRuntimeNoTag(OperationGetManyVertexProperties.class),
+				context.getAverageOperationRuntimeNoTag(OperationGetManyEdgeProperties.class));
 		
-		Wv = getAverageOperationRuntime(OperationAddManyVertices.class);
-		We = getAverageOperationRuntime(OperationAddManyEdges.class);
-		Wp = MathUtils.averageIgnoreNulls(getAverageOperationRuntime(OperationSetManyVertexProperties.class),
-				getAverageOperationRuntime(OperationSetManyEdgeProperties.class));
+		Wv = context.getAverageOperationRuntimeNoTag(OperationAddManyVertices.class);
+		We = context.getAverageOperationRuntimeNoTag(OperationAddManyEdges.class);
+		Wp = MathUtils.averageIgnoreNulls(context.getAverageOperationRuntimeNoTag(OperationSetManyVertexProperties.class),
+				context.getAverageOperationRuntimeNoTag(OperationSetManyEdgeProperties.class));
 		
-		Rvup = getAverageOperationRuntime(OperationGetVerticesUsingKeyIndex.class, "_original_id");
+		Rvup = context.getAverageOperationRuntime(OperationGetVerticesUsingKeyIndex.class, "_original_id");
 		
 		
 		/*
@@ -242,13 +226,9 @@ public class ModelAnalysis {
 			String t  = OutputUtils.toTag(d);
 			int index = translateDirection(d);
 			
-			T [index] = getAverageOperationRuntime(OperationGetFirstNeighbor.class, t);
-			Tl[index] = getAverageOperationRuntime(OperationGetFirstNeighbor.class, t + "-withlabel");
+			T [index] = context.getAverageOperationRuntime(OperationGetFirstNeighbor.class, t);
+			Tl[index] = context.getAverageOperationRuntime(OperationGetFirstNeighbor.class, t + "-withlabel");
 			Tp[index] = getOperationRuntimeAsLinearFunction(OperationGetNeighborEdgeConditional.class, t);
-			
-			if (useKHops1) {
-				Tp[index] = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighborsEdgeConditional.class, t + "-" + 1);
-			}
 			
 			T_prediction [index] = MathUtils.product(MathUtils.sum(Re, Rv), averageDegree);
 			Tl_prediction[index] = MathUtils.product(MathUtils.sum(Re, Rv), averageDegree);
@@ -266,25 +246,6 @@ public class ModelAnalysis {
 		
 			N [index] = getOperationRuntimeAsLinearFunction(OperationGetAllNeighbors.class, t);
 			Nl[index] = getOperationRuntimeAsLinearFunction(OperationGetAllNeighbors.class, t + "-withlabel");
-			
-			if (useKHops1) {
-				N [index] = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighbors.class, t + "-" + 1);
-				Nl[index] = getOperationRuntimeAsLinearFunction(OperationGetKHopNeighbors.class, t + "-withlabel-" + 1);
-				
-				if (N[index] != null) {
-					Double[] D = N[index];
-					if (D[1] < 0) {
-						N [index] = MathUtils.multiplyElementwise(getOperationRuntimeAsLinearFunction(OperationGetKHopNeighbors.class, t + "-" + 2), (double) 0.5);
-					}
-				}
-				
-				if (Nl[index] != null) {
-					Double[] D = Nl[index];
-					if (D[1] < 0) {
-						Nl[index] = MathUtils.multiplyElementwise(getOperationRuntimeAsLinearFunction(OperationGetKHopNeighbors.class, t + "-withlabel-" + 2), (double) 0.5);
-					}
-				}
-			}
 			
 			N_prediction [index] = MathUtils.ifNeitherIsNull(new Double(0), MathUtils.sum(Re, Rv));
 			Nl_prediction[index] = MathUtils.ifNeitherIsNull(new Double(0), MathUtils.sum(Re, Rv));
@@ -628,93 +589,6 @@ public class ModelAnalysis {
 	
 	
 	/**
-	 * Get a runtime of an operation from the latest job, taking a simple average
-	 * if there is more than one within the job. If the operation is of the "Many"
-	 * type, then return the average runtime of the simpler operation that gets
-	 * repeated.
-	 * 
-	 * @param operation the operation type
-	 * @return the runtime in ms, or null if not found
-	 */
-	private Double getAverageOperationRuntime(Class<? extends Operation> operation) {
-		return getAverageOperationRuntime(operation.getSimpleName());
-	}
-	
-	
-	/**
-	 * Get a runtime of an operation from the latest job, taking a simple average
-	 * if there is more than one within the job. If the operation is of the "Many"
-	 * type, then return the average runtime of the simpler operation that gets
-	 * repeated.
-	 * 
-	 * @param operation the operation type
-	 * @param tag the tag
-	 * @return the runtime in ms, or null if not found
-	 */
-	private Double getAverageOperationRuntime(Class<? extends Operation> operation, String tag) {
-		return getAverageOperationRuntime(operation.getSimpleName() + "-" + tag);
-	}
-	
-	
-	/**
-	 * Get a runtime of an operation from the latest job, taking a simple average
-	 * if there is more than one within the job. If the operation is of the "Many"
-	 * type, then return the average runtime of the simpler operation that gets
-	 * repeated.
-	 * 
-	 * @param operationName the operation name including the tag
-	 * @return the runtime in ms, or null if not found
-	 */
-	private Double getAverageOperationRuntime(String operationName) {
-		
-		boolean many = AnalysisUtils.isManyOperation(operationName);
-		int opCountArg = !many ? -1 : AnalysisUtils.getManyOperationOpCountArgumentIndex(operationName);
-		
-		
-		// Find the correct job
-		
-		SortedSet<Job> operationJobs = context.operationWithTagsToJobs.get(operationName);
-		if (operationJobs == null || operationJobs.isEmpty()) return null;
-		Job job = operationJobs.last();
-		
-		
-		// Get the average operation run time
-		
-		if (alwaysUseDetailedLogs) {
-			
-	    	double time = 0; int count = 0;			
-			for (OperationLogEntry e : OperationLogReader.getTailEntries(job.getLogFile(), operationName)) {
-				
-				int c;
-				if (many) {
-					String s = e.getArgs()[opCountArg >= 0 ? opCountArg : e.getArgs().length + opCountArg];
-					int opCount = Integer.parseInt(s);
-					if (!s.equals("" + opCount)) throw new NumberFormatException(s);
-					c = opCount;
-				}
-				else {
-					c = 1;
-				}
-				
-				count += c;
-				time += e.getTime() / 1000000.0;
-			}
-			
-			if (count == 0) return null;
-			return time / count;
-		}
-		else {
-			
-			SummaryLogEntry entry = SummaryLogReader.getEntryForOperation(job.getSummaryFile(), operationName);
-			if (entry == null) return null;	
-			if (many) entry = AnalysisUtils.convertLogEntryForManyOperation(entry, job);
-			
-			return entry.getDefaultRunTimes().getMean() / 1000000.0;
-		}
-	}
-	
-	
-	/**
 	 * Get a runtime of a job as a linear function of one of the operation results
 	 * 
 	 * @param operation the operation type
@@ -840,7 +714,7 @@ public class ModelAnalysis {
 		// Finish
 		
 		return MathUtils.upgradeArray(
-				useRobustFits && ax.length >= 50 ? MathUtils.robustLinearFit(ax, ay) : MathUtils.linearFit(ax, ay));
+				AnalysisContext.useRobustFits && ax.length >= 50 ? MathUtils.robustLinearFit(ax, ay) : MathUtils.linearFit(ax, ay));
 	}
 	
 	
