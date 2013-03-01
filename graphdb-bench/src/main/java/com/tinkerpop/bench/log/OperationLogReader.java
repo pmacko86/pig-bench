@@ -9,6 +9,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -42,8 +43,8 @@ public class OperationLogReader implements Iterable<OperationLogEntry> {
 	private String operationNameFilter;
 	
 	
-	private static WeakHashMap<String, List<OperationLogEntry>> operationEntriesTailCache
-		= new WeakHashMap<String, List<OperationLogEntry>>();
+	private static WeakHashMap<String, WeakReference<List<OperationLogEntry>>> operationEntriesTailCache
+		= new WeakHashMap<String, WeakReference<List<OperationLogEntry>>>();
 
 	
 	public OperationLogReader(File logFile, String operationNameFilter) {
@@ -75,7 +76,8 @@ public class OperationLogReader implements Iterable<OperationLogEntry> {
 		synchronized (operationEntriesTailCache) {
 			
 			String cacheKey = logFile.getAbsolutePath() + "----" + operationName;
-			List<OperationLogEntry> entries = operationEntriesTailCache.get(cacheKey);
+			WeakReference<List<OperationLogEntry>> refEntries = operationEntriesTailCache.get(cacheKey);
+			List<OperationLogEntry> entries = refEntries == null ? null : refEntries.get();
 			
 			
 			// Read the data from disk, if it was not found in the cache
@@ -171,7 +173,7 @@ public class OperationLogReader implements Iterable<OperationLogEntry> {
 				
 				// Store the loaded tail entries in the in-memory tail cache
 				
-				operationEntriesTailCache.put(cacheKey, entries);
+				operationEntriesTailCache.put(cacheKey, new WeakReference<List<OperationLogEntry>>(entries));
 			}
 			
 			return entries;

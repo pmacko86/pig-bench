@@ -50,6 +50,11 @@
 				<% } else { %>
 					<li><p>Compare Databases</p></li>
 				<% } %>
+				<% if (!jsp_page.equals("compareefficiency")) { %>
+					<li><a href="compareefficiency.jsp">Compare Efficiency</a></li>
+				<% } else { %>
+					<li><p>Compare Efficiency</p></li>
+				<% } %>
 				<% if (!jsp_page.equals("compareruns")) { %>
 					<li><a href="compareruns.jsp">Compare Runs</a></li>
 				<% } else { %>

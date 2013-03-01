@@ -11,6 +11,7 @@ import com.tinkerpop.bench.log.OperationLogReader;
 import com.tinkerpop.bench.log.SummaryLogEntry;
 import com.tinkerpop.bench.util.MathUtils;
 import com.tinkerpop.bench.web.Job;
+import com.tinkerpop.blueprints.Direction;
 
 
 /**
@@ -184,5 +185,21 @@ public class AnalysisUtils {
 		m.put(newRunTimes.getGraphName(), newRunTimes);
 		
 		return new SummaryLogEntry(operationName, m);
+	}
+	
+	
+	/**
+	 * Translate a direction tag to Blueprints Direction
+	 * 
+	 * @param tag the direction tag
+	 * @return the Blueprints direction
+	 */
+	public static Direction translateDirectionTagToDirection(String tag) {
+		
+		if ("in"  .equalsIgnoreCase(tag)) return Direction.IN;
+		if ("out" .equalsIgnoreCase(tag)) return Direction.OUT;
+		if ("both".equalsIgnoreCase(tag)) return Direction.BOTH;
+		
+		throw new IllegalArgumentException();
 	}
 }

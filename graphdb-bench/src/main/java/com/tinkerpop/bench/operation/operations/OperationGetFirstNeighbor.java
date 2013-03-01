@@ -11,6 +11,7 @@ import org.neo4j.graphdb.Relationship;
 import com.sparsity.dex.gdb.EdgesDirection;
 import com.sparsity.dex.gdb.Graph;
 import com.tinkerpop.bench.analysis.AnalysisContext;
+import com.tinkerpop.bench.analysis.AnalysisUtils;
 import com.tinkerpop.bench.analysis.OperationModel;
 import com.tinkerpop.bench.analysis.Prediction;
 import com.tinkerpop.bench.operation.Operation;
@@ -22,6 +23,7 @@ import com.tinkerpop.blueprints.extensions.impls.dex.DexUtils;
 import com.tinkerpop.blueprints.extensions.impls.neo4j.Neo4jUtils;
 import com.tinkerpop.blueprints.impls.dex.DexGraph;
 import com.tinkerpop.blueprints.impls.neo4j.Neo4jVertex;
+
 
 public class OperationGetFirstNeighbor extends Operation {
 
@@ -78,6 +80,8 @@ public class OperationGetFirstNeighbor extends Operation {
 		 */
 		@Override
 		public List<Prediction> predictFromTag(String tag) {
+			
+			Direction d = AnalysisUtils.translateDirectionTagToDirection(tag);
 			ArrayList<Prediction> r = new ArrayList<Prediction>();
 			
 			Double readVertex = getContext().getAverageOperationRuntimeNoTag(OperationGetManyVertices.class);
@@ -85,6 +89,9 @@ public class OperationGetFirstNeighbor extends Operation {
 			
 			Double naiveModel = MathUtils.sum(readVertex, readEdge);
 			if (naiveModel != null) r.add(new Prediction(this, tag, "Naive", naiveModel));
+			
+			Double allNeighborsModel = MathUtils.product(naiveModel, getContext().getStatistics().getAverageDegree(d));
+			if (allNeighborsModel != null) r.add(new Prediction(this, tag, "All Neighbors", allNeighborsModel));
 			
 			return r;
 		}

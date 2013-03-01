@@ -381,6 +381,13 @@ public class ShowIngestAnalysis extends HttpServlet {
 					}
 				}
 			}
+			
+			try {
+				w.close();
+			}
+			catch (IOException e) {
+				throw new RuntimeException(e);
+			}
 		}
 
 		else {

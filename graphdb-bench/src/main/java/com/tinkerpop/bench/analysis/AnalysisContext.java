@@ -65,6 +65,9 @@ public class AnalysisContext {
 	/// The map of operations with tags to finished jobs
 	HashMap<String, SortedSet<Job>> operationWithTagsToJobs;
 	
+	/// Statistics
+	DatabaseInstanceStatistics statistics;
+	
 	
 	/*
 	 * Caches
@@ -90,6 +93,8 @@ public class AnalysisContext {
 		
 		this.averageOperationRuntimes = new HashMap<String, Double>();
 		this.operationModels = new HashMap<String, OperationModel>();
+		
+		this.statistics = DatabaseInstanceStatisticsProvider.getStatisticsFor(dbEI);
 		
 		update();
 	}
@@ -264,6 +269,16 @@ public class AnalysisContext {
 	 */
 	public Map<String, SortedSet<Job>> getJobsForAllOperationsWithTags() {
 		return operationWithTagsToJobs;
+	}
+	
+	
+	/**
+	 * Get the statistics for the given instance of the database
+	 * 
+	 * @return the database statistics
+	 */
+	public DatabaseInstanceStatistics getStatistics() {
+		return statistics;
 	}
 	
 	

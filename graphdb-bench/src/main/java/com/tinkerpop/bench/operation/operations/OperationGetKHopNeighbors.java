@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.SortedSet;
 
 import org.neo4j.graphdb.DynamicRelationshipType;
 import org.neo4j.graphdb.Node;
@@ -20,8 +21,14 @@ import com.sparsity.dex.gdb.EdgesDirection;
 import com.sparsity.dex.gdb.Graph;
 import com.sparsity.dex.gdb.OIDList;
 import com.sparsity.dex.gdb.OIDListIterator;
+import com.tinkerpop.bench.analysis.AnalysisContext;
+import com.tinkerpop.bench.analysis.OperationModel;
+import com.tinkerpop.bench.analysis.Prediction;
+import com.tinkerpop.bench.log.OperationLogEntry;
+import com.tinkerpop.bench.log.OperationLogReader;
 import com.tinkerpop.bench.operation.Operation;
 import com.tinkerpop.bench.util.GraphUtils;
+import com.tinkerpop.bench.web.Job;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.blueprints.extensions.impls.dex.DexUtils;
@@ -99,6 +106,68 @@ public class OperationGetKHopNeighbors extends Operation {
 		result = null;
 	}
 	
+	
+	/**
+	 * The operation model
+	 */
+	public static class Model extends OperationModel {
+		
+		/**
+		 * Create an instance of class Model
+		 * 
+		 * @param context the analysis context
+		 */
+		public Model(AnalysisContext context) {
+			super(context, OperationGetFirstNeighbor.class);
+		}
+		
+		
+		/**
+		 * Create prediction(s) based on the specified operation tags
+		 * in the specified context
+		 * 
+		 * @param tag the operation tag(s)
+		 * @return a collection of predictions
+		 */
+		@Override
+		public List<Prediction> predictFromTag(String tag) {
+			
+			String[] tags = tag.split("-");
+			//Direction d = AnalysisUtils.translateDirectionTagToDirection(tags[0]);
+			//int k = Integer.parseInt(tags[1]);
+			
+			ArrayList<Prediction> r = new ArrayList<Prediction>();
+			
+			Double getAllNeighbors = getContext().getAverageOperationRuntime("OperationGetAllNeighbors-" + tags[0]);
+			if (getAllNeighbors != null) {
+				
+				// Hack
+			
+				String operationName = "OperationGetKHopNeighbors-" + tag;
+				SortedSet<Job> jobs = getContext().getJobsWithTag(operationName);
+				Job job = jobs == null ? null : jobs.last();
+				
+				if (job != null) {
+					int getOpsCount = 0;
+					int count = 0;
+					for (OperationLogEntry e : OperationLogReader.getTailEntries(job.getLogFile(), operationName)) {
+						
+						String[] result = e.getResult().split(":");
+						getOpsCount += Integer.parseInt(result[2]);
+						count++;
+					}
+					
+					if (count > 0) {
+						r.add(new Prediction(this, tag, "Using GetAllNeighbors and results",
+								getAllNeighbors.doubleValue() * getOpsCount / (double) count));
+					}
+				}
+			}
+			
+			return r;
+		}
+	}
+
 	
 	/**
 	 * The operation specialized for DEX

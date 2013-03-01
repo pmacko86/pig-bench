@@ -435,6 +435,13 @@ public class ShowOperationRunTimes extends HttpServlet {
 				
 				lastOperation = operation;
 			}
+			
+			try {
+				w.close();
+			}
+			catch (IOException e) {
+				throw new RuntimeException(e);
+			}
 		}
 		
 		else {
@@ -704,6 +711,13 @@ public class ShowOperationRunTimes extends HttpServlet {
 				// Finish the entry
 				
 				lastOperation = operation;
+			}
+			
+			try {
+				w.close();
+			}
+			catch (IOException e) {
+				throw new RuntimeException(e);
 			}
 		}
 		

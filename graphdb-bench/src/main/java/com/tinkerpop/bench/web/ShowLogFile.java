@@ -163,6 +163,13 @@ public class ShowLogFile extends HttpServlet {
 				
 				w.writeNext(buffer);
 			}
+			
+			try {
+				w.close();
+			}
+			catch (IOException e) {
+				throw new RuntimeException(e);
+			}
 		}
 		
 		else {
