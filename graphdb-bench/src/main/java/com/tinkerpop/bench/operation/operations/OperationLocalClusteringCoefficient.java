@@ -2,6 +2,7 @@ package com.tinkerpop.bench.operation.operations;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
@@ -10,6 +11,10 @@ import com.sparsity.dex.gdb.EdgesDirection;
 import com.sparsity.dex.gdb.Graph;
 import com.sparsity.dex.gdb.OIDList;
 import com.sparsity.dex.gdb.OIDListIterator;
+import com.tinkerpop.bench.analysis.AnalysisContext;
+import com.tinkerpop.bench.analysis.OperationModel;
+import com.tinkerpop.bench.analysis.Prediction;
+import com.tinkerpop.bench.log.OperationLogEntry;
 import com.tinkerpop.bench.operation.Operation;
 import com.tinkerpop.bench.util.GraphUtils;
 import com.tinkerpop.blueprints.Direction;
@@ -35,6 +40,44 @@ public class OperationLocalClusteringCoefficient extends Operation {
 	protected void onExecute() throws Exception {
 		double r = GraphUtils.localClusteringCoefficient(vertex, stat);
 		setResult("" + stat.num_uniqueVertices + ":2:" + stat.num_getVertices + ":" + stat.num_getVerticesNext + ":" + r);
+	}
+	
+	
+	/**
+	 * The operation model
+	 */
+	public static class Model extends OperationModel {
+		
+		/**
+		 * Create an instance of class Model
+		 * 
+		 * @param context the analysis context
+		 */
+		public Model(AnalysisContext context) {
+			super(context, OperationLocalClusteringCoefficient.class);
+		}
+		
+		
+		/**
+		 * Create prediction(s) based on the specified operation tags
+		 * in the specified context
+		 * 
+		 * @param tag the operation tag(s)
+		 * @return a collection of predictions
+		 */
+		@Override
+		public List<Prediction> predictFromTag(String tag) {
+			
+			ArrayList<Prediction> r = new ArrayList<Prediction>();
+			
+			Double getKHop2 = getContext().getAverageOperationRuntime("OperationGetKHopNeighbors-both-2");
+			if (getKHop2 != null) {
+				r.add(new Prediction(this, tag, "Using OperationGetKHopNeighbors-both-2",
+								getKHop2.doubleValue()));
+			}
+			
+			return r;
+		}
 	}
 	
 	

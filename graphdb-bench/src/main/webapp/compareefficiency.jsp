@@ -194,70 +194,82 @@
 							<%
 							
 							for (Map.Entry<DatabaseEngineAndInstance, Job> e : map.getValue().entrySet()) {
-								AnalysisContext context = AnalysisContext.getInstance(e.getKey());
-								Job job = e.getValue();
 								
-								SummaryLogEntry entry = SummaryLogReader.getEntryForOperation(job.getSummaryFile(), operationName);
-								if (entry == null) {
+								try {
+									AnalysisContext context = AnalysisContext.getInstance(e.getKey());
+									Job job = e.getValue();
+									
+									SummaryLogEntry entry = SummaryLogReader.getEntryForOperation(job.getSummaryFile(), operationName);
+									if (entry == null) {
+										%>
+											<td class="na_right">&mdash;</td>
+										<%
+										continue;
+									}
+									if (many) entry = AnalysisUtils.convertLogEntryForManyOperation(entry, job);
+									
+									double runtime = entry.getDefaultRunTimes().getMean() / 1000000.0;
+									if (runtime <= 0) {
+										%>
+											<td class="na_right">&mdash;</td>
+										<%
+										continue;
+									}
+									
+									OperationModel model = context.getModelFor(operationName);
+									List<Prediction> l = model == null ? null : model.predictFromName(operationName);
+									if (l == null || l.isEmpty()) {
+										%>
+											<td class="numeric"><%= String.format("%.3f", runtime) %> ms</td>
+										<%
+										continue;
+									}
+									
+									// Get the last prediction
+									Prediction prediction = l.get(l.size() - 1);
+									double predictedRuntime = prediction.getPredictedAverageRuntime();
+									if (predictedRuntime <= 0) {
+										%>
+											<td class="na_right">INV_PREDICTION</td>
+										<%
+										continue;
+									}
+									
+									double score = predictedRuntime / runtime;
+									
+									double x;
+									double tooBigCutoff = 5;
+									if (score <= 1) {
+										x = score * score * score;
+									}
+									else if (score <= tooBigCutoff) {
+										x = 1 + (score - 1) * (score - 1) * (score - 1);
+									}
+									else {
+										x = (0.65 / 0.35) + (score - tooBigCutoff);
+									}
+									
+									double H = Math.min(x * 0.35, score <= tooBigCutoff ? 0.65 : 0.8);
+									double S = 1.0;
+									double B = 0.85;
+									
+									Color color = Color.getHSBColor((float)H, (float)S, (float)B);
+									String strColor = "rgb(" + color.getRed() + "," + color.getGreen() + "," + color.getBlue() + ")";
+									String tooltip = "Runtime: " + String.format("%.3f", runtime) + " ms\n";
+									tooltip += "Predicted: " + String.format("%.3f", predictedRuntime) + " ms";
+									
 									%>
-										<td class="na_right">&mdash;</td>
+										<td class="numeric" style="background: <%= strColor %>; color: white"
+											title="<%= tooltip %>">
+											<%= Math.round(score * 100) %>%
+										</td>
 									<%
-									continue;
 								}
-								if (many) entry = AnalysisUtils.convertLogEntryForManyOperation(entry, job);
-								
-								double runtime = entry.getDefaultRunTimes().getMean() / 1000000.0;
-								if (runtime <= 0) {
+								catch (Exception exception) {
 									%>
-										<td class="na_right">&mdash;</td>
+										<td class="na_right">ERROR</td>
 									<%
-									continue;
 								}
-								
-								OperationModel model = context.getModelFor(operationName);
-								List<Prediction> l = model == null ? null : model.predictFromName(operationName);
-								if (l == null || l.isEmpty()) {
-									%>
-										<td class="numeric"><%= String.format("%.3f", runtime) %> ms</td>
-									<%
-									continue;
-								}
-								
-								// Get the last prediction
-								Prediction prediction = l.get(l.size() - 1);
-								double predictedRuntime = prediction.getPredictedAverageRuntime();
-								if (predictedRuntime <= 0) {
-									%>
-										<td class="na_right">INV_PREDICTION</td>
-									<%
-									continue;
-								}
-								
-								double score = predictedRuntime / runtime;
-								
-								double x;
-								if (score <= 1) {
-									x = score * score * score;
-								}
-								else {
-									x = 1 + (score - 1) * (score - 1) * (score - 1);
-								}
-								
-								double H = Math.min(x * 0.35, 0.65);
-								double S = 1.0;
-								double B = 0.85;
-								
-								Color color = Color.getHSBColor((float)H, (float)S, (float)B);
-								String strColor = "rgb(" + color.getRed() + "," + color.getGreen() + "," + color.getBlue() + ")";
-								String tooltip = "Runtime: " + String.format("%.3f", runtime) + " ms\n";
-								tooltip += "Predicted: " + String.format("%.3f", predictedRuntime) + " ms";
-								
-								%>
-									<td class="numeric" style="background: <%= strColor %>; color: white"
-										title="<%= tooltip %>">
-										<%= Math.round(score * 100) %>%
-									</td>
-								<%
 							}
 							
 							%>

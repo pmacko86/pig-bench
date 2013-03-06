@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.SortedSet;
 
 import org.neo4j.graphdb.DynamicRelationshipType;
 import org.neo4j.graphdb.Node;
@@ -25,10 +24,8 @@ import com.tinkerpop.bench.analysis.AnalysisContext;
 import com.tinkerpop.bench.analysis.OperationModel;
 import com.tinkerpop.bench.analysis.Prediction;
 import com.tinkerpop.bench.log.OperationLogEntry;
-import com.tinkerpop.bench.log.OperationLogReader;
 import com.tinkerpop.bench.operation.Operation;
 import com.tinkerpop.bench.util.GraphUtils;
-import com.tinkerpop.bench.web.Job;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.blueprints.extensions.impls.dex.DexUtils;
@@ -118,7 +115,7 @@ public class OperationGetKHopNeighbors extends Operation {
 		 * @param context the analysis context
 		 */
 		public Model(AnalysisContext context) {
-			super(context, OperationGetFirstNeighbor.class);
+			super(context, OperationGetAllNeighbors.class);
 		}
 		
 		
@@ -142,16 +139,14 @@ public class OperationGetKHopNeighbors extends Operation {
 			if (getAllNeighbors != null) {
 				
 				// Hack
-			
-				String operationName = "OperationGetKHopNeighbors-" + tag;
-				SortedSet<Job> jobs = getContext().getJobsWithTag(operationName);
-				Job job = jobs == null ? null : jobs.last();
 				
-				if (job != null) {
+				List<OperationLogEntry> entries = getContext().getTailEntries("OperationGetKHopNeighbors-" + tag);
+				
+				if (entries != null) {
 					int getOpsCount = 0;
 					int count = 0;
-					for (OperationLogEntry e : OperationLogReader.getTailEntries(job.getLogFile(), operationName)) {
-						
+					
+					for (OperationLogEntry e : entries) {
 						String[] result = e.getResult().split(":");
 						getOpsCount += Integer.parseInt(result[2]);
 						count++;

@@ -5,7 +5,9 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map.Entry;
 
 import org.neo4j.graphdb.GraphDatabaseService;
@@ -14,6 +16,10 @@ import org.neo4j.graphdb.Relationship;
 import org.neo4j.tooling.GlobalGraphOperations;
 
 import com.sparsity.dex.gdb.EdgesDirection;
+import com.tinkerpop.bench.analysis.AnalysisContext;
+import com.tinkerpop.bench.analysis.OperationModel;
+import com.tinkerpop.bench.analysis.Prediction;
+import com.tinkerpop.bench.log.OperationLogEntry;
 import com.tinkerpop.bench.operation.Operation;
 import com.tinkerpop.bench.util.ConsoleUtils;
 import com.tinkerpop.bench.util.FileUtils;
@@ -177,6 +183,62 @@ public class OperationPageRank extends Operation {
 		public double aux = 0; 
 	}
 	
+	
+	/**
+	 * The operation model
+	 */
+	public static class Model extends OperationModel {
+		
+		/**
+		 * Create an instance of class Model
+		 * 
+		 * @param context the analysis context
+		 */
+		public Model(AnalysisContext context) {
+			super(context, OperationPageRank.class);
+		}
+		
+		
+		/**
+		 * Create prediction(s) based on the specified operation tags
+		 * in the specified context
+		 * 
+		 * @param tag the operation tag(s)
+		 * @return a collection of predictions
+		 */
+		@Override
+		public List<Prediction> predictFromTag(String tag) {
+			
+			ArrayList<Prediction> r = new ArrayList<Prediction>();
+			
+			Double getAllNeighbors = getContext().getAverageOperationRuntime("OperationGetAllNeighbors-in");
+			if (getAllNeighbors != null) {
+				
+				// Hack
+				
+				List<OperationLogEntry> entries = getContext().getTailEntries("OperationPageRank");
+				
+				if (entries != null) {
+					int getOpsCount = 0;
+					int count = 0;
+					
+					for (OperationLogEntry e : entries) {
+						String[] result = e.getResult().split(":");
+						getOpsCount += Integer.parseInt(result[2]);
+						count++;
+					}
+					
+					if (count > 0) {
+						r.add(new Prediction(this, tag, "Using GetAllNeighbors and results",
+								getAllNeighbors.doubleValue() * getOpsCount / (double) count));
+					}
+				}
+			}
+			
+			return r;
+		}
+	}
+
 	
 	/**
 	 * The operation specialized for DEX

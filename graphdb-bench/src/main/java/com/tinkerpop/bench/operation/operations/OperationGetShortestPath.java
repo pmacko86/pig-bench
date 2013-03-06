@@ -4,12 +4,17 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
 
 import com.sparsity.dex.gdb.EdgesDirection;
 import com.sparsity.dex.gdb.Graph;
+import com.tinkerpop.bench.analysis.AnalysisContext;
+import com.tinkerpop.bench.analysis.OperationModel;
+import com.tinkerpop.bench.analysis.Prediction;
+import com.tinkerpop.bench.log.OperationLogEntry;
 import com.tinkerpop.bench.operation.Operation;
 import com.tinkerpop.bench.util.GraphUtils;
 import com.tinkerpop.bench.util.LongComparator;
@@ -101,6 +106,62 @@ public class OperationGetShortestPath extends Operation {
 		setResult(dist.size() + ":" + result.size() + ":" + get_nbrs + ":" + get_vertex);
 	}
 	
+	
+	/**
+	 * The operation model
+	 */
+	public static class Model extends OperationModel {
+		
+		/**
+		 * Create an instance of class Model
+		 * 
+		 * @param context the analysis context
+		 */
+		public Model(AnalysisContext context) {
+			super(context, OperationGetShortestPath.class);
+		}
+		
+		
+		/**
+		 * Create prediction(s) based on the specified operation tags
+		 * in the specified context
+		 * 
+		 * @param tag the operation tag(s)
+		 * @return a collection of predictions
+		 */
+		@Override
+		public List<Prediction> predictFromTag(String tag) {
+			
+			ArrayList<Prediction> r = new ArrayList<Prediction>();
+			
+			Double getAllNeighbors = getContext().getAverageOperationRuntime("OperationGetAllNeighbors-both");
+			if (getAllNeighbors != null) {
+				
+				// Hack
+				
+				List<OperationLogEntry> entries = getContext().getTailEntries("OperationGetShortestPath");
+				
+				if (entries != null) {
+					int getOpsCount = 0;
+					int count = 0;
+					
+					for (OperationLogEntry e : entries) {
+						String[] result = e.getResult().split(":");
+						getOpsCount += Integer.parseInt(result[2]);
+						count++;
+					}
+					
+					if (count > 0) {
+						r.add(new Prediction(this, tag, "Using GetAllNeighbors and results",
+								getAllNeighbors.doubleValue() * getOpsCount / (double) count));
+					}
+				}
+			}
+			
+			return r;
+		}
+	}
+
 	
 	/**
 	 * The operation specialized for DEX

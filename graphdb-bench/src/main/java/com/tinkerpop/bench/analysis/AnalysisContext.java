@@ -419,4 +419,25 @@ public class AnalysisContext {
 			return r;
 		}
 	}
+	
+	
+	/**
+	 * Get the tail operation log entries from the latest job for the given operation name
+	 * (including tags)
+	 * 
+	 * @param operationName the operation name including tags
+	 * @return a list of the operation log entries from the tail of the log, or null if not available
+	 */
+	public List<OperationLogEntry> getTailEntries(String operationName) {
+		
+		SortedSet<Job> jobs = getJobsWithTag(operationName);
+		Job job = jobs == null ? null : jobs.last();
+		
+		if (job != null) {
+			return OperationLogReader.getTailEntries(job.getLogFile(), operationName);
+		}
+		else {
+			return null;
+		}
+	}
 }
