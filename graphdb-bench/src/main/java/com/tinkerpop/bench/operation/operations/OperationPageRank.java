@@ -307,7 +307,7 @@ public class OperationPageRank extends Operation {
 					int c = 0;
 					Long n = I.getKey();
 					for (int t : edgeTypes) {
-						com.sparsity.dex.gdb.Objects objs = graph.neighbors(n, t, EdgesDirection.Any);
+						com.sparsity.dex.gdb.Objects objs = graph.neighbors(n, t, EdgesDirection.Ingoing);
 						com.sparsity.dex.gdb.ObjectsIterator objsItr = objs.iterator();
 								
 						while (objsItr.hasNext()) {
