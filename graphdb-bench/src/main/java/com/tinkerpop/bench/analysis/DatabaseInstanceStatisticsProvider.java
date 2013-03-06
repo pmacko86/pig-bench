@@ -79,7 +79,7 @@ public abstract class DatabaseInstanceStatisticsProvider {
 		}
 	
 		
-		throw new IllegalArgumentException("There is no suitable statistics provider");
+		throw new IllegalArgumentException("There is no suitable statistics provider for \"" + instanceName + "\"");
 	}
 	
 	

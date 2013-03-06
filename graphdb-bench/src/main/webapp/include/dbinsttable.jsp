@@ -50,6 +50,69 @@ if (dbinst_simple) {
 }
 else {
 %>
+		<script language="JavaScript">
+		<!-- Begin
+		
+		/*
+		 * Toggle/check all checkboxes for the given database engine
+		 */
+		function dbinsttable_toggle_dbengine(dbengine)
+		{
+			field = document.getElementsByName('database_engine_instance');
+
+			checked_all = true;
+			for (i = 0; i < field.length; i++) {
+				if (field[i].value.indexOf(dbengine + "|") == 0) {
+					if (!field[i].checked) {
+						checked_all = false;
+						break;
+					}
+				}
+			}
+			
+			new_check = !checked_all;
+			for (i = 0; i < field.length; i++) {
+				if (field[i].value.indexOf(dbengine + "|") == 0) {
+					field[i].checked = new_check;
+				}
+			}
+			
+			<% if (dbinst_onchange != null) { %>
+				<%= dbinst_onchange %>;
+			<% } %>
+		}
+		
+		/*
+		 * Toggle/check all checkboxes for the given database instance
+		 */
+		function dbinsttable_toggle_dbinstance(dbinstance)
+		{
+			field = document.getElementsByName('database_engine_instance');
+
+			checked_all = true;
+			for (i = 0; i < field.length; i++) {
+				if (field[i].value.indexOf("|" + dbinstance) > 0) {
+					if (!field[i].checked) {
+						checked_all = false;
+						break;
+					}
+				}
+			}
+			
+			new_check = !checked_all;
+			for (i = 0; i < field.length; i++) {
+				if (field[i].value.indexOf("|" + dbinstance) > 0) {
+					field[i].checked = new_check;
+				}
+			}
+			
+			<% if (dbinst_onchange != null) { %>
+				<%= dbinst_onchange %>;
+			<% } %>
+		}
+		
+		//  End -->
+	</script>
 	
 	<table class="db_table">
 		<tr>
@@ -57,7 +120,9 @@ else {
 			<%
 			for (DatabaseEngine e : engines.values()) {
 				%>
-					<th><%= e.getLongName() %></th>
+					<th<%= dbinst_choose_many
+							? " onclick=\"dbinsttable_toggle_dbengine('" + e.getShortName() + "')\"" 
+							: "" %>><%= e.getLongName() %></th>
 				<%
 			}					
 			%>
@@ -118,19 +183,25 @@ else {
 							if (dbi.equals("<new>")) {
 						%>
 							<th>
-								<label>New:&nbsp;</label>
+								<label<%= dbinst_choose_many
+									? " onclick=\"dbinsttable_toggle_dbinstance('" + dbi + "')\"" 
+									: "" %>>New:&nbsp;</label>
 								<input type="text" name="new_database_instance" id="new_database_instance" value="" />
 							</th>
 						<%
 							}
 							else if (dbi.equals("")) {
 						%>
-							<th style="text-align:left">&lt;default&gt;</th>
+							<th<%= dbinst_choose_many
+								? " onclick=\"dbinsttable_toggle_dbinstance('" + dbi + "')\"" 
+								: "" %> style="text-align:left">&lt;default&gt;</th>
 						<%
 							}
 							else {
 						%>
-							<th style="text-align:left"><%= dbi %></th>
+							<th<%= dbinst_choose_many
+								? " onclick=\"dbinsttable_toggle_dbinstance('" + dbi + "')\"" 
+								: "" %> style="text-align:left"><%= dbi %></th>
 						<%
 							}
 						%>

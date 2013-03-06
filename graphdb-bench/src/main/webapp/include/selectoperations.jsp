@@ -26,6 +26,41 @@ if (true) {
 	
 	//boolean selectoperations_selectMultiple = WebUtils.getBooleanParameter(request, "select_multiple", false);
 	
+	%>
+	<script language="JavaScript">
+		<!-- Begin
+		
+		/*
+		 * Toggle/check all checkboxes for the given operation
+		 */
+		function selectoperations_toggle_suboperations(operation)
+		{
+			field = document.getElementsByName('operations');
+
+			checked_all = true;
+			for (i = 0; i < field.length; i++) {
+				if (field[i].value.indexOf(operation + "-") == 0) {
+					if (!field[i].checked) {
+						checked_all = false;
+						break;
+					}
+				}
+			}
+			
+			new_check = !checked_all;
+			for (i = 0; i < field.length; i++) {
+				if (field[i].value.indexOf(operation + "-") == 0) {
+					field[i].checked = new_check;
+				}
+			}
+			
+			form_submit();
+		}
+		
+		//  End -->
+	</script>
+	<%
+
 	
 	// Get the intersection of all available operations
 	
@@ -107,6 +142,9 @@ if (true) {
 				extraTags += " checked=\"checked\"";
 			}
 			
+			int orgTagStart = n.indexOf('-');
+			String orgOperationNameWithoutTag = orgTagStart > 0 ? n.substring(0, orgTagStart) : n;
+			
 			String niceName = n;
 			if (niceName.startsWith("Operation")) niceName = niceName.substring(9);
 			
@@ -146,7 +184,9 @@ if (true) {
 					}
 					divOpen = true;
 					%>
-						<label class="checkbox">
+						<label<%= selectoperations_selectMultiple
+							? " onclick=\"selectoperations_toggle_suboperations('" + orgOperationNameWithoutTag + "')\"" 
+							: "" %> class="checkbox">
 							<%= operationNameWithoutTag %>
 						</label>
 						<div class="checkbox_lesser">

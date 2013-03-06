@@ -386,6 +386,23 @@ button {
 	margin-left:0px;
 }
 
+.stylized_form a.like_button {
+    text-decoration: none;
+    display: inline-block;
+    padding: 2px 8px;
+	float:left;
+	margin-top:20px;
+	margin-left:0px;
+	width:150px;
+	height:31px;
+	background:#666666;
+	text-align:center;
+	line-height:31px;
+	color:#FFFFFF;
+	font-size:11px;
+	font-weight:bold;
+}
+
 .stylized_form div.db_table_div {
 	clear: none;
 	float:left;

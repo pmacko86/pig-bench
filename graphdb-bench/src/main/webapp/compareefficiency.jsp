@@ -24,7 +24,7 @@
 	String jsp_body = "onload=\"body_on_load()\" onunload=\"\"";
 	boolean jsp_allow_cache = true;
 %>
-<%@ include file="include/header.jsp" %>
+<%@ include file="/include/header.jsp" %>
 	
 	<script src="/include/d3.v2.js"></script>
 	<script src="/include/d3bp.js"></script>
@@ -66,8 +66,8 @@
 	
 	<div class="stylized_form">
 		<form id="form" name="form" method="post" action="/compareefficiency.jsp">
-			<h1>Compare Databases</h1>
-			<p class="header">Compare the performance of selected operations across multiple databases</p>
+			<h1>Compare Efficiency</h1>
+			<p class="header">Compare the implementation efficiency of selected operations across multiple databases</p>
 			
 			
 			<!-- Database Engine / Instance Names -->
@@ -106,113 +106,17 @@
 			
 			<!-- Jobs -->
 		
-			<%
-				SimpleDateFormat dateTimeFormatter = new SimpleDateFormat("[yyyy/MM/dd HH:mm:ss]");
-				
-			
-				// A map of selected [[database engine, database instance name], operation name] pairs to a sorted set of selected jobs
-				TreeMap<Pair<DatabaseEngineAndInstance, String>, SortedSet<Job>>
-					selectedDatabaseInstanceAndOperationToSelectedJobsMap
-					= new TreeMap<Pair<DatabaseEngineAndInstance, String>, SortedSet<Job>>();
-				
+			<%								
 				if (!selectedOperations.isEmpty()) {
-					%>
-					
-					<div id="select_job">
+					%>	
 						<p class="middle">3) Select relevant jobs for each operation and each database engine/instance pair:</p>
-						
-						<%
-							for (String operationName : selectedOperations) {
-								String niceOperationName = operationName;
-								if (niceOperationName.startsWith("Operation")) {
-									niceOperationName = niceOperationName.substring(9);
-								}
-
-								
-								%>
-									<p class="middle_inner"><%= niceOperationName %></p>
-								<%
-								
-								for (DatabaseEngineAndInstance p : selectedDatabaseInstances) {
-									AnalysisContext ac = AnalysisContext.getInstance(p);
-									
-									String untransformedOperationName = operationName;
-									Map<DatabaseEngineAndInstance, String> tm = operationNameTransforms.get(operationName);
-									if (tm != null && tm.containsKey(p)) untransformedOperationName = tm.get(p);
-									
-									SortedSet<Job> jobs = ac.getJobsWithTag(untransformedOperationName);
-									if (jobs == null || jobs.isEmpty()) continue;
-									
-									String inputName = p.getEngine().getShortName()
-											+ "-" + p.getInstanceSafe("")
-											+ "-" + operationName;
-									
-									String[] params = WebUtils.getStringParameterValues(request, inputName);
-									TreeSet<Job> selectedJobsForSelectedDatabaseInstanceAndOperation = new TreeSet<Job>();
-									if (params != null) {
-										for (String pm : params) {
-											long jobId = Long.parseLong(pm);
-											Job job = JobList.getInstance().getFinishedJobByPersistentId(jobId);
-											if (job == null) continue;
-											if (!jobs.contains(job)) continue;
-											selectedJobsForSelectedDatabaseInstanceAndOperation.add(job);
-										}
-									}
-									selectedDatabaseInstanceAndOperationToSelectedJobsMap.put(
-											new Pair<DatabaseEngineAndInstance, String>(p, operationName),
-											selectedJobsForSelectedDatabaseInstanceAndOperation);
-									
-									if (selectedJobsForSelectedDatabaseInstanceAndOperation.isEmpty()) {
-										Job lastGoodJob = null;
-										for (Job job : jobs) {
-											if (job.getArguments().contains("--use-stored-procedures")) continue;
-											lastGoodJob = job;
-										}
-										if (lastGoodJob == null) {
-											lastGoodJob = jobs.last();
-										}
-										if (lastGoodJob != null) {
-											selectedJobsForSelectedDatabaseInstanceAndOperation.add(lastGoodJob);
-										}
-									}
-
-									%>
-										<label class="lesser">
-											<%= p.getEngine().getLongName() %>
-											<span class="small">
-											<%= p.getInstanceSafe("&lt;default&gt;") %>
-											</span>
-										</label>
-										<select name="<%= inputName %>" id="<%= inputName %>"
-												onchange="form_submit();">
-									<%
-									
-									int index = 0;
-									for (Job job : jobs) {
-										index++;
-										
-										String extraTags = "";
-										if (selectedJobsForSelectedDatabaseInstanceAndOperation.contains(job)) {
-											extraTags += " selected=\"selected\"";
-										}
-										
-										String prefix = dateTimeFormatter.format(job.getExecutionTime()) + " ";
-										
-										%>
-											<option value="<%= job.getPersistentId() %>"<%= extraTags %>><%= prefix + job.toString() %></option>
-										<%
-									}
-									%>
-										</select>
-									<%
-								}
-							}
-						%>
-						<div class="clear"></div>
-					</div>
 					<%
 				}
+			
+				boolean selectjobs_selectMultiple = false;
 			%>
+			<%@ include file="include/selectjobs.jsp" %>
+
 			
 			<input type="hidden" name="refreshed" id="refreshed" value="no" />
 
