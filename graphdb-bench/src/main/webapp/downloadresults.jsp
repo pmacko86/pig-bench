@@ -59,6 +59,7 @@
 			
 			<div class="clear"></div>
 			
+			<input type="hidden" name="all" value="false" />
 			<button type="submit">Download Selected</button>			
 		
 		</form>

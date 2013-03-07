@@ -194,6 +194,12 @@ public class Job implements Comparable<Job> {
 		logFile = null;
 		
 		
+		// Get the relevant configuration
+		
+		boolean provenanceEnabled = Bench.getBooleanProperty(Bench.CPL_ENABLED, true);
+		boolean warmupEnabled = Bench.getBooleanProperty(Bench.WARMUP_ENABLED, true);
+		
+		
 		// Get the request arguments
 		
 		dbEngine = WebUtils.getStringParameter(request, "database_name");
@@ -312,7 +318,7 @@ public class Job implements Comparable<Job> {
 			}
 		}
 		
-		if (noProvenance) {
+		if (noProvenance && provenanceEnabled) {
 			arguments.add("--no-provenance");
 		}
 		
@@ -320,7 +326,7 @@ public class Job implements Comparable<Job> {
 			arguments.add("--no-cache-pollution");
 		}
 		
-		if (noWarmup) {
+		if (noWarmup && warmupEnabled) {
 			arguments.add("--no-warmup");
 		}
 
@@ -378,7 +384,7 @@ public class Job implements Comparable<Job> {
 				}
 			}
 			if (s_warmupOpCount != null) {
-				if (!s_warmupOpCount.equals(s_opCount)) {
+				if (!s_warmupOpCount.equals(s_opCount) && !noWarmup && warmupEnabled) {
 					arguments.add("--warmup-op-count"); arguments.add(s_warmupOpCount);
 				}
 			}
@@ -394,7 +400,8 @@ public class Job implements Comparable<Job> {
 		
 		if (s_edgeCondProp != null
 				&& !BenchmarkMicro.DEFAULT_EDGE_CONDITIONAL_PROPERTY_KEY.equals(s_edgeCondProp)) {
-			if (workloads.containsKey("get") || workloads.containsKey("get-k")
+			if (workloads.containsKey("get") || workloads.containsKey("get--micro")
+					|| workloads.containsKey("get--traversals") || workloads.containsKey("get-k")
 					|| workloads.containsKey("get-label") || workloads.containsKey("get-k-label")) {
 				arguments.add("--edge-cond-prop");
 				arguments.add(s_edgeCondProp);
@@ -496,6 +503,9 @@ public class Job implements Comparable<Job> {
 		for (String t : tokens) {
 			if (first) {
 				first = false;
+			}
+			else if (t.equals("jrockit")) {
+				arguments.add("+" + t);
 			}
 			else if (t.length() == 1) {
 				arguments.add("-" + t);

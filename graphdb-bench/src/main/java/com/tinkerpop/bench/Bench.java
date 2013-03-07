@@ -34,11 +34,16 @@ public class Bench {
 	// DATABASE ENGINE CACHES
 	public static final String DB_CACHE_SIZE = "bench.db.db_cache_size";
 	public static final String DB_PREFERRED_BUFFER_POOL_RATIO = "bench.db.preferred_buffer_pool_ratio";
+	public static final String DB_PREFERRED_BUFFER_POOL_MIN = "bench.db.preferred_buffer_pool_min";
 	public static final String DB_NEO_CACHES = "bench.db.neo.caches";
 	public static final String DB_NEO_GCR = "bench.db.neo.gcr";
+	
+	// BENCHMARK SETUP - Warmup, etc.
+	public static final String WARMUP_ENABLED = "bench.warmup.enabled";
 
 	// LOGS - Operation Logs & Provenance
 	public static final String LOGS_DELIMITER = "bench.logs.delimiter";
+	public static final String CPL_ENABLED = "bench.cpl.enabled";
 	public static final String CPL_ODBC_DSN = "bench.cpl.odbc";
 
 	// RESULTS - Logs, Summaries, Plots

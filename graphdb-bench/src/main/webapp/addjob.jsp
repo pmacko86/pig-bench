@@ -201,6 +201,11 @@
 			
 			<p class="middle">Configure the benchmark:</p>
 			
+			<%
+				boolean provenanceEnabled = Bench.getBooleanProperty(Bench.CPL_ENABLED, true);
+				boolean warmupEnabled = Bench.getBooleanProperty(Bench.WARMUP_ENABLED, true);
+			%>
+			
 			<label>Annotation
 				<span class="small">A custom provenance annotation</span>
 			</label>
@@ -230,6 +235,7 @@
 		
 			<label class="checkbox">
 				<input class="checkbox" type="checkbox" name="no_provenance"
+						<%= provenanceEnabled ? "" : "checked=\"true\" disabled" %>
 						value="true"/>
 				Disable provenance
 			</label>
@@ -255,6 +261,7 @@
 		
 			<label class="checkbox">
 				<input class="checkbox" type="checkbox" name="no_warmup"
+						<%= warmupEnabled ? "" : "checked=\"true\" disabled" %>
 						value="true"/>
 				Disable the warmup run before the benchmark run
 			</label>

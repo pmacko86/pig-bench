@@ -51,7 +51,18 @@ public class DownloadResults extends HttpServlet {
 				+ "| grep -v /wait | grep -v /backup | grep -v /" + OperationLogReader.TAIL_CACHE_DIR;
 		String command;
 		
+		
+		// Get the request parameters (default to "all" if none supplied)
+		
 		boolean all = WebUtils.getBooleanParameter(request, "all", false);
+		
+		String dbEngine = WebUtils.getStringParameter(request, "database_engine");
+		String dbInstance = WebUtils.getStringParameter(request, "database_instance");
+		String[] pairs = WebUtils.getStringParameterValues(request, "database_engine_instance");
+		
+		if (dbEngine == null && dbInstance == null && pairs == null && !WebUtils.hasParameter(request, "all")) {
+			all = true;
+		}
 		
 		
 		// Compose the tar commands depending on the download type arguments
@@ -63,16 +74,13 @@ public class DownloadResults extends HttpServlet {
 			
 			// The case when a single database engine is specified
 			
-			String dbEngine = WebUtils.getStringParameter(request, "database_engine");
 			if (dbEngine != null) {
-				String dbInstance = WebUtils.getStringParameter(request, "database_instance");
 				directories += " " + WebUtils.getResultsDirectory(dbEngine, dbInstance).getName();
 			}
 	
 			
 			// The case when multiple database engine/instances are specified
 			
-			String[] pairs = WebUtils.getStringParameterValues(request, "database_engine_instance");
 			if (pairs != null) {
 				for (String p : pairs) {
 					int d = p.indexOf('|');

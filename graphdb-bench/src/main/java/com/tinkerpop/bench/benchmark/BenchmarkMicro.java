@@ -391,12 +391,12 @@ public class BenchmarkMicro extends Benchmark {
 			}
 		}
 		
-		boolean provenance = true;
+		boolean provenance = Bench.getBooleanProperty(Bench.CPL_ENABLED, true);
 		if (options.has("no-provenance")) {
 			provenance = false;
 		}
 		
-		boolean warmup = true;
+		boolean warmup = Bench.getBooleanProperty(Bench.WARMUP_ENABLED, true);
 		if (options.has("no-warmup")) {
 			warmup = false;
 		}
@@ -707,6 +707,15 @@ public class BenchmarkMicro extends Benchmark {
 				return 1;
 			}
 			
+			String s_preferredBufferPoolMin = Bench.getProperty(Bench.DB_PREFERRED_BUFFER_POOL_MIN);
+			int preferredBufferPoolMin = Integer.parseInt(s_preferredBufferPoolMin);
+			if (preferredBufferPoolMin < 0) preferredBufferPoolMin = 0;
+			if (GlobalConfig.databaseCacheSize < preferredBufferPoolMin) {
+				ConsoleUtils.error(Bench.DB_PREFERRED_BUFFER_POOL_MIN + "(" + preferredBufferPoolMin + " MB) "
+						+ "is smaller than the database cache size (" + GlobalConfig.databaseCacheSize + " MB)");
+				return 1;
+			}
+			
 			String s_defaultCacheSize = Bench.getProperty(Bench.DB_CACHE_SIZE);
 			int defaultCacheSize = Integer.parseInt(s_defaultCacheSize);
 			if (defaultCacheSize < 16) {
@@ -731,6 +740,10 @@ public class BenchmarkMicro extends Benchmark {
 			}
 			else {
 				
+				int preferredBufferPoolSize = MathUtils.round(preferredBufferPoolRatio * GlobalConfig.databaseCacheSize);
+				if (preferredBufferPoolSize < preferredBufferPoolMin) preferredBufferPoolSize = preferredBufferPoolMin;
+				
+				
 				// Default behavior: Scale the database cache sizes according
 				// to the file sizes, or scale the defaults if the database
 				// does not yet exist
@@ -739,7 +752,7 @@ public class BenchmarkMicro extends Benchmark {
 				if (dir.exists() && dir.isDirectory() && !isIngest) {
 					
 					long[] adjustedSizes = FileUtils.getScaledFileSizesMB(dir,
-							MathUtils.round(preferredBufferPoolRatio * GlobalConfig.databaseCacheSize),
+							preferredBufferPoolSize,
 							"neostore.nodestore.db", "neostore.relationshipstore.db", "neostore.propertystore.db",
 							"neostore.propertystore.db.strings", "neostore.propertystore.db.arrays");
  
@@ -748,7 +761,7 @@ public class BenchmarkMicro extends Benchmark {
 				else {
 					String s = Bench.getProperty(Bench.DB_NEO_CACHES);
 					config = MathUtils.toStringArray(MathUtils.adjustSumApproximate(MathUtils.fromStringArray(s.split(":")),
-							MathUtils.round(preferredBufferPoolRatio * GlobalConfig.databaseCacheSize), 1));
+							preferredBufferPoolSize, 1));
 				}
 			}
 			
@@ -788,6 +801,10 @@ public class BenchmarkMicro extends Benchmark {
 			}
 			else {
 				
+				int preferredBufferPoolSize = MathUtils.round(preferredBufferPoolRatio * GlobalConfig.databaseCacheSize);
+				if (preferredBufferPoolSize < preferredBufferPoolMin) preferredBufferPoolSize = preferredBufferPoolMin;
+
+				
 				// Default behavior: Scale the database cache sizes according
 				// to the number of nodes and relationships, or set to the
 				// defaults if the database does not yet exist
@@ -806,12 +823,12 @@ public class BenchmarkMicro extends Benchmark {
 					};
 					
 					config = MathUtils.toStringArray(MathUtils.adjustSumApproximate(inMemSizesMB,
-							MathUtils.round((1 - preferredBufferPoolRatio) * GlobalConfig.databaseCacheSize), 1));
+							GlobalConfig.databaseCacheSize - preferredBufferPoolSize, 1));
 				}
 				else {
 					String s = Bench.getProperty(Bench.DB_NEO_GCR);
 					config = MathUtils.toStringArray(MathUtils.adjustSumApproximate(MathUtils.fromStringArray(s.split(":")),
-							MathUtils.round((1 - preferredBufferPoolRatio) * GlobalConfig.databaseCacheSize), 1));
+							GlobalConfig.databaseCacheSize - preferredBufferPoolSize, 1));
 				}
 			}
 			
@@ -1048,6 +1065,10 @@ public class BenchmarkMicro extends Benchmark {
 		sb.append("__mem_");
 		sb.append(Math.round(Runtime.getRuntime().maxMemory() / 1048576.0f));
 		sb.append("m");
+		
+		if (JVMUtils.JVM_NAME.contains("JRockit")) {
+			sb.append("__jrockit");
+		}
 		
 		for (String s : args) {
 			String argName = s.charAt(0) == '-' ? s.substring(s.charAt(1) == '-' ? 2 : 1) : s;
