@@ -18,8 +18,8 @@ import org.neo4j.tooling.GlobalGraphOperations;
 import com.sparsity.dex.gdb.EdgesDirection;
 import com.tinkerpop.bench.analysis.AnalysisContext;
 import com.tinkerpop.bench.analysis.OperationModel;
+import com.tinkerpop.bench.analysis.OperationStats;
 import com.tinkerpop.bench.analysis.Prediction;
-import com.tinkerpop.bench.log.OperationLogEntry;
 import com.tinkerpop.bench.operation.Operation;
 import com.tinkerpop.bench.util.ConsoleUtils;
 import com.tinkerpop.bench.util.FileUtils;
@@ -216,22 +216,12 @@ public class OperationPageRank extends Operation {
 				
 				// Hack
 				
-				List<OperationLogEntry> entries = getContext().getTailEntries("OperationPageRank");
-				
-				if (entries != null) {
-					int getOpsCount = 0;
-					int count = 0;
+				OperationStats stats = getContext().getOperationStats("OperationPageRank");
+				if (stats != null) {
+					double averageNumNeighborhoods = stats.getAverageResult(2);
 					
-					for (OperationLogEntry e : entries) {
-						String[] result = e.getResult().split(":");
-						getOpsCount += Integer.parseInt(result[2]);
-						count++;
-					}
-					
-					if (count > 0) {
-						r.add(new Prediction(this, tag, "Using GetAllNeighbors and results",
-								getAllNeighbors.doubleValue() * getOpsCount / (double) count));
-					}
+					r.add(new Prediction(this, tag, "Using GetAllNeighbors and results",
+							getAllNeighbors.doubleValue() * averageNumNeighborhoods));
 				}
 			}
 			

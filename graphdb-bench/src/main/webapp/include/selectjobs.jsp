@@ -1,7 +1,9 @@
 <%@ page import="com.tinkerpop.bench.analysis.*"%>
 <%@ page import="com.tinkerpop.bench.util.*"%>
 <%@ page import="com.tinkerpop.bench.web.*"%>
+
 <%@ page import="java.io.*"%>
+<%@ page import="java.text.SimpleDateFormat"%>
 <%@ page import="java.util.*"%>
 
 <%

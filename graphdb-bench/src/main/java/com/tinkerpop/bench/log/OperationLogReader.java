@@ -7,6 +7,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InvalidClassException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.ref.WeakReference;
@@ -30,7 +31,7 @@ public class OperationLogReader implements Iterable<OperationLogEntry> {
 
 	private static Pattern opNamePattern = Pattern.compile("^[A-Za-z][A-Za-z0-9_-]*$");
 	
-	public static final String TAIL_CACHE_DIR = "cache";
+	public static final String CACHE_DIR = "cache";
 	public static boolean PERSISTENT_TAIL_CACHE = true;
 
 	public static int TAIL_MIN_ROWS = 1;
@@ -66,6 +67,29 @@ public class OperationLogReader implements Iterable<OperationLogEntry> {
 		return r;
 	}
 	
+	
+	public static File getCacheFile(File logFile, String operationName, String prefix, String suffix) {
+		
+		int logDatePos = logFile.getName().indexOf("__date_");
+		String logDate = "";
+		if (logDatePos >= 0) {
+			int logDateEnd = logFile.getName().indexOf("__", logDatePos + "__date_".length());
+			if (logDateEnd < 0) logDateEnd = logFile.getName().indexOf('.', logDatePos + "__date_".length());
+			if (logDateEnd > 0) {
+				logDate = logFile.getName().substring(logDatePos, logDateEnd);
+			}
+		}
+		
+		File cacheDir = new File(logFile.getParentFile(), CACHE_DIR);
+		String cacheFileName = prefix + logDate + "__hash_" + Integer.toHexString(logFile.hashCode())
+				+ "__op_" + operationName;
+		if (!suffix.startsWith(".") && !suffix.startsWith("__")) cacheFileName += "__";
+		cacheFileName += suffix;
+		
+		return new File(cacheDir, cacheFileName);
+	}
+	
+	
 	@SuppressWarnings("unchecked")
 	public static List<OperationLogEntry> getTailEntries(File logFile, String operationName) {
 		
@@ -83,42 +107,30 @@ public class OperationLogReader implements Iterable<OperationLogEntry> {
 			// Read the data from disk, if it was not found in the cache
 			
 			if (entries == null) {
-				
-				
+
 				// Check the persistent tail cache
 				
-				int logDatePos = logFile.getName().indexOf("__date_");
-				String logDate = "";
-				if (logDatePos >= 0) {
-					int logDateEnd = logFile.getName().indexOf("__", logDatePos + "__date_".length());
-					if (logDateEnd < 0) logDateEnd = logFile.getName().indexOf('.', logDatePos + "__date_".length());
-					if (logDateEnd > 0) {
-						logDate = logFile.getName().substring(logDatePos, logDateEnd);
-					}
-				}
-				
-				File tailCacheDir = new File(logFile.getParentFile(), TAIL_CACHE_DIR);
-				String tailCacheFileName = "tail" + logDate + "__hash_" + Integer.toHexString(logFile.hashCode())
-						+ "__op_" + operationName
-						+ "__tail_" + TAIL_MIN_ROWS + "_" + TAIL_MAX_ROWS + "_" + ((int) (100 * TAIL_MAX_FRACTION))
-						+ ".dat";
+				File cacheFile = getCacheFile(logFile, operationName, "tail", "tail_" + TAIL_MIN_ROWS
+						+ "_" + TAIL_MAX_ROWS + "_" + ((int) (100 * TAIL_MAX_FRACTION)) + ".dat");
 						
 				if (PERSISTENT_TAIL_CACHE) {
-					File f = new File(tailCacheDir, tailCacheFileName);
-					if (f.exists()) {
-						
-						// TODO Make it so that if we update OperationLogEntry, the code will recreate the cached files
-						//      automatically without failing (check serialVersionUID)
-						
+					if (cacheFile.exists()) {
+						ObjectInputStream in = null;
 						try {
-							ObjectInputStream in = new ObjectInputStream(new BufferedInputStream(new FileInputStream(f)));
+							in = new ObjectInputStream(new BufferedInputStream(new FileInputStream(cacheFile)));
 							entries = (List<OperationLogEntry>) in.readObject();
 							in.close();
 						}
+						catch (InvalidClassException e) {
+							entries = null;
+							try { if (in != null) in.close(); } catch (IOException ex) {};
+						}
 						catch (IOException e) {
+							try { if (in != null) in.close(); } catch (IOException ex) {};
 							throw new RuntimeException(e);
 						}
 						catch (ClassNotFoundException e) {
+							try { if (in != null) in.close(); } catch (IOException ex) {};
 							throw new RuntimeException(e);
 						}
 					}
@@ -157,10 +169,9 @@ public class OperationLogReader implements Iterable<OperationLogEntry> {
 					// Store the tail in the persistent cache, if enabled
 					
 					if (PERSISTENT_TAIL_CACHE) {
-						tailCacheDir.mkdirs();
-						File f = new File(tailCacheDir, tailCacheFileName);
+						cacheFile.getParentFile().mkdirs();
 						try {
-							ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(f));
+							ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(cacheFile));
 							out.writeObject(entries);
 							out.close();
 						}

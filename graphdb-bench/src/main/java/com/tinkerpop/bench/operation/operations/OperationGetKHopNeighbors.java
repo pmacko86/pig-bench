@@ -22,10 +22,11 @@ import com.sparsity.dex.gdb.OIDList;
 import com.sparsity.dex.gdb.OIDListIterator;
 import com.tinkerpop.bench.analysis.AnalysisContext;
 import com.tinkerpop.bench.analysis.OperationModel;
+import com.tinkerpop.bench.analysis.OperationStats;
 import com.tinkerpop.bench.analysis.Prediction;
-import com.tinkerpop.bench.log.OperationLogEntry;
 import com.tinkerpop.bench.operation.Operation;
 import com.tinkerpop.bench.util.GraphUtils;
+import com.tinkerpop.bench.util.MathUtils;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.blueprints.extensions.impls.dex.DexUtils;
@@ -135,27 +136,29 @@ public class OperationGetKHopNeighbors extends Operation {
 			
 			ArrayList<Prediction> r = new ArrayList<Prediction>();
 			
-			Double getAllNeighbors = getContext().getAverageOperationRuntime("OperationGetAllNeighbors-" + tags[0]);
+			OperationStats getAllNeighbors = getContext().getOperationStats("OperationGetAllNeighbors-" + tags[0]);
 			if (getAllNeighbors != null) {
 				
 				// Hack
 				
-				List<OperationLogEntry> entries = getContext().getTailEntries("OperationGetKHopNeighbors-" + tag);
-				
-				if (entries != null) {
-					int getOpsCount = 0;
-					int count = 0;
+				OperationStats stats = getContext().getOperationStats("OperationGetKHopNeighbors-" + tag);
+				if (stats != null) {
 					
-					for (OperationLogEntry e : entries) {
-						String[] result = e.getResult().split(":");
-						getOpsCount += Integer.parseInt(result[2]);
-						count++;
-					}
+					double averageNumNeighborhoods = stats.getAverageResult(2);
+					r.add(new Prediction(this, tag, "Using GetAllNeighbors and results, based on the neighborhood size",
+							getAllNeighbors.getAverageOperationRuntime() * averageNumNeighborhoods));
 					
-					if (count > 0) {
-						r.add(new Prediction(this, tag, "Using GetAllNeighbors and results",
-								getAllNeighbors.doubleValue() * getOpsCount / (double) count));
-					}
+					/*double averageNumAccessedNodes = stats.getAverageResult(3);
+					r.add(new Prediction(this, tag, "Using GetAllNeighbors and results, based on the number of accessed nodes",
+							MathUtils.evaluatePolynomial(getAllNeighbors.getLinearFitsForResult(3), averageNumAccessedNodes)));*/
+					
+					/*double averageNumUniqueNodes = stats.getAverageResult(0);
+					r.add(new Prediction(this, tag, "Using GetAllNeighbors and results, based on the number of unique nodes",
+							MathUtils.evaluatePolynomial(getAllNeighbors.getLinearFitsForResult(0), averageNumUniqueNodes)));*/
+					
+					double averageNumUniqueNodes = stats.getAverageResult(0);
+					r.add(new Prediction(this, tag, "Using GetAllNeighbors and results, based on the average unique nodes in a neighborhood",
+							averageNumNeighborhoods * MathUtils.evaluatePolynomial(getAllNeighbors.getLinearFitsForResult(0), averageNumUniqueNodes / averageNumNeighborhoods)));
 				}
 			}
 			

@@ -713,8 +713,7 @@ public class ModelAnalysis {
 		
 		// Finish
 		
-		return MathUtils.upgradeArray(
-				AnalysisContext.useRobustFits && ax.length >= 50 ? MathUtils.robustLinearFit(ax, ay) : MathUtils.linearFit(ax, ay));
+		return MathUtils.upgradeArray(MathUtils.linearFit(ax, ay));
 	}
 	
 	

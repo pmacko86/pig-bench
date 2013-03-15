@@ -1,6 +1,7 @@
 package com.tinkerpop.bench.analysis;
 
 import java.util.HashMap;
+import java.util.SortedSet;
 import java.util.Vector;
 
 import org.apache.commons.lang.StringUtils;
@@ -136,12 +137,42 @@ public class AnalysisUtils {
 	 */
 	public static SummaryLogEntry convertLogEntryForManyOperation(SummaryLogEntry entry, Job job) {
 		
-		int opCountArg = getManyOperationOpCountArgumentIndex(entry.getName());
-		
 		GraphRunTimes runTimes = entry.getDefaultRunTimes();
 		if (entry.getRunTimes().size() != 1) {
 			throw new UnsupportedOperationException("Not supported if the size of entry.getRunTimes() is not 1");
 		}
+
+		
+		// First, see if we can satisfy this from the analysis context
+		
+		AnalysisContext context = AnalysisContext.getInstance(job.getDatabaseEngineAndInstance());
+		SortedSet<Job> contextJobs = context.getJobsWithTag(entry.getName());
+		Job contextJob = contextJobs == null ? null : contextJobs.last();
+		
+		if (contextJob != null && job.getLogFile().equals(contextJob.getLogFile())) {
+
+			OperationStats stats = context.getOperationStats(entry.getName());
+			String operationName = convertNameOfManyOperation(entry.getName());
+			
+			double mean = stats.getAverageOperationRuntime();
+			double stdev = stats.getOperationRuntimeStdev();
+			double min = stats.getMinOperationRuntime();
+			double max = stats.getMaxOperationRuntime();
+			
+			GraphRunTimes newRunTimes = new GraphRunTimes(runTimes.getGraphName(),
+					operationName, mean * 1000000.0, stdev * 1000000.0,
+					min * 1000000.0, max * 1000000.0);
+			
+			HashMap<String, GraphRunTimes> m = new HashMap<String, GraphRunTimes>();
+			m.put(newRunTimes.getGraphName(), newRunTimes);
+			
+			return new SummaryLogEntry(operationName, m);
+		}
+		
+		
+		// Else use the job...
+		
+		int opCountArg = getManyOperationOpCountArgumentIndex(entry.getName());
 		
 		
 		// Reread the actual log file

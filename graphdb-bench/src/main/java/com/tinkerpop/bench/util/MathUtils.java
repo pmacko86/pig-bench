@@ -598,6 +598,24 @@ public class MathUtils {
 	
 	
 	/**
+	 * Evaluate a polynomial
+	 * 
+	 * @param coefficients the coefficients of the polynomial in the form c[0] + c[1] * x + c[2] * x^2 + ...
+	 * @param x the value of x
+	 * @return the result
+	 */
+	public static double evaluatePolynomial(double[] coefficients, double x) {
+		
+		double r = 0;
+		for (int i = coefficients.length - 1; i >= 0; i--) {
+			r = (r * x) + coefficients[i];
+		}
+		
+		return r;
+	}
+	
+	
+	/**
 	 * Return the quantile
 	 * 
 	 * @param x the array of values

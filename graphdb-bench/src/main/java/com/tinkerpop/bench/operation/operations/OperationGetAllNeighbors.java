@@ -88,6 +88,9 @@ public class OperationGetAllNeighbors extends Operation {
 			Double readEdge = getContext().getAverageOperationRuntimeNoTag(OperationGetManyEdges.class);
 			Double oneEdgeTraversal = MathUtils.sum(readVertex, readEdge);
 			
+			//System.out.println(getContext().getStatistics().getDatabaseEngineAndInstance() + ": ("
+			//		+ readVertex + " + " + readEdge + ") * " + getContext().getStatistics().getAverageDegree(d));
+			
 			Double allNeighborsModel = MathUtils.product(oneEdgeTraversal, getContext().getStatistics().getAverageDegree(d));
 			if (allNeighborsModel != null) r.add(new Prediction(this, tag, "All Neighbors", allNeighborsModel));
 			

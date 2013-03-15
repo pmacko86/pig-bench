@@ -13,8 +13,8 @@ import com.sparsity.dex.gdb.EdgesDirection;
 import com.sparsity.dex.gdb.Graph;
 import com.tinkerpop.bench.analysis.AnalysisContext;
 import com.tinkerpop.bench.analysis.OperationModel;
+import com.tinkerpop.bench.analysis.OperationStats;
 import com.tinkerpop.bench.analysis.Prediction;
-import com.tinkerpop.bench.log.OperationLogEntry;
 import com.tinkerpop.bench.operation.Operation;
 import com.tinkerpop.bench.util.GraphUtils;
 import com.tinkerpop.bench.util.LongComparator;
@@ -139,22 +139,11 @@ public class OperationGetShortestPath extends Operation {
 				
 				// Hack
 				
-				List<OperationLogEntry> entries = getContext().getTailEntries("OperationGetShortestPath");
-				
-				if (entries != null) {
-					int getOpsCount = 0;
-					int count = 0;
-					
-					for (OperationLogEntry e : entries) {
-						String[] result = e.getResult().split(":");
-						getOpsCount += Integer.parseInt(result[2]);
-						count++;
-					}
-					
-					if (count > 0) {
-						r.add(new Prediction(this, tag, "Using GetAllNeighbors and results",
-								getAllNeighbors.doubleValue() * getOpsCount / (double) count));
-					}
+				OperationStats stats = getContext().getOperationStats("OperationGetShortestPath");
+				if (stats != null) {
+					double averageNumNeighborhoods = stats.getAverageResult(2);
+					r.add(new Prediction(this, tag, "Using GetAllNeighbors and results",
+							getAllNeighbors.doubleValue() * averageNumNeighborhoods));
 				}
 			}
 			

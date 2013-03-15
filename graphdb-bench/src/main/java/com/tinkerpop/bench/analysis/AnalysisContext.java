@@ -1,6 +1,12 @@
 package com.tinkerpop.bench.analysis;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InvalidClassException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,16 +32,9 @@ import com.tinkerpop.bench.web.JobList;
  */
 public class AnalysisContext {
 	
-	/*
-	 * Configuration
-	 */
-	
-	/// Whether to use robust linear fits
-	public static boolean useRobustFits = false;
-	
-	/// Whether to always use the detailed log files instead of the summary files
-	public static boolean alwaysUseDetailedLogs = false;
-	
+	/// The fraction of extreme values to drop by default
+	public static final double DROP_EXTREMES = 0.05;
+
 	
 	/*
 	 * Cache
@@ -73,11 +72,11 @@ public class AnalysisContext {
 	 * Caches
 	 */
 	
-	/// The map of average operation runtimes
-	HashMap<String, Double> averageOperationRuntimes;
-	
 	/// The map of operation models
 	HashMap<String, OperationModel> operationModels;
+	
+	/// The map of operation statistics
+	HashMap<String, OperationStats> operationStats;
 
 	
 	
@@ -91,8 +90,8 @@ public class AnalysisContext {
 		this.dbEI = dbEI;
 		this.numFinishedJobs = -1;
 		
-		this.averageOperationRuntimes = new HashMap<String, Double>();
 		this.operationModels = new HashMap<String, OperationModel>();
+		this.operationStats = new HashMap<String, OperationStats>();
 		
 		this.statistics = DatabaseInstanceStatisticsProvider.getStatisticsFor(dbEI);
 		
@@ -200,8 +199,8 @@ public class AnalysisContext {
 		 * Clear the appropriate caches
 		 */
 		
-		averageOperationRuntimes.clear();
 		operationModels.clear();
+		operationStats.clear();
 		
 		
 		/*
@@ -323,6 +322,78 @@ public class AnalysisContext {
 	
 	
 	/**
+	 * Get statistics for the given operation
+	 * 
+	 * @param operationName the operation name, including all tags
+	 * @return the statistics, or null if none
+	 */
+	public synchronized OperationStats getOperationStats(String operationName) {
+		
+		OperationStats cached = operationStats.get(operationName);
+		if (cached != null) return cached;
+		
+		
+		// Check the persistent cache
+		
+		SortedSet<Job> jobs = getJobsWithTag(operationName);
+		Job job = jobs == null ? null : jobs.last();
+		if (job == null) return null;
+	
+		File cacheFile = OperationLogReader.getCacheFile(job.getLogFile(), operationName, "stats",
+				"drop-extremes_" + ((int) (100 * DROP_EXTREMES)) + ".dat");
+		
+		if (cacheFile.exists()) {
+			OperationStats stats = null;
+
+			ObjectInputStream in = null;
+			try {
+				in = new ObjectInputStream(new FileInputStream(cacheFile));
+				stats = (OperationStats) in.readObject();
+				in.close();
+			}
+			catch (InvalidClassException e) {
+				stats = null;
+				try { if (in != null) in.close(); } catch (IOException ex) {};
+			}
+			catch (IOException e) {
+				try { if (in != null) in.close(); } catch (IOException ex) {};
+				throw new RuntimeException(e);
+			}
+			catch (ClassNotFoundException e) {
+				try { if (in != null) in.close(); } catch (IOException ex) {};
+				throw new RuntimeException(e);
+			}
+			
+			if (stats != null) {
+				operationStats.put(operationName, stats);
+				return stats;
+			}
+		}
+		
+		
+		// Compute the statistics
+		
+		OperationStats stats = new OperationStats(this, operationName, DROP_EXTREMES);
+		operationStats.put(operationName, stats);
+		
+		
+		// Store them in the persistent cache
+		
+		cacheFile.getParentFile().mkdirs();
+		try {
+			ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(cacheFile));
+			out.writeObject(stats);
+			out.close();
+		}
+		catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		
+		return stats;
+	}
+	
+	
+	/**
 	 * Get a runtime of an operation from the latest job, taking a simple average
 	 * if there is more than one within the job. If the operation is of the "Many"
 	 * type, then return the average runtime of the simpler operation that gets
@@ -360,64 +431,10 @@ public class AnalysisContext {
 	 * @param operationName the operation name including the tag
 	 * @return the runtime in ms, or null if not found
 	 */
-	public synchronized Double getAverageOperationRuntime(String operationName) {
+	public Double getAverageOperationRuntime(String operationName) {
 		
-		Double cached = averageOperationRuntimes.get(operationName);
-		if (cached != null) return cached;
-		
-		
-		// Initialize
-		
-		boolean many = AnalysisUtils.isManyOperation(operationName);
-		int opCountArg = !many ? -1 : AnalysisUtils.getManyOperationOpCountArgumentIndex(operationName);
-		
-		
-		// Find the correct job
-		
-		SortedSet<Job> operationJobs = operationWithTagsToJobs.get(operationName);
-		if (operationJobs == null || operationJobs.isEmpty()) return null;
-		Job job = operationJobs.last();
-		
-		
-		// Get the average operation run time
-		
-		if (alwaysUseDetailedLogs) {
-			
-	    	double time = 0; int count = 0;			
-			for (OperationLogEntry e : OperationLogReader.getTailEntries(job.getLogFile(), operationName)) {
-				
-				int c;
-				if (many) {
-					String s = e.getArgs()[opCountArg >= 0 ? opCountArg : e.getArgs().length + opCountArg];
-					int opCount = Integer.parseInt(s);
-					if (!s.equals("" + opCount)) throw new NumberFormatException(s);
-					c = opCount;
-				}
-				else {
-					c = 1;
-				}
-				
-				count += c;
-				time += e.getTime() / 1000000.0;
-			}
-			
-			if (count == 0) return null;
-			double r = time / count;
-			
-			averageOperationRuntimes.put(operationName, r);
-			return r;
-		}
-		else {
-			
-			SummaryLogEntry entry = SummaryLogReader.getEntryForOperation(job.getSummaryFile(), operationName);
-			if (entry == null) return null;
-			if (many) entry = AnalysisUtils.convertLogEntryForManyOperation(entry, job);
-			
-			double r = entry.getDefaultRunTimes().getMean() / 1000000.0;
-			
-			averageOperationRuntimes.put(operationName, r);
-			return r;
-		}
+		OperationStats stats = getOperationStats(operationName);
+		return stats == null ? null : stats.getAverageOperationRuntime();
 	}
 	
 	

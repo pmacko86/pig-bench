@@ -118,6 +118,199 @@
 			<%@ include file="include/selectjobs.jsp" %>
 
 			
+			
+			<!-- Models -->
+			<%								
+				TreeSet<DatabaseEngineAndInstance> selectedDatabaseInstances_sortedByInstance
+					= new TreeSet<DatabaseEngineAndInstance>(new DatabaseEngineAndInstance.ByInstance());
+				selectedDatabaseInstances_sortedByInstance.addAll(selectedDatabaseInstances);
+				
+				boolean sameDatabaseEngine = true;
+				DatabaseEngine lastEngine = null;
+				
+				for (DatabaseEngineAndInstance p : selectedDatabaseInstances) {
+					if (lastEngine == null) {
+						lastEngine = p.getEngine();
+					}
+					else {
+						if (lastEngine != p.getEngine()) {
+							sameDatabaseEngine = false;
+						}
+					}
+				}
+				
+				
+				/*
+				 * Create a map: nice operation name --> DBEI --> [runtime, predictions]
+				 */
+						
+				TreeMap<String, TreeMap<DatabaseEngineAndInstance, Pair<Double, List<Prediction>>>>
+					niceOpName_DBEI_RuntimeAndPrediction
+					= new TreeMap<String, TreeMap<DatabaseEngineAndInstance, Pair<Double, List<Prediction>>>>();
+				
+				
+				// Additional map: [nice operation name, DBEI] --> exception
+				
+				HashMap<Pair<String, DatabaseEngineAndInstance>, Exception>
+					niceOpNameAndDBEI_Exception = new HashMap<Pair<String, DatabaseEngineAndInstance>, Exception>();
+				
+				
+				// Additional map: nice operation type name --> { prediction names / descriptions }
+				
+				TreeMap<String, TreeSet<String>> niceOpTypeName_PredictionDescriptions
+					= new TreeMap<String, TreeSet<String>>();
+				
+				
+				// Additional map: nice operation type name --> selected prediction name / description
+				
+				HashMap<String, String> niceOpTypeName_SelectedPredictionDescription
+					= new HashMap<String, String>();
+				
+		
+				if (!selectedOperations.isEmpty()) {
+					%>	
+						<p class="middle">4) Select the appropriate models:</p>
+					<%
+					
+					
+					// Create a map: operation name --> DBEI --> job
+					
+					TreeMap<String, TreeMap<DatabaseEngineAndInstance, Job>> operationsToJobMaps
+						= new TreeMap<String, TreeMap<DatabaseEngineAndInstance, Job>>();
+					
+					for (String operationName : selectedOperations) {
+						TreeMap<DatabaseEngineAndInstance, Job> currentJobs = new TreeMap<DatabaseEngineAndInstance, Job>();
+						for (DatabaseEngineAndInstance p : selectedDatabaseInstances_sortedByInstance) {
+							SortedSet<Job> jobs = selectedDatabaseInstanceAndOperationToSelectedJobsMap.get(
+									new Pair<DatabaseEngineAndInstance, String>(p, operationName));
+							currentJobs.put(p, jobs.first());
+						}
+						operationsToJobMaps.put(operationName, currentJobs);
+					}
+					
+					
+					// Create a map: nice operation name --> DBEI --> [runtime, predictions]
+					
+					for (Map.Entry<String, TreeMap<DatabaseEngineAndInstance, Job>> map : operationsToJobMaps.entrySet()) {
+					
+						String operationName = map.getKey();
+						boolean many = AnalysisUtils.isManyOperation(operationName);
+						
+						String newOperationName = AnalysisUtils.convertNameOfManyOperation(operationName);
+						
+						String niceOperationName = newOperationName;
+						if (niceOperationName.startsWith("Operation")) {
+							niceOperationName = niceOperationName.substring(9);
+						}
+						
+						String niceOperationTypeName = niceOperationName;
+						if (niceOperationTypeName.contains("-")) {
+							niceOperationTypeName = niceOperationTypeName.substring(0, niceOperationTypeName.indexOf('-'));
+						}
+						
+						TreeMap<DatabaseEngineAndInstance, Pair<Double, List<Prediction>>>
+							DBEI_RuntimeAndPrediction
+							= new TreeMap<DatabaseEngineAndInstance, Pair<Double, List<Prediction>>>();
+						
+						niceOpName_DBEI_RuntimeAndPrediction.put(niceOperationName, DBEI_RuntimeAndPrediction);
+						
+						for (Map.Entry<DatabaseEngineAndInstance, Job> e : map.getValue().entrySet()) {
+							
+							Pair<Double, List<Prediction>> p = null;
+							
+							try {
+								AnalysisContext context = AnalysisContext.getInstance(e.getKey());
+								Job job = e.getValue();
+								
+								SummaryLogEntry entry = SummaryLogReader.getEntryForOperation(job.getSummaryFile(), operationName);
+								if (entry == null) {
+									DBEI_RuntimeAndPrediction.put(e.getKey(), new Pair<Double, List<Prediction>>(null, null));
+									continue;
+								}
+								if (many) entry = AnalysisUtils.convertLogEntryForManyOperation(entry, job);
+								
+								double runtime = entry.getDefaultRunTimes().getMean() / 1000000.0;
+								if (runtime <= 0) {
+									DBEI_RuntimeAndPrediction.put(e.getKey(), new Pair<Double, List<Prediction>>(null, null));
+									continue;
+								}
+								
+								OperationModel model = context.getModelFor(operationName);
+								List<Prediction> l = model == null ? null : model.predictFromName(operationName);
+								if (l != null && l.isEmpty()) l = null;
+								
+								p = new Pair<Double, List<Prediction>>(runtime, l);
+								DBEI_RuntimeAndPrediction.put(e.getKey(), p);
+								
+								if (l != null) {
+									TreeSet<String> pd = niceOpTypeName_PredictionDescriptions.get(niceOperationTypeName);
+									if (pd == null) {
+										pd = new TreeSet<String>();
+										niceOpTypeName_PredictionDescriptions.put(niceOperationTypeName, pd);
+									}
+									for (Prediction x : l) pd.add(x.getDescription());
+									
+									String selected = niceOpTypeName_SelectedPredictionDescription.get(niceOperationTypeName);
+									if (selected == null) {
+										selected = l.get(l.size() - 1).getDescription();
+										niceOpTypeName_SelectedPredictionDescription.put(niceOperationTypeName, selected);
+									}
+								}
+							}
+							catch (Exception exception) {
+								DBEI_RuntimeAndPrediction.put(e.getKey(), null);
+								niceOpNameAndDBEI_Exception.put(
+										new Pair<String, DatabaseEngineAndInstance>(niceOperationName, e.getKey()),
+										exception);
+							}
+						}
+					}
+					
+					
+					// Create a map: nice operation type name --> selected prediction name / description
+					
+					for (String niceOperationTypeName : niceOpTypeName_PredictionDescriptions.keySet()) {
+						String[] params = WebUtils.getStringParameterValues(request, niceOperationTypeName);
+						if (params != null) {
+							if (niceOpTypeName_PredictionDescriptions.get(niceOperationTypeName).contains(params[0])) {
+								niceOpTypeName_SelectedPredictionDescription.put(niceOperationTypeName, params[0]);
+							}
+						}
+					}
+					
+					
+					// Show the selection UI
+					
+					for (String niceOperationTypeName : niceOpTypeName_PredictionDescriptions.keySet()) {
+						%>
+							<label class="lesser_no_sub">
+								<%= niceOperationTypeName %>
+							</label>
+							<select name="<%= niceOperationTypeName %>" id="<%= niceOperationTypeName %>"
+									onchange="form_submit();" class="tight">
+						<%
+						
+						int index = 0;
+						for (String prediction : niceOpTypeName_PredictionDescriptions.get(niceOperationTypeName)) {
+							index++;
+							
+							String extraTags = "";
+							if (niceOpTypeName_SelectedPredictionDescription.get(niceOperationTypeName).equals(prediction)) {
+								extraTags += " selected=\"selected\"";
+							}
+							
+							%>
+								<option value="<%= StringEscapeUtils.escapeHtml(prediction) %>"<%= extraTags %>><%= prediction %></option>
+							<%
+						}
+						%>
+							</select>
+						<%
+					}
+				}
+			%>
+
+			
 			<input type="hidden" name="refreshed" id="refreshed" value="no" />
 
 			<div class="spacer"></div>
@@ -126,37 +319,11 @@
 		
 	<div class="basic_form">
 		<%		
-			TreeSet<DatabaseEngineAndInstance> selectedDatabaseInstances_sortedByInstance
-				= new TreeSet<DatabaseEngineAndInstance>(new DatabaseEngineAndInstance.ByInstance());
-			selectedDatabaseInstances_sortedByInstance.addAll(selectedDatabaseInstances);
-			
-			boolean sameDatabaseEngine = true;
-			DatabaseEngine lastEngine = null;
-			
-			for (DatabaseEngineAndInstance p : selectedDatabaseInstances) {
-				if (lastEngine == null) {
-					lastEngine = p.getEngine();
-				}
-				else {
-					if (lastEngine != p.getEngine()) {
-						sameDatabaseEngine = false;
-					}
-				}
-			}
 		
 			if (selectedOperations.size() > 0) {
 				
-				TreeMap<String, TreeMap<DatabaseEngineAndInstance, Job>> operationsToJobMaps
-					= new TreeMap<String, TreeMap<DatabaseEngineAndInstance, Job>>();
-				for (String operationName : selectedOperations) {
-					TreeMap<DatabaseEngineAndInstance, Job> currentJobs = new TreeMap<DatabaseEngineAndInstance, Job>();
-					for (DatabaseEngineAndInstance p : selectedDatabaseInstances_sortedByInstance) {
-						SortedSet<Job> jobs = selectedDatabaseInstanceAndOperationToSelectedJobsMap.get(
-								new Pair<DatabaseEngineAndInstance, String>(p, operationName));
-						currentJobs.put(p, jobs.first());
-					}
-					operationsToJobMaps.put(operationName, currentJobs);
-				}
+				
+				// Create a map: operations
 				
 				%>
 					<h2>Summary</h2>
@@ -176,16 +343,14 @@
 						</tr>
 						<%
 						
-						for (Map.Entry<String, TreeMap<DatabaseEngineAndInstance, Job>> map : operationsToJobMaps.entrySet()) {
+						for (Map.Entry<String, TreeMap<DatabaseEngineAndInstance, Pair<Double, List<Prediction>>>> map
+								: niceOpName_DBEI_RuntimeAndPrediction.entrySet()) {
 						
-							String operationName = map.getKey();
-							boolean many = AnalysisUtils.isManyOperation(operationName);
+							String niceOperationName = map.getKey();
 							
-							String newOperationName = AnalysisUtils.convertNameOfManyOperation(operationName);
-							
-							String niceOperationName = newOperationName;
-							if (niceOperationName.startsWith("Operation")) {
-								niceOperationName = niceOperationName.substring(9);
+							String niceOperationTypeName = niceOperationName;
+							if (niceOperationTypeName.contains("-")) {
+								niceOperationTypeName = niceOperationTypeName.substring(0, niceOperationTypeName.indexOf('-'));
 							}
 							
 							%>
@@ -193,83 +358,104 @@
 									<td><%= niceOperationName %></td>
 							<%
 							
-							for (Map.Entry<DatabaseEngineAndInstance, Job> e : map.getValue().entrySet()) {
+							for (Map.Entry<DatabaseEngineAndInstance, Pair<Double, List<Prediction>>> e : map.getValue().entrySet()) {
 								
-								try {
-									AnalysisContext context = AnalysisContext.getInstance(e.getKey());
-									Job job = e.getValue();
-									
-									SummaryLogEntry entry = SummaryLogReader.getEntryForOperation(job.getSummaryFile(), operationName);
-									if (entry == null) {
+								Pair<Double, List<Prediction>> p = e.getValue();
+								
+								if (p == null) {
+									Exception exception = niceOpNameAndDBEI_Exception.get(
+											new Pair<String, DatabaseEngineAndInstance>(niceOperationName, e.getKey()));
+									if (exception == null) {
 										%>
-											<td class="na_right">&mdash;</td>
+											<td class="na_right">ERROR</td>
 										<%
-										continue;
-									}
-									if (many) entry = AnalysisUtils.convertLogEntryForManyOperation(entry, job);
-									
-									double runtime = entry.getDefaultRunTimes().getMean() / 1000000.0;
-									if (runtime <= 0) {
-										%>
-											<td class="na_right">&mdash;</td>
-										<%
-										continue;
-									}
-									
-									OperationModel model = context.getModelFor(operationName);
-									List<Prediction> l = model == null ? null : model.predictFromName(operationName);
-									if (l == null || l.isEmpty()) {
-										%>
-											<td class="numeric"><%= String.format("%.3f", runtime) %> ms</td>
-										<%
-										continue;
-									}
-									
-									// Get the last prediction
-									Prediction prediction = l.get(l.size() - 1);
-									double predictedRuntime = prediction.getPredictedAverageRuntime();
-									if (predictedRuntime <= 0) {
-										%>
-											<td class="na_right">INV_PREDICTION</td>
-										<%
-										continue;
-									}
-									
-									double score = predictedRuntime / runtime;
-									
-									double x;
-									double tooBigCutoff = 5;
-									if (score <= 1) {
-										x = score * score * score;
-									}
-									else if (score <= tooBigCutoff) {
-										x = 1 + (score - 1) * (score - 1) * (score - 1);
 									}
 									else {
-										x = (0.65 / 0.35) + (score - tooBigCutoff);
+										%>
+											<td class="na_right"><%= exception.getClass().getSimpleName() %></td>
+										<%
+										//exception.printStackTrace();
 									}
-									
-									double H = Math.min(x * 0.35, score <= tooBigCutoff ? 0.65 : 0.8);
-									double S = 1.0;
-									double B = 0.85;
-									
-									Color color = Color.getHSBColor((float)H, (float)S, (float)B);
-									String strColor = "rgb(" + color.getRed() + "," + color.getGreen() + "," + color.getBlue() + ")";
-									String tooltip = "Runtime: " + String.format("%.3f", runtime) + " ms\n";
-									tooltip += "Predicted: " + String.format("%.3f", predictedRuntime) + " ms";
-									
-									%>
-										<td class="numeric" style="background: <%= strColor %>; color: white"
-											title="<%= tooltip %>">
-											<%= Math.round(score * 100) %>%
-										</td>
-									<%
+									continue;
 								}
-								catch (Exception exception) {
+								
+								if (p.getFirst() == null) {
 									%>
-										<td class="na_right">ERROR</td>
+										<td class="na_right">&mdash;</td>
 									<%
+									continue;
 								}
+								
+								double runtime = p.getFirst().doubleValue();
+								List<Prediction> l = p.getSecond();
+								if (l == null || l.isEmpty()) {
+									%>
+										<td class="numeric"><%= String.format("%.3f", runtime) %> ms</td>
+									<%
+									continue;
+								}
+								
+								
+								// Get selected last prediction
+								
+								String selectedPrediction = niceOpTypeName_SelectedPredictionDescription.get(niceOperationTypeName);
+								Prediction prediction = null;
+								
+								for (Prediction pr : l) {
+									if (pr.getDescription().equals(selectedPrediction)) {
+										prediction = pr;
+										break;
+									}
+								}
+								
+								if (prediction == null) {
+									%>
+										<td class="na_right">N/A</td>
+									<%
+									continue;
+								}
+								
+								
+								// Get the predicted value and the efficiency score
+								
+								double predictedRuntime = prediction.getPredictedAverageRuntime();
+								if (predictedRuntime <= 0) {
+									%>
+										<td class="na_right">INV_PREDICTION</td>
+									<%
+									continue;
+								}
+								
+								double score = predictedRuntime / runtime;
+								
+								double x;
+								double tooBigCutoff = 5;
+								if (score <= 1) {
+									x = score * score * score;
+								}
+								else if (score <= tooBigCutoff) {
+									x = 1 + (score - 1) * (score - 1) * (score - 1);
+								}
+								else {
+									x = (0.65 / 0.35) + (score - tooBigCutoff);
+								}
+								
+								double H = Math.min(x * 0.35, score <= tooBigCutoff ? 0.65 : 0.8);
+								double S = 1.0;
+								double B = 0.85;
+								
+								Color color = Color.getHSBColor((float)H, (float)S, (float)B);
+								String strColor = "rgb(" + color.getRed() + "," + color.getGreen() + "," + color.getBlue() + ")";
+								String tooltip = "Runtime: " + String.format("%.3f", runtime) + " ms\n";
+								tooltip += "Predicted: " + String.format("%.3f", predictedRuntime) + " ms\n";
+								tooltip += "\nModel: " + prediction.getDescription() + "\n";
+								
+								%>
+									<td class="numeric" style="background: <%= strColor %>; color: white"
+										title="<%= tooltip %>">
+										<%= Math.round(score * 100) %>%
+									</td>
+								<%
 							}
 							
 							%>

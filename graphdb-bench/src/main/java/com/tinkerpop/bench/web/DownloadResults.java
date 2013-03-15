@@ -48,7 +48,7 @@ public class DownloadResults extends HttpServlet {
     {
 		String directories = "";
 		String grep = "| grep -v /db | grep -v /warmup | grep -v /org | grep -v /bad "
-				+ "| grep -v /wait | grep -v /backup | grep -v /" + OperationLogReader.TAIL_CACHE_DIR;
+				+ "| grep -v /wait | grep -v /backup | grep -v /" + OperationLogReader.CACHE_DIR;
 		String command;
 		
 		

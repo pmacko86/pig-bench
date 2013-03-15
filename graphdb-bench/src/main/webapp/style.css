@@ -306,6 +306,12 @@ button {
 	font-weight:normal;
 }
 
+.stylized_form label.lesser_no_sub {
+	font-weight:normal;
+	vertical-align: middle;
+	line-height: 30px;
+}
+
 .stylized_form label.checkbox {
 	display:inline;
 	font-weight:normal;
@@ -345,6 +351,10 @@ button {
 	border:solid 1px #aacfe4;
 	width:100%;
 	margin:2px -500px 20px 10px;
+}
+
+.stylized_form input.tight, .stylized_form select.tight {
+	margin-bottom: 0px;
 }
 
 .stylized_form input.checkbox {
