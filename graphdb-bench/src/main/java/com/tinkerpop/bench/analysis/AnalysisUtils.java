@@ -118,8 +118,10 @@ public class AnalysisUtils {
 				Math.round(entry.getTime() / (double) opCount),
 				entry.getResult(),
 				entry.getMemory(),
-				Math.round(Math.ceil(entry.getGCCount () / (double) opCount)),
-				Math.round(Math.ceil(entry.getGCTimeMS() / (double) opCount))
+				(int) Math.round(Math.ceil(entry.getGCCount  () / (double) opCount)),
+				(int) Math.round(Math.ceil(entry.getGCTimeMS () / (double) opCount)),
+				entry.getKbRead   () < 0 ? -1 : (int) Math.round(Math.ceil(entry.getKbRead   () / (double) opCount)),
+				entry.getKbWritten() < 0 ? -1 : (int) Math.round(Math.ceil(entry.getKbWritten() / (double) opCount))
 				);
 	}
 	

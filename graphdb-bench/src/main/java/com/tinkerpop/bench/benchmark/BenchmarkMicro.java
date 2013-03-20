@@ -116,6 +116,7 @@ public class BenchmarkMicro extends Benchmark {
 		System.err.println("  --dir DIR               Set the database and results directory");
 		System.err.println("  --dumb-terminal         Use the dumb terminal settings");
 		System.err.println("  --help                  Print this help message");
+		System.err.println("  --iostat                Capture the I/O statistics");
 		System.err.println("  --log-warmup            Log the warmup phase of the benchmark");
 		System.err.println("  --no-cache-pollution    Disable cache pollution before benchmarks");
 		System.err.println("  --no-color              Disable color output to the terminal");
@@ -224,6 +225,7 @@ public class BenchmarkMicro extends Benchmark {
 		parser.accepts("dir").withRequiredArg().ofType(String.class);
 		parser.accepts("dumb-terminal");
 		parser.accepts("help");
+		parser.accepts("iostat");
 		parser.accepts("keep-temp-copy");
 		parser.accepts("log-warmup");
 		parser.accepts("neo-caches").withRequiredArg().ofType(String.class);
@@ -361,6 +363,11 @@ public class BenchmarkMicro extends Benchmark {
 		String warmupIngestFile = ingestFile;
 		if (options.has("warmup-ingest")) {
 			warmupIngestFile = options.valueOf("warmup-ingest").toString();
+		}
+		
+		boolean iostat = false;
+		if (options.has("iostat")) {
+			iostat = true;
 		}
 		
 		boolean ingestAsUndirected = false;
@@ -1050,6 +1057,9 @@ public class BenchmarkMicro extends Benchmark {
 				graphmlFiles, graphGenerators, options, opCount, kHops,
 				ingestAsUndirected, edgePropertyForConditionalTraversal);
 		
+		warmupBenchmark.setCapturingIostat(iostat);
+		benchmark.setCapturingIostat(iostat);
+		
 		
 		/*
 		 * Build the argument string to be used as a part of the log file name
@@ -1133,7 +1143,7 @@ public class BenchmarkMicro extends Benchmark {
 			}
 			
 			try {
-				graphDescriptor = new GraphDescriptor(dbEngine, dbDir, dbConfig);
+				graphDescriptor = new GraphDescriptor(dbEngine, new File(dbDir), dbConfig);
 				Graph g = graphDescriptor.openGraph(GraphDescriptor.OpenMode.DEFAULT);
 				GraphUtils.printGraphML(out, g, false);
 				graphDescriptor.shutdownGraph();
@@ -1151,7 +1161,7 @@ public class BenchmarkMicro extends Benchmark {
 			
 			try {
 				File f = new File(file);
-				graphDescriptor = new GraphDescriptor(dbEngine, dbDir, dbConfig);
+				graphDescriptor = new GraphDescriptor(dbEngine, new File(dbDir), dbConfig);
 				Graph g = graphDescriptor.openGraph(GraphDescriptor.OpenMode.DEFAULT);
 				FGFGraphWriter.outputGraph(g, f);
 				graphDescriptor.shutdownGraph();
@@ -1169,9 +1179,9 @@ public class BenchmarkMicro extends Benchmark {
 			boolean warmupStat = options.has("warmup-stat");
 			
 			if (warmupStat)
-				graphDescriptor = new GraphDescriptor(dbEngine, warmupDbDir, warmupDbConfig);
+				graphDescriptor = new GraphDescriptor(dbEngine, new File(warmupDbDir), warmupDbConfig);
 			else
-				graphDescriptor = new GraphDescriptor(dbEngine, dbDir, dbConfig);
+				graphDescriptor = new GraphDescriptor(dbEngine, new File(dbDir), dbConfig);
 			Graph g = graphDescriptor.openGraph(GraphDescriptor.OpenMode.DEFAULT);
 			
 			ConsoleUtils.sectionHeader((warmupStat ? "Warmup " : "") + "Database Statistics");
@@ -1229,7 +1239,7 @@ public class BenchmarkMicro extends Benchmark {
 			
 			String dir = options.valueOf("export-dex-csv").toString();
 			
-			graphDescriptor = new GraphDescriptor(dbEngine, dbDir, dbConfig);
+			graphDescriptor = new GraphDescriptor(dbEngine, new File(dbDir), dbConfig);
 			Graph g = graphDescriptor.openGraph(GraphDescriptor.OpenMode.DEFAULT);
 			
 			if (!(g instanceof ExtendedDexGraph)) {
@@ -1252,7 +1262,7 @@ public class BenchmarkMicro extends Benchmark {
 			
 			String dir = options.valueOf("ingest-dex-csv").toString();
 			
-			graphDescriptor = new GraphDescriptor(dbEngine, dbDir, dbConfig);
+			graphDescriptor = new GraphDescriptor(dbEngine, new File(dbDir), dbConfig);
 			Graph g = graphDescriptor.openGraph(GraphDescriptor.OpenMode.BULKLOAD);
 			
 			if (!(g instanceof ExtendedDexGraph)) {
@@ -1574,7 +1584,7 @@ public class BenchmarkMicro extends Benchmark {
 				System.out.println("done [" + OutputUtils.formatTimeMS(t) + "]");
 			}
 			
-			graphDescriptor = new GraphDescriptor(dbEngine, warmupDbDir, warmupDbConfig);
+			graphDescriptor = new GraphDescriptor(dbEngine, new File(warmupDbDir), warmupDbConfig);
 			
 			try {
 				if (!skipWorkloads) {
@@ -1635,7 +1645,7 @@ public class BenchmarkMicro extends Benchmark {
 			System.out.println("done [" + OutputUtils.formatTimeMS(t) + "]");
 		}
 		
-		graphDescriptor = new GraphDescriptor(dbEngine, dbDir, dbConfig);
+		graphDescriptor = new GraphDescriptor(dbEngine, new File(dbDir), dbConfig);
 		
 		BenchResults results = null;
 		try {

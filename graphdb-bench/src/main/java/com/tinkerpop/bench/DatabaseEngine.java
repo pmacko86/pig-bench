@@ -273,8 +273,8 @@ public abstract class DatabaseEngine implements Comparable<DatabaseEngine> {
 		
 		if (CPL.isAttached()) {
 			
-			GraphDescriptor srcGD = new GraphDescriptor(this, dbSourceDir, configuration); 
-			GraphDescriptor dstGD = new GraphDescriptor(this, dbTargetDir, configuration, true);
+			GraphDescriptor srcGD = new GraphDescriptor(this,  srcDir, configuration); 
+			GraphDescriptor dstGD = new GraphDescriptor(this, destDir, configuration, true);
 			
 			dstGD.getCPLObject().dataFlowFrom(srcGD.getCPLObject(), CPLObject.DATA_COPY);
 		}
@@ -326,14 +326,13 @@ public abstract class DatabaseEngine implements Comparable<DatabaseEngine> {
 	 * @param configuration the map of database-specific configuration arguments
 	 * @throws IOException on I/O error
 	 */
-	public void bringToBufferCache(String dbDir, Map<String, String> configuration) throws IOException {
+	public void bringToBufferCache(File dbDir, Map<String, String> configuration) throws IOException {
 		
 		if (!isPersistent()) throw new UnsupportedOperationException();
 		
-		File dir = new File(dbDir);
-		if (dir.exists()) {
+		if (dbDir.exists()) {
 			byte[] buffer = new byte[16 * 1048576];
-			readAllFiles(dir, buffer);
+			readAllFiles(dbDir, buffer);
 		}
 	}
 	
@@ -493,7 +492,7 @@ public abstract class DatabaseEngine implements Comparable<DatabaseEngine> {
 		 * @throws IOException on I/O error
 		 */
 		@Override
-		public void bringToBufferCache(String dbDir, Map<String, String> configuration) throws IOException {
+		public void bringToBufferCache(File dbDir, Map<String, String> configuration) throws IOException {
 			// Nothing to do - need to figure out something better
 		}
 	}

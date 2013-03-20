@@ -15,6 +15,7 @@ import com.tinkerpop.bench.operationFactory.OperationFactory;
 public abstract class Benchmark {
 	
 	private boolean actualRun;
+	private boolean captureIostat = false;
 
 	
 	/**
@@ -34,6 +35,26 @@ public abstract class Benchmark {
 	 */
 	public boolean isActualRun() {
 		return actualRun;
+	}
+	
+	
+	/**
+	 * Set whether to capture the iostat
+	 * 
+	 * @param capture true to capture iostat
+	 */
+	public void setCapturingIostat(boolean capture) {
+		captureIostat = capture;
+	}
+	
+	
+	/**
+	 * Return whether to capture the iostat
+	 * 
+	 * @return true to capture iostat
+	 */
+	public boolean isCapturingIostat() {
+		return captureIostat;
 	}
 
 	

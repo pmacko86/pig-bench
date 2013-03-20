@@ -117,7 +117,6 @@ public class BenchRunner {
 	protected void openGraph() throws Exception {
 		
 		Operation openOperation = openFactory.next();
-		openOperation.setLogWriter(logWriter);
 		openOperation.initialize(graphDescriptor);
 		openOperation.execute();
 		logWriter.logOperation(openOperation);
@@ -132,14 +131,12 @@ public class BenchRunner {
 	protected void closeGraph() throws Exception {
 		
 		Operation shutdownOperation = shutdownFactory.next();
-		shutdownOperation.setLogWriter(logWriter);
 		shutdownOperation.initialize(graphDescriptor);
 		shutdownOperation.execute();
 		logWriter.logOperation(shutdownOperation);
 
 		// Try to Garbage Collect
 		Operation gcOperation = gcFactory.next();
-		gcOperation.setLogWriter(logWriter);
 		gcOperation.initialize(graphDescriptor);
 		gcOperation.execute();
 		logWriter.logOperation(gcOperation);
@@ -164,9 +161,9 @@ public class BenchRunner {
 		
 		try {
 			
-			openFactory.initialize(graphDescriptor, operationId);
-			shutdownFactory.initialize(graphDescriptor, operationId);
-			gcFactory.initialize(graphDescriptor, operationId);
+			openFactory.initialize(graphDescriptor, operationId, benchmark);
+			shutdownFactory.initialize(graphDescriptor, operationId, benchmark);
+			gcFactory.initialize(graphDescriptor, operationId, benchmark);
 			
 			
 			// Open the graph
@@ -187,6 +184,9 @@ public class BenchRunner {
 			for (int i = 0; i < numThreads; i++) {
 				
 				Collection<OperationFactory> factories = benchmark.createOperationFactories();
+				for (OperationFactory f : factories) {
+					f.setLogWriter(logWriter);
+				}
 				if (i == 0) {
 					numFactories = factories.size();
 				}
@@ -625,7 +625,6 @@ public class BenchRunner {
 			if (!(currentFactory instanceof OperationFactoryLog)) {
 				try {
 					Operation gcOperation = gcFactory.next();
-					gcOperation.setLogWriter(logWriter);
 					gcOperation.initialize(graphDescriptor);
 					gcOperation.execute();
 					logWriter.logOperation(gcOperation);
@@ -695,7 +694,7 @@ public class BenchRunner {
 			
 			// Initialize the operation factory and instantiate the operations
 
-			factory.initialize(graphDescriptor, operationId);
+			factory.initialize(graphDescriptor, operationId, benchmark);
 			for (Operation operation : factory) {
 				if (operation == null) continue;
 				operations.add(operation);
@@ -709,7 +708,6 @@ public class BenchRunner {
 			// Initialize all operations
 			
 			for (Operation operation : operations) {
-				operation.setLogWriter(logWriter);
 				operation.initialize(graphDescriptor);
 			}
 			initialized = true;

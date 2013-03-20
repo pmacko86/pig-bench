@@ -4,7 +4,7 @@ import java.io.Serializable;
 
 public class OperationLogEntry implements Serializable {
 
-	private static final long serialVersionUID = 5560227280010464454L;
+	private static final long serialVersionUID = -5592620775382822208L;
 	
 	private int opId = -1;
 	private String name = null;
@@ -14,11 +14,14 @@ public class OperationLogEntry implements Serializable {
 	private long time = -1;
 	private String result = null;
 	private long memory = -1;
-	private long gcCount = -1;
-	private long gcTimeMS = -1;
+	private int gcCount = -1;
+	private int gcTimeMS = -1;
+	private int kbRead = -1;
+	private int kbWritten = -1;
 
 	public OperationLogEntry(int opId, String name, String type, String args,
-			long time, String result, long memory, long gcCount, long gcTimeMS)  {
+			long time, String result, long memory, int gcCount, int gcTimeMS,
+			int kbRead, int kbWritten)  {
 		this.opId = opId;
 		this.name = name;
 		this.type = type;
@@ -28,6 +31,8 @@ public class OperationLogEntry implements Serializable {
 		this.memory = memory;
 		this.gcCount = gcCount;
 		this.gcTimeMS = gcTimeMS;
+		this.kbRead = kbRead;
+		this.kbWritten = kbWritten;
 	}
 
 	public int getOpId() {
@@ -64,12 +69,20 @@ public class OperationLogEntry implements Serializable {
 		return memory;
 	}
 
-	public long getGCCount() {
+	public int getGCCount() {
 		return gcCount;
 	}
 
-	public long getGCTimeMS() {
+	public int getGCTimeMS() {
 		return gcTimeMS;
+	}
+
+	public int getKbRead() {
+		return kbRead;
+	}
+
+	public int getKbWritten() {
+		return kbWritten;
 	}
 
 	private static String[] extractArgs(String argsStr) {

@@ -66,7 +66,7 @@ public class FileUtils {
 		}
 
 		
-			
+		
 		// Get the size of the files
 		
 		long[] sizes = new long[files.length];

@@ -149,7 +149,7 @@ public class OperationPageRank extends Operation {
 		
 		if (outputDetailedStatistics) {
 			assert getAllNeighborsCount == getAllNeighborsRuntimes.length;
-			File logFile = getLogWriter().getLogFile();
+			File logFile = getFactory().getLogWriter().getLogFile();
 			if (logFile == null) {
 				ConsoleUtils.warn("Logging is disabled, so operation statistics will not be written out either");
 			}

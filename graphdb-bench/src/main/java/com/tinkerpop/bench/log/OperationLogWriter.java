@@ -19,7 +19,8 @@ import edu.harvard.pass.cpl.CPLObject;
 
 public class OperationLogWriter {
 	
-	public static final String[] HEADERS = { "id", "name", "type", "args", "time", "result", "memory", "gccount", "gctime" };
+	public static final String[] HEADERS = { "id", "name", "type", "args", "time", "result", "memory",
+		"gccount", "gctime", "kbread", "kbwritten" };
 	private static final char LOG_DELIM = LogUtils.LOG_DELIMITER.charAt(0);
 	
 	
@@ -82,15 +83,17 @@ public class OperationLogWriter {
 		
 		if (writer != null) {
 			
-			buffer[0] = Integer.toString(op.getId());
-			buffer[1] = op.getName();
-			buffer[2] = op.getType();
-			buffer[3] = Arrays.toString(op.getArgs());
-			buffer[4] = Long.toString(op.getTime());
-			buffer[5] = op.getResult() == null ? "null" : op.getResult().toString();
-			buffer[6] = Long.toString(op.getMemory());
-			buffer[7] = Long.toString(op.getGCCount());
-			buffer[8] = Long.toString(op.getGCTimeMS());
+			buffer[ 0] = Integer.toString(op.getId());
+			buffer[ 1] = op.getName();
+			buffer[ 2] = op.getType();
+			buffer[ 3] = Arrays.toString(op.getArgs());
+			buffer[ 4] = Long.toString(op.getTime());
+			buffer[ 5] = op.getResult() == null ? "null" : op.getResult().toString();
+			buffer[ 6] = Long.toString(op.getMemory());
+			buffer[ 7] = Long.toString(op.getGCCount());
+			buffer[ 8] = Long.toString(op.getGCTimeMS());
+			buffer[ 9] = Integer.toString(op.getKbRead());
+			buffer[10] = Integer.toString(op.getKbWritten());
 			
 			writer.writeNext(buffer);
 		}
@@ -119,15 +122,17 @@ public class OperationLogWriter {
 		
 		if (writer != null) {
 			
-			buffer[0] = Integer.toString(entry.getOpId());
-			buffer[1] = entry.getName();
-			buffer[2] = entry.getType();
-			buffer[3] = Arrays.toString(entry.getArgs());
-			buffer[4] = Long.toString(entry.getTime());
-			buffer[5] = entry.getResult() == null ? "null" : entry.getResult().toString();
-			buffer[6] = Long.toString(entry.getMemory());
-			buffer[7] = Long.toString(entry.getGCCount());
-			buffer[8] = Long.toString(entry.getGCTimeMS());
+			buffer[ 0] = Integer.toString(entry.getOpId());
+			buffer[ 1] = entry.getName();
+			buffer[ 2] = entry.getType();
+			buffer[ 3] = Arrays.toString(entry.getArgs());
+			buffer[ 4] = Long.toString(entry.getTime());
+			buffer[ 5] = entry.getResult() == null ? "null" : entry.getResult().toString();
+			buffer[ 6] = Long.toString(entry.getMemory());
+			buffer[ 7] = Long.toString(entry.getGCCount());
+			buffer[ 8] = Long.toString(entry.getGCTimeMS());
+			buffer[ 9] = Integer.toString(entry.getKbRead());
+			buffer[10] = Integer.toString(entry.getKbWritten());
 			
 			writer.writeNext(buffer);
 		}

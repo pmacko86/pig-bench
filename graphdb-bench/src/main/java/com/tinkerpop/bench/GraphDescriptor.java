@@ -1,9 +1,13 @@
 package com.tinkerpop.bench;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 import com.tinkerpop.bench.util.FileUtils;
+import com.tinkerpop.bench.util.MountInfo;
+import com.tinkerpop.bench.util.MountInfo.MountInfoRecord;
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.extensions.BenchmarkableGraph;
 import com.tinkerpop.blueprints.extensions.impls.sql.SqlGraph;
@@ -25,7 +29,8 @@ public class GraphDescriptor {
 
 	private DatabaseEngine graphEngine = null;
 	private Class<? extends Graph> graphType = null;
-	private String graphDir = null;
+	private File graphDir = null;
+	private MountInfoRecord graphDirMountPoint = null;
 	private Map<String, String> configuration = new HashMap<String, String>();
 	private Graph graph = null;
 	private ThreadLocal<Graph> threadLocalGraphs = new ThreadLocal<Graph>();
@@ -38,14 +43,20 @@ public class GraphDescriptor {
 		this(graphEngine, null, null, false);
 	}
 
-	public GraphDescriptor(DatabaseEngine graphEngine, String graphDir, Map<String, String> configuration) {
+	public GraphDescriptor(DatabaseEngine graphEngine, File graphDir, Map<String, String> configuration) {
 		this(graphEngine, graphDir, configuration, false);
 	}
 
-	public GraphDescriptor(DatabaseEngine graphEngine, String graphDir, Map<String, String> configuration, boolean isNew) {
+	public GraphDescriptor(DatabaseEngine graphEngine, File graphDir, Map<String, String> configuration, boolean isNew) {
 		this.graphEngine = graphEngine;
 		this.graphType = graphEngine.getBlueprintsClass();
 		this.graphDir = graphDir;
+		try {
+			this.graphDirMountPoint = graphDir == null ? null : MountInfo.run().getRecordForFile(graphDir);
+		}
+		catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 		this.configuration.putAll(configuration);
 		
 		if (CPL.isAttached()) {
@@ -79,8 +90,12 @@ public class GraphDescriptor {
 		return cplObject;
 	}
 	
-	public String getDirectory() {
+	public File getDirectory() {
 		return graphDir;
+	}
+	
+	public MountInfoRecord getMountPoint() {
+		return graphDirMountPoint;
 	}
 	
 	public Map<String, String> getConfiguration() {
@@ -107,8 +122,8 @@ public class GraphDescriptor {
 		// Create a new instance of the graph
 		
 		switch (mode) {
-		case DEFAULT : g = graphEngine.newInstance(graphDir, configuration); break;
-		case BULKLOAD: g = graphEngine.newInstanceForBulkload(graphDir, configuration); break;
+		case DEFAULT : g = graphEngine.newInstance(graphDir.getAbsolutePath(), configuration); break;
+		case BULKLOAD: g = graphEngine.newInstanceForBulkload(graphDir.getAbsolutePath(), configuration); break;
 		default      : throw new IllegalArgumentException("Invalid graph open mode");
 		}
 		
@@ -216,7 +231,7 @@ public class GraphDescriptor {
 	
 	private void initializeCPLObject() {
 		cplObject.addProperty("CLASS", "" + graphType);
-		if (graphDir != null) cplObject.addProperty("DIR", graphDir);
+		if (graphDir != null) cplObject.addProperty("DIR", graphDir.getAbsolutePath());
 		for (Map.Entry<String, String> e : configuration.entrySet()) {
 			cplObject.addProperty(e.getKey(), e.getValue());
 		}

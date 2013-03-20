@@ -149,17 +149,21 @@ public class ShowLogFile extends HttpServlet {
 	        w.writeNext(OperationLogWriter.HEADERS);
 	        
 	        String[] buffer = new String[OperationLogWriter.HEADERS.length];
+	        assert OperationLogWriter.HEADERS.length == 11;
+	        
 			for (OperationLogEntry e : reader) {
 				
-				buffer[0] = Integer.toString(e.getOpId());
-				buffer[1] = e.getName();
-				buffer[2] = e.getType();
-				buffer[3] = Arrays.toString(e.getArgs());
-				buffer[4] = Long.toString(e.getTime());
-				buffer[5] = e.getResult().toString();
-				buffer[6] = Long.toString(e.getMemory());
-				buffer[7] = Long.toString(e.getGCCount());
-				buffer[8] = Long.toString(e.getGCTimeMS());
+				buffer[ 0] = Integer.toString(e.getOpId());
+				buffer[ 1] = e.getName();
+				buffer[ 2] = e.getType();
+				buffer[ 3] = Arrays.toString(e.getArgs());
+				buffer[ 4] = Long.toString(e.getTime());
+				buffer[ 5] = e.getResult().toString();
+				buffer[ 6] = Long.toString(e.getMemory());
+				buffer[ 7] = Long.toString(e.getGCCount());
+				buffer[ 8] = Long.toString(e.getGCTimeMS());
+				buffer[ 9] = Integer.toString(e.getKbRead());
+				buffer[10] = Integer.toString(e.getKbWritten());
 				
 				w.writeNext(buffer);
 			}

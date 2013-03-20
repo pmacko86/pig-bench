@@ -7,7 +7,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import com.tinkerpop.bench.DatabaseEngine;
 import com.tinkerpop.bench.GlobalConfig;
 import com.tinkerpop.bench.GraphDescriptor;
+import com.tinkerpop.bench.benchmark.Benchmark;
 import com.tinkerpop.bench.log.OperationLogEntry;
+import com.tinkerpop.bench.log.OperationLogWriter;
 import com.tinkerpop.bench.operation.Operation;
 import com.tinkerpop.bench.operation.OperationDoGC;
 import com.tinkerpop.bench.operation.OperationOpenGraph;
@@ -26,6 +28,9 @@ import edu.harvard.pass.cpl.CPLObject;
 public abstract class OperationFactory implements Iterator<Operation>,
 		Iterable<Operation> {
 	
+	/// The benchmark
+	private Benchmark benchmark = null;
+	
 	/// The graph descriptor
 	private GraphDescriptor graphDescriptor = null;
 	
@@ -38,6 +43,9 @@ public abstract class OperationFactory implements Iterator<Operation>,
 	/// The CPL object to be shared among multiple operations produced by this factory
 	private CPLObject sharedOperationCPLObject = null;
 	
+	/// The log writer
+	private OperationLogWriter logWriter = null;
+
 	
 	/**
 	 * Create an instance of OperationFactory
@@ -75,6 +83,16 @@ public abstract class OperationFactory implements Iterator<Operation>,
 		return currentId;
 	}
 	
+	
+	/**
+	 * Get the benchmark
+	 * 
+	 * @return the benchmark	
+	 */
+	public final Benchmark getBenchmark() {
+		return benchmark;
+	}
+	
 
 	/**
 	 * Initialize the operation factory
@@ -83,9 +101,10 @@ public abstract class OperationFactory implements Iterator<Operation>,
 	 * @param sharedIdCounter the shared operation ID counter
 	 */
 	public void initialize(GraphDescriptor graphDescriptor,
-			AtomicInteger sharedIdCounter) {
+			AtomicInteger sharedIdCounter, Benchmark benchmark) {
 		this.graphDescriptor = graphDescriptor;
 		this.sharedIdCounter = sharedIdCounter;
+		this.benchmark = benchmark;
 		onInitialize();
 	}
 	
@@ -95,7 +114,7 @@ public abstract class OperationFactory implements Iterator<Operation>,
 	 * 
 	 * @return the graph descriptor
 	 */
-	protected final GraphDescriptor getGraphDescriptor() {
+	public final GraphDescriptor getGraphDescriptor() {
 		return graphDescriptor;
 	}
 
@@ -107,6 +126,26 @@ public abstract class OperationFactory implements Iterator<Operation>,
 	 */
 	protected final Graph getGraph() {
 		return graphDescriptor.getGraph();
+	}
+	
+	
+	/**
+	 * Set the log writer
+	 * 
+	 * @param logWriter the log writer
+	 */
+	public final void setLogWriter(OperationLogWriter logWriter) {
+		this.logWriter = logWriter;
+	}
+	
+	
+	/**
+	 * Return the log writer
+	 * 
+	 * @return the log writer
+	 */
+	public final OperationLogWriter getLogWriter() {
+		return logWriter;
 	}
 	
 	

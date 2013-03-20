@@ -284,7 +284,7 @@ public class OperationLogReader implements Iterable<OperationLogEntry> {
 
 		private OperationLogEntry extractLogEntry(String[] tokens) throws IOException {
 
-			if (tokens.length != 7 && tokens.length != OperationLogWriter.HEADERS.length) {
+			if (tokens.length < 7) {
 				throw new IOException("Unexpected number of tokens");
 			}
 			
@@ -302,11 +302,18 @@ public class OperationLogReader implements Iterable<OperationLogEntry> {
 			
 			// New fields as of 9/27/12
 			
-			long gcCount  = tokens.length <= 7 ? -1 : Long.parseLong(tokens[7]);
-			long gcTime   = tokens.length <= 8 ? -1 : Long.parseLong(tokens[8]);
+			int gcCount  = tokens.length <= 7 ? -1 : Integer.parseInt(tokens[7]);
+			int gcTime   = tokens.length <= 8 ? -1 : Integer.parseInt(tokens[8]);
+			
+			
+			// New fields as of 3/20/13
+			
+			int kbRead    = tokens.length <=  9 ? -1 : Integer.parseInt(tokens[9]);
+			int kbWritten = tokens.length <= 10 ? -1 : Integer.parseInt(tokens[10]);
 
 			
-			return new OperationLogEntry(opId, name, type, args, time, result, memory, gcCount, gcTime);
+			return new OperationLogEntry(opId, name, type, args, time, result, memory,
+					gcCount, gcTime, kbRead, kbWritten);
 		}
 	}
 }
