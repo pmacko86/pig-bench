@@ -454,6 +454,10 @@ public abstract class DatabaseEngine implements Comparable<DatabaseEngine> {
 			if (dbPath == null) {
 				throw new IllegalArgumentException("The required \"path\" SQL configuration property is not defined");
 			}
+			
+			//XXX Need to make sure the dbDir matches the device on which the database is stored for the sake of iostat
+			com.tinkerpop.bench.util.ConsoleUtils.warn("dbDir might not match the database directory -- not implemented");
+			
 			return new SqlGraph(dbPath);
 		}
 		

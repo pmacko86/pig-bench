@@ -42,6 +42,7 @@ import com.tinkerpop.bench.operationFactory.factories.OperationFactoryRandomVert
 import com.tinkerpop.bench.util.ConsoleUtils;
 import com.tinkerpop.bench.util.FileUtils;
 import com.tinkerpop.bench.util.GraphUtils;
+import com.tinkerpop.bench.util.IOStat;
 import com.tinkerpop.bench.util.JVMUtils;
 import com.tinkerpop.bench.util.LogUtils;
 import com.tinkerpop.bench.util.MathUtils;
@@ -368,6 +369,10 @@ public class BenchmarkMicro extends Benchmark {
 		boolean iostat = false;
 		if (options.has("iostat")) {
 			iostat = true;
+			if (!IOStat.isInstalled()) {
+				ConsoleUtils.error("iostat is not installed");
+				return 1;
+			}
 		}
 		
 		boolean ingestAsUndirected = false;
