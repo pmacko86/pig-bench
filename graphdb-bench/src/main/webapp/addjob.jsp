@@ -369,20 +369,22 @@
 				%>
 				</select>
 
-				<label>Warmup file
-					<span class="small">For the warmup database</span>
-				</label>
-				<select name="ingest_warmup_file" id="ingest_warmup_file">
-					<option value="">&lt;same as above&gt;</option>
-				<%
-					for (String name : datasets) {
-						String extra = "";
-						%>
-							<option value="<%= name %>"<%= extra %>><%= name %></option>
-						<%
-					}
-				%>
-				</select>
+				<% if (warmupEnabled) { %>
+					<label>Warmup file
+						<span class="small">For the warmup database</span>
+					</label>
+					<select name="ingest_warmup_file" id="ingest_warmup_file">
+						<option value="">&lt;same as above&gt;</option>
+					<%
+						for (String name : datasets) {
+							String extra = "";
+							%>
+								<option value="<%= name %>"<%= extra %>><%= name %></option>
+							<%
+						}
+					%>
+					</select>
+				<% } %>
 		
 				<label class="checkbox">
 					<input class="checkbox" type="checkbox" name="ingest_as_undirected"
@@ -424,10 +426,12 @@
 				</label>
 				<input type="text" name="op_count" id="op_count" value="<%= BenchmarkMicro.DEFAULT_OP_COUNT %>" />
 				
-				<label>Number of Warmup Operations
-					<span class="small">At least 1</span>
-				</label>
-				<input type="text" name="warmup_op_count" id="warmup_op_count" value="<%= BenchmarkMicro.DEFAULT_OP_COUNT %>" />
+				<% if (warmupEnabled) { %>
+					<label>Number of Warmup Operations
+						<span class="small">At least 1</span>
+					</label>
+					<input type="text" name="warmup_op_count" id="warmup_op_count" value="<%= BenchmarkMicro.DEFAULT_OP_COUNT %>" />
+				<% } %>
 
 				<div class="clear"></div>
 			</div>
