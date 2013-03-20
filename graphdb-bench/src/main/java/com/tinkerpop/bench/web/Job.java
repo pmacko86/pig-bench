@@ -236,6 +236,7 @@ public class Job implements Comparable<Job> {
 		boolean noWarmup = WebUtils.getBooleanParameter(request, "no_warmup", false);
 		boolean noCachePollution = WebUtils.getBooleanParameter(request, "no_cache_pollution", false);
 		boolean updateDirectly = WebUtils.getBooleanParameter(request, "update_directly", false);
+		boolean iostat = WebUtils.getBooleanParameter(request, "iostat", false);
 		String s_javaHeapSize = WebUtils.getStringParameter(request, "java_heap_size");
 		String s_dbCacheSize = WebUtils.getStringParameter(request, "db_cache_size");
 		
@@ -340,6 +341,10 @@ public class Job implements Comparable<Job> {
 		
 		if (updateDirectly && hasUpdates && hasNonLoadUpdates) {
 			arguments.add("--update-directly");
+		}
+		
+		if (iostat) {
+			arguments.add("--iostat");
 		}
 		
 		if (a_workloads != null) {

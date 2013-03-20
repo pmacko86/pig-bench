@@ -271,6 +271,12 @@
 						value="true"/>
 				Run non-load update operations directly on the database instead of a temporary clone 
 			</label>
+		
+			<label class="checkbox">
+				<input class="checkbox" type="checkbox" name="iostat"
+						value="true"/>
+				Capture the I/O statistics 
+			</label>
 			
 			
 			<p class="middle">Workloads (select one or more):</p>
