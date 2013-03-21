@@ -21,6 +21,7 @@ import com.tinkerpop.bench.util.LongComparator;
 import com.tinkerpop.bench.util.LongIntHashMap;
 import com.tinkerpop.bench.util.LongLongHashMap;
 import com.tinkerpop.bench.util.LongPriorityHashQueue;
+import com.tinkerpop.bench.util.MathUtils;
 import com.tinkerpop.bench.util.PriorityHashQueue;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Vertex;
@@ -134,16 +135,21 @@ public class OperationGetShortestPath extends Operation {
 			
 			ArrayList<Prediction> r = new ArrayList<Prediction>();
 			
-			Double getAllNeighbors = getContext().getAverageOperationRuntime("OperationGetAllNeighbors-both");
+			OperationStats getAllNeighbors = getContext().getOperationStats("OperationGetAllNeighbors-both");
 			if (getAllNeighbors != null) {
 				
 				// Hack
 				
 				OperationStats stats = getContext().getOperationStats("OperationGetShortestPath");
 				if (stats != null) {
+					
 					double averageNumNeighborhoods = stats.getAverageResult(2);
-					r.add(new Prediction(this, tag, "Using GetAllNeighbors and results",
-							getAllNeighbors.doubleValue() * averageNumNeighborhoods));
+					r.add(new Prediction(this, tag, "Using GetAllNeighbors and results, based on the neighborhood size",
+							getAllNeighbors.getAverageOperationRuntime() * averageNumNeighborhoods));
+					
+					double averageNumUniqueNodes = stats.getAverageResult(0);
+					r.add(new Prediction(this, tag, "Using GetAllNeighbors and results, based on the average unique nodes in a neighborhood",
+							averageNumNeighborhoods * MathUtils.evaluatePolynomial(getAllNeighbors.getLinearFitsForResult(0), averageNumUniqueNodes / averageNumNeighborhoods)));
 				}
 			}
 			
