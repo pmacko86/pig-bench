@@ -100,14 +100,19 @@ public class MountInfo {
 	 * @throws NoSuchElementException if no such record could be found
 	 */
 	public MountInfoRecord getRecordForFile(File file) {
-		String abs = file.getAbsolutePath();
+		String canonical;
+		try {
+			canonical = file.getCanonicalPath();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 		
 		MountInfoRecord best = null;
 		int maxLen = -1;
 		
 		for (MountInfoRecord r : records) {
-			if (abs.equals(r.directory)) return r;
-			if (abs.startsWith(r.directory.endsWith("/") ? r.directory : (r.directory + "/"))) {
+			if (canonical.equals(r.directory)) return r;
+			if (canonical.startsWith(r.directory.endsWith("/") ? r.directory : (r.directory + "/"))) {
 				if (maxLen < r.directory.length()) {
 					maxLen = r.directory.length();
 					best = r;
@@ -116,7 +121,7 @@ public class MountInfo {
 		}
 		
 		if (best == null) {
-			throw new NoSuchElementException("Could not determine the mountpoint for " + abs);
+			throw new NoSuchElementException("Could not determine the mountpoint for " + canonical);
 		}
 		
 		return best;
