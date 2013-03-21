@@ -320,8 +320,8 @@ public abstract class Operation {
 		IOStat iostatBefore = getFactory().getBenchmark().isCapturingIostat()
 				&& getFactory().getGraphDescriptor().getMountPoint() != null ? IOStat.run() : null;
 		
-		long cacheHitsStart = graph.getCacheHitCount();
-		long cacheMissesStart = graph.getCacheMissCount();
+		long cacheHitsStart   = graph == null ? -1 : graph.getCacheHitCount();
+		long cacheMissesStart = graph == null ? -1 : graph.getCacheMissCount();
 
 		// http://stackoverflow.com/questions/466878/can-you-get-basic-gc-stats-in-java
 		long startTotalGarbageCollections = 0;
