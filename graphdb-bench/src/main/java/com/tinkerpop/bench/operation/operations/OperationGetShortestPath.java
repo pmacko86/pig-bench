@@ -144,11 +144,11 @@ public class OperationGetShortestPath extends Operation {
 				if (stats != null) {
 					
 					double averageNumNeighborhoods = stats.getAverageResult(2);
-					r.add(new Prediction(this, tag, "Using GetAllNeighbors and results, based on the neighborhood size",
+					r.add(new Prediction(this, tag, "Using GetAllNeighbors and results, based on the number of neighborhood retrievals",
 							getAllNeighbors.getAverageOperationRuntime() * averageNumNeighborhoods));
 					
 					double averageNumUniqueNodes = stats.getAverageResult(0);
-					r.add(new Prediction(this, tag, "Using GetAllNeighbors and results, based on the average unique nodes in a neighborhood",
+					r.add(new Prediction(this, tag, "Using GetAllNeighbors and results, based on the average number of unique nodes in a neighborhood",
 							averageNumNeighborhoods * MathUtils.evaluatePolynomial(getAllNeighbors.getLinearFitsForResult(0), averageNumUniqueNodes / averageNumNeighborhoods)));
 				}
 			}
