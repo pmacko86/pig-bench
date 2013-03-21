@@ -310,10 +310,16 @@ public class OperationLogReader implements Iterable<OperationLogEntry> {
 			
 			int kbRead    = tokens.length <=  9 ? -1 : Integer.parseInt(tokens[9]);
 			int kbWritten = tokens.length <= 10 ? -1 : Integer.parseInt(tokens[10]);
+			
+			
+			// New fields as of 3/20/13
+			
+			int cacheHits   = tokens.length <= 11 ? -1 : Integer.parseInt(tokens[11]);
+			int cacheMisses = tokens.length <= 12 ? -1 : Integer.parseInt(tokens[12]);
 
 			
 			return new OperationLogEntry(opId, name, type, args, time, result, memory,
-					gcCount, gcTime, kbRead, kbWritten);
+					gcCount, gcTime, kbRead, kbWritten, cacheHits, cacheMisses);
 		}
 	}
 }

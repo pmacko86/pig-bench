@@ -16,6 +16,7 @@ import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.TransactionalGraph;
 import com.tinkerpop.blueprints.TransactionalGraph.Conclusion;
 import com.tinkerpop.blueprints.extensions.AutoTransactionalGraph;
+import com.tinkerpop.blueprints.extensions.BenchmarkableGraph;
 import com.tinkerpop.blueprints.extensions.impls.neo4j.ExtendedNeo4jGraph;
 
 import edu.harvard.pass.cpl.CPL;
@@ -40,6 +41,8 @@ public abstract class Operation {
 	private CPLObject cplObject = null;
 	private int kbRead = -1;
 	private int kbWritten = -1;
+	private int cacheHits = -1;
+	private int cacheMisses = -1;
 
 
 	/**
@@ -213,6 +216,26 @@ public abstract class Operation {
 		return kbWritten;
 	}
 
+	
+	/**
+	 * Get the number of cache hits
+	 * 
+	 * @return the number of cache hits, or -1 if unavailable
+	 */
+	public final int getCacheHits() {
+		return cacheHits;
+	}
+
+	
+	/**
+	 * Get the number of cache misses
+	 * 
+	 * @return the number of cache misses, or -1 if unavailable
+	 */
+	public final int getCacheMisses() {
+		return cacheMisses;
+	}
+
 
 	/**
 	 * Return the operation factory responsible for creating this operation
@@ -282,7 +305,7 @@ public abstract class Operation {
 	public final void execute() throws Exception {
 
 		int previousMaxBufferSize = 0;
-		Graph graph = getGraph();
+		BenchmarkableGraph graph = (BenchmarkableGraph) getGraph();
 		if (graph == null && !(this instanceof OperationDeleteGraph
 				|| this instanceof OperationOpenGraph
 				|| this instanceof OperationShutdownGraph
@@ -296,6 +319,9 @@ public abstract class Operation {
 
 		IOStat iostatBefore = getFactory().getBenchmark().isCapturingIostat()
 				&& getFactory().getGraphDescriptor().getMountPoint() != null ? IOStat.run() : null;
+		
+		long cacheHitsStart = graph.getCacheHitCount();
+		long cacheMissesStart = graph.getCacheMissCount();
 
 		// http://stackoverflow.com/questions/466878/can-you-get-basic-gc-stats-in-java
 		long startTotalGarbageCollections = 0;
@@ -384,6 +410,11 @@ public abstract class Operation {
 
 		totalGarbageCollections = (int) (stopTotalGarbageCollections - startTotalGarbageCollections);
 		garbageCollectionTime = (int) (stopGarbageCollectionTime - startGarbageCollectionTime);
+		
+		if (cacheHitsStart >= 0 && cacheMissesStart >= 0) {
+			cacheHits   = (int) (graph.getCacheHitCount()  - cacheHitsStart);
+			cacheMisses = (int) (graph.getCacheMissCount() - cacheMissesStart);
+		}
 
 		if (iostatBefore != null) {
 			IOStat iostatAfter = IOStat.run();

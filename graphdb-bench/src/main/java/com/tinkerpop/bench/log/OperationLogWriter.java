@@ -20,7 +20,7 @@ import edu.harvard.pass.cpl.CPLObject;
 public class OperationLogWriter {
 	
 	public static final String[] HEADERS = { "id", "name", "type", "args", "time", "result", "memory",
-		"gccount", "gctime", "kbread", "kbwritten" };
+		"gccount", "gctime", "kbread", "kbwritten", "cachehits", "cachemisses" };
 	private static final char LOG_DELIM = LogUtils.LOG_DELIMITER.charAt(0);
 	
 	
@@ -94,6 +94,8 @@ public class OperationLogWriter {
 			buffer[ 8] = Long.toString(op.getGCTimeMS());
 			buffer[ 9] = Integer.toString(op.getKbRead());
 			buffer[10] = Integer.toString(op.getKbWritten());
+			buffer[11] = Integer.toString(op.getCacheHits());
+			buffer[12] = Integer.toString(op.getCacheMisses());
 			
 			writer.writeNext(buffer);
 		}
@@ -112,29 +114,47 @@ public class OperationLogWriter {
 	/**
 	 * Write a .csv log data row
 	 * 
+	 * @param writer the CSV writer
+	 * @param entry the operation log entry
+	 * @param buffer the buffer (can be null)
+	 * @throws IOException on I/O error
+	 */
+	public static void write(CSVWriter writer, OperationLogEntry entry, String[] buffer) {
+		
+		if (buffer == null) {
+			buffer = new String[HEADERS.length];
+		}
+		
+		buffer[ 0] = Integer.toString(entry.getOpId());
+		buffer[ 1] = entry.getName();
+		buffer[ 2] = entry.getType();
+		buffer[ 3] = Arrays.toString(entry.getArgs());
+		buffer[ 4] = Long.toString(entry.getTime());
+		buffer[ 5] = entry.getResult() == null ? "null" : entry.getResult().toString();
+		buffer[ 6] = Long.toString(entry.getMemory());
+		buffer[ 7] = Long.toString(entry.getGCCount());
+		buffer[ 8] = Long.toString(entry.getGCTimeMS());
+		buffer[ 9] = Integer.toString(entry.getKbRead());
+		buffer[10] = Integer.toString(entry.getKbWritten());
+		buffer[11] = Integer.toString(entry.getCacheHits());
+		buffer[12] = Integer.toString(entry.getCacheMisses());
+			
+		writer.writeNext(buffer);
+	}
+
+	
+	/**
+	 * Write a .csv log data row
+	 * 
 	 * @param entry the operation log entry
 	 * @throws IOException on I/O error
 	 */
 	public synchronized void write(OperationLogEntry entry) throws IOException {
 		
-		
 		// Log to the file
 		
 		if (writer != null) {
-			
-			buffer[ 0] = Integer.toString(entry.getOpId());
-			buffer[ 1] = entry.getName();
-			buffer[ 2] = entry.getType();
-			buffer[ 3] = Arrays.toString(entry.getArgs());
-			buffer[ 4] = Long.toString(entry.getTime());
-			buffer[ 5] = entry.getResult() == null ? "null" : entry.getResult().toString();
-			buffer[ 6] = Long.toString(entry.getMemory());
-			buffer[ 7] = Long.toString(entry.getGCCount());
-			buffer[ 8] = Long.toString(entry.getGCTimeMS());
-			buffer[ 9] = Integer.toString(entry.getKbRead());
-			buffer[10] = Integer.toString(entry.getKbWritten());
-			
-			writer.writeNext(buffer);
+			write(writer, entry, buffer);
 		}
 	}
 

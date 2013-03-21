@@ -18,10 +18,12 @@ public class OperationLogEntry implements Serializable {
 	private int gcTimeMS = -1;
 	private int kbRead = -1;
 	private int kbWritten = -1;
+	private int cacheHits = -1;
+	private int cacheMisses = -1;
 
 	public OperationLogEntry(int opId, String name, String type, String args,
 			long time, String result, long memory, int gcCount, int gcTimeMS,
-			int kbRead, int kbWritten)  {
+			int kbRead, int kbWritten, int cacheHits, int cacheMisses)  {
 		this.opId = opId;
 		this.name = name;
 		this.type = type;
@@ -33,6 +35,8 @@ public class OperationLogEntry implements Serializable {
 		this.gcTimeMS = gcTimeMS;
 		this.kbRead = kbRead;
 		this.kbWritten = kbWritten;
+		this.cacheHits = cacheHits;
+		this.cacheMisses = cacheMisses;
 	}
 
 	public int getOpId() {
@@ -83,6 +87,14 @@ public class OperationLogEntry implements Serializable {
 
 	public int getKbWritten() {
 		return kbWritten;
+	}
+
+	public int getCacheHits() {
+		return cacheHits;
+	}
+
+	public int getCacheMisses() {
+		return cacheMisses;
 	}
 
 	private static String[] extractArgs(String argsStr) {
