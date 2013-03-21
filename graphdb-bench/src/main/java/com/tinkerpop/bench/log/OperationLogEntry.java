@@ -3,8 +3,8 @@ package com.tinkerpop.bench.log;
 import java.io.Serializable;
 
 public class OperationLogEntry implements Serializable {
-
-	private static final long serialVersionUID = -5592620775382822208L;
+	
+	private static final long serialVersionUID = -9165602269707526022L;
 	
 	private int opId = -1;
 	private String name = null;
