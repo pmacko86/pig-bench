@@ -144,7 +144,7 @@ public class OperationGetShortestPath extends Operation {
 				
 				// Hack
 				
-				OperationStats stats = getContext().getOperationStats("OperationGetShortestPath");
+				OperationStats stats = getContext().getOperationStats("OperationGetShortestPath", true);
 				if (stats != null) {
 					
 					double averageNumNeighborhoods = stats.getAverageResult(2);

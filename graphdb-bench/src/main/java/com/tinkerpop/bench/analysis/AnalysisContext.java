@@ -58,6 +58,12 @@ public class AnalysisContext {
 	/// The list of relevant successfully finished jobs
 	private List<Job> finishedJobs;
 	
+	/// The map of operations to finished jobs, limited to non stored procedure operations
+	HashMap<String, SortedSet<Job>> operationTypesToJobsPure;
+	
+	/// The map of operations with tags to finished jobs, limited to non stored procedure operations
+	HashMap<String, SortedSet<Job>> operationWithTagsToJobsPure;
+	
 	/// The map of operations to finished jobs
 	HashMap<String, SortedSet<Job>> operationTypesToJobs;
 	
@@ -77,6 +83,9 @@ public class AnalysisContext {
 	
 	/// The map of operation statistics
 	HashMap<String, OperationStats> operationStats;
+	
+	/// The map of pure operation statistics
+	HashMap<String, OperationStats> pureOperationStats;
 
 	
 	
@@ -92,6 +101,7 @@ public class AnalysisContext {
 		
 		this.operationModels = new HashMap<String, OperationModel>();
 		this.operationStats = new HashMap<String, OperationStats>();
+		this.pureOperationStats = new HashMap<String, OperationStats>();
 		
 		this.statistics = DatabaseInstanceStatisticsProvider.getStatisticsFor(dbEI);
 		
@@ -121,6 +131,17 @@ public class AnalysisContext {
 	
 	
 	/**
+	 * Determine if the given job is pure
+	 * 
+	 * @param job the job
+	 * @return true if it is pure
+	 */
+	private boolean isPure(Job job) {
+		return !job.getArguments().contains("--use-stored-procedures");
+	}
+	
+	
+	/**
 	 * Recompute if necessary
 	 * 
 	 * @return true if it was recomputed
@@ -137,6 +158,8 @@ public class AnalysisContext {
 	
 		finishedJobs = new ArrayList<Job>();
 		
+		operationTypesToJobsPure = new HashMap<String, SortedSet<Job>>();
+		operationWithTagsToJobsPure = new HashMap<String, SortedSet<Job>>();
 		operationTypesToJobs = new HashMap<String, SortedSet<Job>>();
 		operationWithTagsToJobs = new HashMap<String, SortedSet<Job>>();
 		
@@ -154,9 +177,9 @@ public class AnalysisContext {
 			if (job.getExecutionTime() == null) continue;
 			
 			
-			// Exclude jobs with some command-line arguments
+			// Exclude jobs with some command-line arguments from some collections 
 			
-			if (job.getArguments().contains("--use-stored-procedures")) continue;
+			boolean includeInPure = isPure(job);
 			
 			
 			// We found a relevant job!
@@ -182,6 +205,15 @@ public class AnalysisContext {
 				}
 				ojs.add(job);
 				
+				if (includeInPure) {
+					ojs = operationWithTagsToJobsPure.get(name);
+					if (ojs == null) {
+						ojs = new TreeSet<Job>();
+						operationWithTagsToJobsPure.put(name, ojs);
+					}
+					ojs.add(job);
+				}
+				
 				int tagStart = name.indexOf('-');
 				if (tagStart > 0) name = name.substring(0, tagStart);
 				
@@ -191,6 +223,15 @@ public class AnalysisContext {
 					operationTypesToJobs.put(name, ojs);
 				}
 				ojs.add(job);
+				
+				if (includeInPure) {
+					ojs = operationTypesToJobsPure.get(name);
+					if (ojs == null) {
+						ojs = new TreeSet<Job>();
+						operationTypesToJobsPure.put(name, ojs);
+					}
+					ojs.add(job); 
+				}
 			}
 		}
 		
@@ -201,6 +242,7 @@ public class AnalysisContext {
 		
 		operationModels.clear();
 		operationStats.clear();
+		pureOperationStats.clear();
 		
 		
 		/*
@@ -239,6 +281,27 @@ public class AnalysisContext {
 	
 	
 	/**
+	 * Get all jobs for the specified operation (base name, not with tags)
+	 * 
+	 * @param operationName the operation type
+	 * @param pure true for only pure jobs
+	 * @return the jobs sorted by time (ascending), or null if none
+	 */
+	public SortedSet<Job> getJobsForType(String operationName, boolean pure) {
+		String s = operationName.indexOf('-') > 0 ? operationName.substring(0, operationName.indexOf('-')) : operationName;
+		SortedSet<Job> operationJobs;
+		if (pure) {
+			operationJobs = operationTypesToJobsPure.get(s);
+		}
+		else {
+			operationJobs = operationTypesToJobs.get(s);
+		}
+		if (operationJobs == null || operationJobs.isEmpty()) return null;
+		return operationJobs;
+	}
+	
+	
+	/**
 	 * Get all jobs for the specified operation that includes a specified tag
 	 * 
 	 * @param operationName the operation name with an optional tag
@@ -246,6 +309,26 @@ public class AnalysisContext {
 	 */
 	public SortedSet<Job> getJobsWithTag(String operationName) {
 		SortedSet<Job> operationJobs = operationWithTagsToJobs.get(operationName);
+		if (operationJobs == null || operationJobs.isEmpty()) return null;
+		return operationJobs;
+	}
+	
+	
+	/**
+	 * Get all jobs for the specified operation that includes a specified tag
+	 * 
+	 * @param operationName the operation name with an optional tag
+	 * @param pure true for only pure jobs
+	 * @return the jobs sorted by time (ascending), or null if none
+	 */
+	public SortedSet<Job> getJobsWithTag(String operationName, boolean pure) {
+		SortedSet<Job> operationJobs;
+		if (pure) {
+			operationJobs = operationWithTagsToJobsPure.get(operationName);
+		}
+		else {
+			operationJobs = operationWithTagsToJobs.get(operationName);
+		}
 		if (operationJobs == null || operationJobs.isEmpty()) return null;
 		return operationJobs;
 	}
@@ -328,14 +411,34 @@ public class AnalysisContext {
 	 * @return the statistics, or null if none
 	 */
 	public synchronized OperationStats getOperationStats(String operationName) {
+		return getOperationStats(operationName, false);
+	}
+	
+	
+	/**
+	 * Get statistics for the given operation
+	 * 
+	 * @param operationName the operation name, including all tags
+	 * @param pure true if the operation must be pure (i.e. not a stored procedure)
+	 * @return the statistics, or null if none
+	 */
+	public synchronized OperationStats getOperationStats(String operationName, boolean pure) {
 		
-		OperationStats cached = operationStats.get(operationName);
+		OperationStats cached;
+		
+		if (pure) {
+			cached = pureOperationStats.get(operationName);
+		}
+		else {
+			cached = operationStats.get(operationName);
+		}
+		
 		if (cached != null) return cached;
 		
 		
 		// Check the persistent cache
 		
-		SortedSet<Job> jobs = getJobsWithTag(operationName);
+		SortedSet<Job> jobs = getJobsWithTag(operationName, pure);
 		Job job = jobs == null ? null : jobs.last();
 		if (job == null) return null;
 	
@@ -349,6 +452,8 @@ public class AnalysisContext {
 			try {
 				in = new ObjectInputStream(new FileInputStream(cacheFile));
 				stats = (OperationStats) in.readObject();
+				stats.job = job;
+				stats.context = this;
 				in.close();
 			}
 			catch (InvalidClassException e) {
@@ -366,6 +471,7 @@ public class AnalysisContext {
 			
 			if (stats != null) {
 				operationStats.put(operationName, stats);
+				if (isPure(job)) pureOperationStats.put(operationName, stats);
 				return stats;
 			}
 		}
@@ -373,8 +479,9 @@ public class AnalysisContext {
 		
 		// Compute the statistics
 		
-		OperationStats stats = new OperationStats(this, operationName, DROP_EXTREMES);
+		OperationStats stats = new OperationStats(this, job, operationName, DROP_EXTREMES);
 		operationStats.put(operationName, stats);
+		if (isPure(job)) pureOperationStats.put(operationName, stats);
 		
 		
 		// Store them in the persistent cache
@@ -446,9 +553,24 @@ public class AnalysisContext {
 	 * @return a list of the operation log entries from the tail of the log, or null if not available
 	 */
 	public List<OperationLogEntry> getTailEntries(String operationName) {
+		return getTailEntries(operationName, null);
+	}
+	
+	
+	/**
+	 * Get the tail operation log entries from the given job for the given operation name
+	 * (including tags)
+	 * 
+	 * @param operationName the operation name including tags
+	 * @param job the job, null to use the latest successful job for the given operation name
+	 * @return a list of the operation log entries from the tail of the log, or null if not available
+	 */
+	public List<OperationLogEntry> getTailEntries(String operationName, Job job) {
 		
-		SortedSet<Job> jobs = getJobsWithTag(operationName);
-		Job job = jobs == null ? null : jobs.last();
+		if (job == null) {
+			SortedSet<Job> jobs = getJobsWithTag(operationName);
+			job = jobs == null ? null : jobs.last();
+		}
 		
 		if (job != null) {
 			return OperationLogReader.getTailEntries(job.getLogFile(), operationName);

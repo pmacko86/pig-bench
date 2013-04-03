@@ -141,7 +141,7 @@ public class OperationGetKHopNeighbors extends Operation {
 				
 				// Hack
 				
-				OperationStats stats = getContext().getOperationStats("OperationGetKHopNeighbors-" + tag);
+				OperationStats stats = getContext().getOperationStats("OperationGetKHopNeighbors-" + tag, true);
 				if (stats != null) {
 					
 					double averageNumNeighborhoods = stats.getAverageResult(2);
