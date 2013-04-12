@@ -13,8 +13,11 @@ import org.neo4j.graphdb.Path;
 import org.neo4j.graphdb.Relationship;
 import org.neo4j.kernel.Traversal;
 
+import com.sparsity.dex.algorithms.SinglePairShortestPath;
+import com.sparsity.dex.algorithms.SinglePairShortestPathBFS;
 import com.sparsity.dex.gdb.EdgesDirection;
 import com.sparsity.dex.gdb.Graph;
+import com.sparsity.dex.gdb.OIDList;
 import com.tinkerpop.bench.analysis.AnalysisContext;
 import com.tinkerpop.bench.analysis.OperationModel;
 import com.tinkerpop.bench.analysis.OperationStats;
@@ -30,6 +33,7 @@ import com.tinkerpop.bench.util.PriorityHashQueue;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.blueprints.extensions.impls.dex.DexUtils;
+import com.tinkerpop.blueprints.extensions.impls.dex.ExtendedDexGraph;
 import com.tinkerpop.blueprints.extensions.impls.neo4j.Neo4jUtils;
 import com.tinkerpop.blueprints.impls.dex.DexGraph;
 
@@ -267,6 +271,63 @@ public class OperationGetShortestPath extends Operation {
 		}
 	}
 	
+	
+	/**
+	 * The operation specialized for DEX using its stored procedure
+	 */
+	public static class DEX_StoredProcedure extends OperationGetShortestPath {
+		
+		private EdgesDirection d;
+		
+		private long source;
+		private long target;
+		
+		
+		/**
+		 * Initialize the operation
+		 * 
+		 * @param args the operation arguments
+		 */
+		@Override
+		protected void onInitialize(Object[] args) {
+			super.onInitialize(args);
+
+			d = DexUtils.translateDirection(direction);
+
+			source = DexUtils.translateVertex(super.source);
+			target = DexUtils.translateVertex(super.target);
+		}
+
+		
+		/**
+		 * Execute the operation
+		 */
+		@Override
+		protected void onExecute() throws Exception {
+			
+			int real_hops = 0, get_ops = -1, get_vertex = -1;
+			
+			SinglePairShortestPath sp;
+			sp = new SinglePairShortestPathBFS(((ExtendedDexGraph) getGraph()).getSession(), source, target);
+			sp.addAllEdgeTypes(d);
+			sp.addAllNodeTypes();
+			sp.run();
+
+			if (sp.exists()) {
+				OIDList l = sp.getPathAsEdges();
+				real_hops = l.count();
+				l.delete();
+			}
+			else {
+				real_hops = -1;
+			}
+			
+			sp.close();
+			
+			setResult(-1 + ":" + real_hops + ":" + get_ops + ":" + get_vertex);
+		}
+	}
+
 	
 	/**
 	 * The operation specialized for Neo4j
