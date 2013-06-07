@@ -7,7 +7,6 @@ import com.tinkerpop.blueprints.Index;
 import com.tinkerpop.blueprints.IndexableGraph;
 import com.tinkerpop.blueprints.TransactionalGraph;
 import com.tinkerpop.blueprints.Vertex;
-import com.tinkerpop.blueprints.TransactionalGraph.Conclusion;
 import com.tinkerpop.blueprints.extensions.util.ClosingIterator;
 
 
@@ -83,7 +82,7 @@ public class OperationIndexPutAllElements extends Operation {
 			elementCount++;
 
 			if (elementCount % TRANSACTION_BUFFER == 0) {
-				transactionalGraph.stopTransaction(Conclusion.SUCCESS);
+				transactionalGraph.commit();
 			}
 		}
 
@@ -92,11 +91,11 @@ public class OperationIndexPutAllElements extends Operation {
 			elementCount++;
 
 			if (elementCount % TRANSACTION_BUFFER == 0) {
-				transactionalGraph.stopTransaction(Conclusion.SUCCESS);
+				transactionalGraph.commit();
 			}
 		}
 
-		transactionalGraph.stopTransaction(Conclusion.SUCCESS);
+		transactionalGraph.commit();
 
 		return elementCount;
 	}

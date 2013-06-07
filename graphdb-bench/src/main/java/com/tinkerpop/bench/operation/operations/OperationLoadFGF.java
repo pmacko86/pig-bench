@@ -9,13 +9,14 @@ import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.extensions.BulkloadableGraph;
 import com.tinkerpop.blueprints.extensions.impls.dex.DexCSVLoader;
 import com.tinkerpop.blueprints.extensions.impls.dex.DexFGFIncrementalLoader;
+import com.tinkerpop.blueprints.extensions.impls.dex.ExtendedDexGraph;
 import com.tinkerpop.blueprints.extensions.impls.neo4j.Neo4jFGFIncrementalLoader;
 import com.tinkerpop.blueprints.extensions.impls.neo4j.Neo4jFGFLoader;
 import com.tinkerpop.blueprints.extensions.io.GraphProgressListener;
 import com.tinkerpop.blueprints.extensions.io.fgf.FGFGraphReader;
 import com.tinkerpop.blueprints.impls.dex.DexGraph;
 import com.tinkerpop.blueprints.impls.neo4j.Neo4jGraph;
-import com.tinkerpop.blueprints.impls.neo4jbatch.Neo4jBatchGraph;
+import com.tinkerpop.blueprints.impls.neo4j.batch.Neo4jBatchGraph;
 
 import edu.harvard.pass.cpl.CPL;
 import edu.harvard.pass.cpl.CPLFile;
@@ -94,6 +95,7 @@ public class OperationLoadFGF extends Operation implements GraphProgressListener
 		
 		else if (graph instanceof DexGraph) {
 			if (bulkLoad) {
+				if (graph instanceof ExtendedDexGraph) ((ExtendedDexGraph) graph).startTransaction();
 				DexCSVLoader.load(((DexGraph) graph).getRawGraph(), dexCsvDir, filePrefix, this);
 			}
 			else {

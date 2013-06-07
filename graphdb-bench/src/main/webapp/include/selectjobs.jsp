@@ -105,7 +105,7 @@ if (true) {
 						if (selectedJobsForSelectedDatabaseInstanceAndOperation.isEmpty()) {
 							Job lastGoodJob = null;
 							for (Job job : jobs) {
-								if (job.getArguments().contains("--use-stored-procedures")) continue;
+								//if (job.getArguments().contains("--use-stored-procedures")) continue;
 								lastGoodJob = job;
 							}
 							if (lastGoodJob == null) {

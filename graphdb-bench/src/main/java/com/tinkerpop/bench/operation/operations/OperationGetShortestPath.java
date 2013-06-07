@@ -6,11 +6,18 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
+import org.neo4j.graphalgo.GraphAlgoFactory;
+import org.neo4j.graphalgo.PathFinder;
 import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Path;
 import org.neo4j.graphdb.Relationship;
+import org.neo4j.kernel.Traversal;
 
+import com.sparsity.dex.algorithms.SinglePairShortestPath;
+import com.sparsity.dex.algorithms.SinglePairShortestPathBFS;
 import com.sparsity.dex.gdb.EdgesDirection;
 import com.sparsity.dex.gdb.Graph;
+import com.sparsity.dex.gdb.OIDList;
 import com.tinkerpop.bench.analysis.AnalysisContext;
 import com.tinkerpop.bench.analysis.OperationModel;
 import com.tinkerpop.bench.analysis.OperationStats;
@@ -26,6 +33,7 @@ import com.tinkerpop.bench.util.PriorityHashQueue;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.blueprints.extensions.impls.dex.DexUtils;
+import com.tinkerpop.blueprints.extensions.impls.dex.ExtendedDexGraph;
 import com.tinkerpop.blueprints.extensions.impls.neo4j.Neo4jUtils;
 import com.tinkerpop.blueprints.impls.dex.DexGraph;
 
@@ -140,7 +148,7 @@ public class OperationGetShortestPath extends Operation {
 				
 				// Hack
 				
-				OperationStats stats = getContext().getOperationStats("OperationGetShortestPath");
+				OperationStats stats = getContext().getOperationStats("OperationGetShortestPath", true);
 				if (stats != null) {
 					
 					double averageNumNeighborhoods = stats.getAverageResult(2);
@@ -265,6 +273,63 @@ public class OperationGetShortestPath extends Operation {
 	
 	
 	/**
+	 * The operation specialized for DEX using its stored procedure
+	 */
+	public static class DEX_StoredProcedure extends OperationGetShortestPath {
+		
+		private EdgesDirection d;
+		
+		private long source;
+		private long target;
+		
+		
+		/**
+		 * Initialize the operation
+		 * 
+		 * @param args the operation arguments
+		 */
+		@Override
+		protected void onInitialize(Object[] args) {
+			super.onInitialize(args);
+
+			d = DexUtils.translateDirection(direction);
+
+			source = DexUtils.translateVertex(super.source);
+			target = DexUtils.translateVertex(super.target);
+		}
+
+		
+		/**
+		 * Execute the operation
+		 */
+		@Override
+		protected void onExecute() throws Exception {
+			
+			int real_hops = 0, get_ops = -1, get_vertex = -1;
+			
+			SinglePairShortestPath sp;
+			sp = new SinglePairShortestPathBFS(((ExtendedDexGraph) getGraph()).getSession(), source, target);
+			sp.addAllEdgeTypes(d);
+			sp.addAllNodeTypes();
+			sp.run();
+
+			if (sp.exists()) {
+				OIDList l = sp.getPathAsEdges();
+				real_hops = l.count();
+				l.delete();
+			}
+			else {
+				real_hops = -1;
+			}
+			
+			sp.close();
+			
+			setResult(-1 + ":" + real_hops + ":" + get_ops + ":" + get_vertex);
+		}
+	}
+
+	
+	/**
 	 * The operation specialized for Neo4j
 	 */
 	public static class Neo extends OperationGetShortestPath {
@@ -360,6 +425,55 @@ public class OperationGetShortestPath extends Operation {
 			
 			// format unique_vertices:path_len:get_nbrs:get_vertex
 			setResult(dist.size() + ":" + result.size() + ":" + get_nbrs + ":" + get_vertex);
+		}
+	}
+	
+	
+	/**
+	 * The operation specialized for Neo4j using its stored procedure
+	 */
+	public static class Neo_StoredProcedure extends OperationGetShortestPath {
+		
+		private org.neo4j.graphdb.Direction d;
+		
+		private Node source;
+		private Node target;
+		
+		
+		/**
+		 * Initialize the operation
+		 * 
+		 * @param args the operation arguments
+		 */
+		@Override
+		protected void onInitialize(Object[] args) {
+			super.onInitialize(args);
+			
+			d = Neo4jUtils.translateDirection(direction);
+			
+			source = Neo4jUtils.translateVertex(super.source);
+			target = Neo4jUtils.translateVertex(super.target);
+		}
+
+		
+		/**
+		 * Execute the operation
+		 */
+		@Override
+		protected void onExecute() throws Exception {
+			
+			int real_hops = 0, get_ops = -1, get_vertex = -1;
+			
+			PathFinder<Path> finder = GraphAlgoFactory.shortestPath(Traversal.expanderForAllTypes(d),
+					Integer.MAX_VALUE);
+			Path p = finder.findSinglePath(source, target);
+
+			@SuppressWarnings("unused")
+			Node v = p.endNode();
+			int d = p.length();
+			real_hops = d;
+			
+			setResult(-1 + ":" + real_hops + ":" + get_ops + ":" + get_vertex);
 		}
 	}
 }

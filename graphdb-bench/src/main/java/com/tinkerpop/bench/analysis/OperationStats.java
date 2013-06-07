@@ -7,6 +7,7 @@ import java.util.List;
 
 import com.tinkerpop.bench.log.OperationLogEntry;
 import com.tinkerpop.bench.util.MathUtils;
+import com.tinkerpop.bench.web.Job;
 
 
 /**
@@ -19,6 +20,8 @@ public class OperationStats implements Serializable {
 	private static final long serialVersionUID = 3469953900075433166L;
 	
 	transient AnalysisContext context = null;
+	transient Job job = null;
+	
 	private String operationName;
 	private double dropExtremes = 0;
 
@@ -40,12 +43,14 @@ public class OperationStats implements Serializable {
 	 * Create an instance of class OperationStatus
 	 * 
 	 * @param context the analysis context
+	 * @param job the job from which to get the stats
 	 * @param operationName the operation name with tags
 	 * @param dropExtremes the fraction of extreme values to drop
 	 */
-	OperationStats(AnalysisContext context, String operationName, double dropExtremes) {
+	OperationStats(AnalysisContext context, Job job, String operationName, double dropExtremes) {
 		
 		this.context = context;
+		this.job = job;
 		this.operationName = operationName;
 		this.dropExtremes = dropExtremes;
 		
@@ -55,7 +60,7 @@ public class OperationStats implements Serializable {
 		
 		// Get the entries and drop those with the extreme values
 		
-		List<OperationLogEntry> entries = context.getTailEntries(operationName);
+		List<OperationLogEntry> entries = context.getTailEntries(operationName, job);
 		
 		if (this.dropExtremes > 0 && entries.size() > 0) {
 			
@@ -191,6 +196,16 @@ public class OperationStats implements Serializable {
 	 */
 	public AnalysisContext getContext() {
 		return context;
+	}
+	
+	
+	/**
+	 * Get the associated job
+	 * 
+	 * @return the associated job
+	 */
+	public Job getJob() {
+		return job;
 	}
 	
 	

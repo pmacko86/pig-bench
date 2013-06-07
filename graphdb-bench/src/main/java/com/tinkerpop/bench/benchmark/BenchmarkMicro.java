@@ -1383,7 +1383,20 @@ public class BenchmarkMicro extends Benchmark {
 						jobs = context.getJobsWithTag(operation);
 					}
 					if (jobs == null || jobs.isEmpty()) continue;
-					Job job = jobs.last();
+					Job latestJob = jobs.last();
+					
+					if (operation.endsWith("-*")) {
+						jobs = context.getJobsForType(operation.substring(0, operation.length() - 2));
+					}
+					else {
+						jobs = context.getJobsWithTag(operation, true);
+					}
+					if (jobs == null || jobs.isEmpty()) continue;
+					Job latestPureJob = jobs.last();
+					
+					Set<Job> retainJobs = new HashSet<Job>();
+					retainJobs.add(latestJob);
+					retainJobs.add(latestPureJob);
 					
 					
 					// Find all operations that can be satisfied by this job
@@ -1404,7 +1417,21 @@ public class BenchmarkMicro extends Benchmark {
 						if (xJobs == null || xJobs.isEmpty()) continue;
 						Job xJob = xJobs.last();
 						
-						if (xJob == job) {
+						if (xJob == latestJob || xJob == latestPureJob) {
+							processedOperations.add(x);
+							currentRetain.add(x);
+						}
+
+						if (x.endsWith("-*")) {
+							xJobs = context.getJobsForType(x.substring(0, x.length() - 2), true);
+						}
+						else {
+							xJobs = context.getJobsWithTag(x, true);
+						}
+						if (xJobs == null || xJobs.isEmpty()) continue;
+						xJob = xJobs.last();
+						
+						if (xJob == latestJob || xJob == latestPureJob) {
 							processedOperations.add(x);
 							currentRetain.add(x);
 						}
@@ -1420,55 +1447,57 @@ public class BenchmarkMicro extends Benchmark {
 					
 					// Determine the name of the consolidated log file
 					
-					String consolidatedLogFileName = job.getLogFile().getName();
-					
-					if (job.getExecutionTime().after(now)) {
+					for (Job job : retainJobs) {
+						String consolidatedLogFileName = job.getLogFile().getName();
 						
-						// Fix log file dates that are in the future
-						
-						Date d = job.getExecutionTime();
-						while (d.after(now)) {
-							Calendar c = Calendar.getInstance();
-							c.setTime(d);
-							c.add(Calendar.MONTH, -1);
-							d = c.getTime();
+						if (job.getExecutionTime().after(now)) {
+							
+							// Fix log file dates that are in the future
+							
+							Date d = job.getExecutionTime();
+							while (d.after(now)) {
+								Calendar c = Calendar.getInstance();
+								c.setTime(d);
+								c.add(Calendar.MONTH, -1);
+								d = c.getTime();
+							}
+							
+							String org = consolidatedLogFileName;
+							consolidatedLogFileName = consolidatedLogFileName.replace(
+									LogUtils.DATE_FORMAT.format(job.getExecutionTime()),
+									LogUtils.DATE_FORMAT.format(d));
+							
+							assert !consolidatedLogFileName.equals(org);
 						}
 						
-						String org = consolidatedLogFileName;
-						consolidatedLogFileName = consolidatedLogFileName.replace(
-								LogUtils.DATE_FORMAT.format(job.getExecutionTime()),
-								LogUtils.DATE_FORMAT.format(d));
+						File consolidatedLogFile = new File(consolidateDir, consolidatedLogFileName);
 						
-						assert !consolidatedLogFileName.equals(org);
-					}
-					
-					File consolidatedLogFile = new File(consolidateDir, consolidatedLogFileName);
-					
-					
-					// Consolidate and retain the jobs in the main log file
-					// (do not even attempt to process the warmup file)
-					
-					OperationLogReader logReader = new OperationLogReader(job.getLogFile());
-					OperationLogWriter logWriter = new OperationLogWriter(consolidatedLogFile);
-					
-					for (OperationLogEntry e : logReader) {
-						if (currentRetain.contains(e.getName())) {
-							logWriter.write(e);
+						
+						// Consolidate and retain the jobs in the main log file
+						// (do not even attempt to process the warmup file)
+						
+						OperationLogReader logReader = new OperationLogReader(job.getLogFile());
+						OperationLogWriter logWriter = new OperationLogWriter(consolidatedLogFile);
+						
+						for (OperationLogEntry e : logReader) {
+							if (currentRetain.contains(e.getName())) {
+								logWriter.write(e);
+							}
 						}
+						
+						logWriter.close();
+						
+						
+						// Write the consolidated summary log file
+						
+						File consolidatedSummaryLogFile = new File(consolidateDir, job.getSummaryFile().getName());
+						
+						LinkedHashMap<String, String> resultFiles = new LinkedHashMap<String, String>();
+						resultFiles.put(dbShortName, consolidatedLogFile.getAbsolutePath());
+						
+						SummaryLogWriter summaryLogWriter = new SummaryLogWriter(resultFiles);
+						summaryLogWriter.writeSummary(consolidatedSummaryLogFile.getAbsolutePath());
 					}
-					
-					logWriter.close();
-					
-					
-					// Write the consolidated summary log file
-					
-					File consolidatedSummaryLogFile = new File(consolidateDir, job.getSummaryFile().getName());
-					
-					LinkedHashMap<String, String> resultFiles = new LinkedHashMap<String, String>();
-					resultFiles.put(dbShortName, consolidatedLogFile.getAbsolutePath());
-					
-					SummaryLogWriter summaryLogWriter = new SummaryLogWriter(resultFiles);
-					summaryLogWriter.writeSummary(consolidatedSummaryLogFile.getAbsolutePath());
 				}
 				
 				

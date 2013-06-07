@@ -14,7 +14,6 @@ import com.tinkerpop.bench.util.StatisticsHelper;
 import com.tinkerpop.bench.util.IOStat.DeviceStat;
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.TransactionalGraph;
-import com.tinkerpop.blueprints.TransactionalGraph.Conclusion;
 import com.tinkerpop.blueprints.extensions.AutoTransactionalGraph;
 import com.tinkerpop.blueprints.extensions.BenchmarkableGraph;
 import com.tinkerpop.blueprints.extensions.impls.neo4j.ExtendedNeo4jGraph;
@@ -383,7 +382,7 @@ public abstract class Operation {
 							// should translate to a NO-OP, assuming that there is no
 					// running transaction).
 					TransactionalGraph g = (TransactionalGraph) graph;
-					g.stopTransaction(Conclusion.SUCCESS);
+					g.commit();
 				}
 			}
 		}
