@@ -55,16 +55,18 @@
 				<% } else { %>
 					<li><p>Compare Efficiency</p></li>
 				<% } %>
-				<% if (!jsp_page.equals("compareruns")) { %>
-					<li><a href="compareruns.jsp">Compare Runs</a></li>
-				<% } else { %>
-					<li><p>Compare Runs</p></li>
-				<% } %>
-				<% if (!jsp_page.equals("runanalysis")) { %>
-					<li><a href="runanalysis.jsp">Simple Model Analysis</a></li>
-				<% } else { %>
-					<li><p>Simple Model Analysis</p></li>
-				<% } %>
+				<!--
+					<% if (!jsp_page.equals("compareruns")) { %>
+						<li><a href="compareruns.jsp">Compare Runs</a></li>
+					<% } else { %>
+						<li><p>Compare Runs</p></li>
+					<% } %>
+					<% if (!jsp_page.equals("runanalysis")) { %>
+						<li><a href="runanalysis.jsp">Simple Model Analysis</a></li>
+					<% } else { %>
+						<li><p>Simple Model Analysis</p></li>
+					<% } %>
+				-->
 				<% if (!jsp_page.equals("analyzeingest")) { %>
 					<li><a href="analyzeingest.jsp">Analyze Ingest</a></li>
 				<% } else { %>
