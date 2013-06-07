@@ -2,6 +2,7 @@ package com.tinkerpop.bench.web;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -15,8 +16,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import scala.actors.threadpool.Arrays;
 
 import com.tinkerpop.bench.DatabaseEngine;
 import com.tinkerpop.bench.analysis.AnalysisContext;
