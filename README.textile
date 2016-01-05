@@ -1,3 +1,0 @@
-!https://github.com/tinkerpop/tinkubator/raw/master/doc/images/tinkubator-logo.png!
-
-The Tinkubator is a laboratory repository for emerging "TinkerPop":http://tinkerpop.com projects. Furthermore, it also contains historic, low-activity projects. If you feel like contributing to TinkerPop, perhaps start a fresh project in the Tinkubator.
